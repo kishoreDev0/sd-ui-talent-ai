@@ -1,165 +1,435 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
-import { Search, Filter, TrendingUp, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Search, 
+  Filter, 
+  TrendingUp, 
+  Download, 
+  Edit, 
+  Trash2, 
+  UserPlus, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Building2,
+  Briefcase,
+  Calendar,
+  MoreVertical,
+  X,
+  Star,
+  CheckCircle2,
+  Clock,
+  User
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import CustomSelect from '@/components/ui/custom-select';
 import { UserRole } from '@/types';
 
+interface Candidate {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobile: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  currentCompany?: string;
+  experience?: string;
+  skills: string[];
+  majorSkills: string[];
+  matchScore?: number;
+  status: 'Active' | 'Shortlisted' | 'Interview' | 'Rejected' | 'On Hold';
+  appliedDate: string;
+  rating?: number;
+  organization?: string;
+  currentCTC?: string;
+  expectedCTC?: string;
+}
+
 const CandidatesPage: React.FC = () => {
+  const navigate = useNavigate();
   const getUserRole = (): UserRole => 'admin';
 
-  const candidates = [
+  const [candidates, setCandidates] = useState<Candidate[]>([
     {
       id: 1,
-      name: 'Sarah Johnson',
+      firstName: 'Sarah',
+      lastName: 'Johnson',
       email: 'sarah.johnson@email.com',
-      role: 'Product Designer',
-      matchScore: 92,
+      mobile: '+1 234-567-8900',
+      city: 'San Francisco',
+      state: 'California',
+      country: 'USA',
+      currentCompany: 'Tech Corp',
+      experience: '5 Years',
       skills: ['UI/UX Design', 'Figma', 'Prototyping', 'User Research'],
-      matchedSkills: ['UI/UX Design', 'Figma', 'Prototyping'],
+      majorSkills: ['UI/UX Design'],
+      matchScore: 92,
       status: 'Interview',
       appliedDate: 'Oct 18, 2024',
+      rating: 85,
+      organization: 'Tringapps Research Labs Pvt. Ltd.',
+      currentCTC: '$120,000',
+      expectedCTC: '$140,000',
     },
     {
       id: 2,
-      name: 'Michael Chen',
+      firstName: 'Michael',
+      lastName: 'Chen',
       email: 'michael.chen@email.com',
-      role: 'Frontend Developer',
-      matchScore: 88,
+      mobile: '+1 234-567-8901',
+      city: 'New York',
+      state: 'New York',
+      country: 'USA',
+      currentCompany: 'Digital Solutions',
+      experience: '3 Years',
       skills: ['React', 'TypeScript', 'Next.js', 'Node.js'],
-      matchedSkills: ['React', 'TypeScript', 'Next.js'],
-      status: 'Screening',
+      majorSkills: ['Web Development'],
+      matchScore: 88,
+      status: 'Shortlisted',
       appliedDate: 'Oct 20, 2024',
+      rating: 78,
+      organization: 'Tringapps - BU2',
+      currentCTC: '$95,000',
+      expectedCTC: '$110,000',
     },
     {
       id: 3,
-      name: 'Emily Davis',
+      firstName: 'Emily',
+      lastName: 'Davis',
       email: 'emily.davis@email.com',
-      role: 'UI/UX Designer',
-      matchScore: 85,
+      mobile: '+1 234-567-8902',
+      city: 'Seattle',
+      state: 'Washington',
+      country: 'USA',
+      currentCompany: 'Design Studio',
+      experience: '4 Years',
       skills: ['Design Systems', 'Sketch', 'Adobe XD', 'Wireframing'],
-      matchedSkills: ['Design Systems', 'Sketch', 'Wireframing'],
-      status: 'Applied',
+      majorSkills: ['UI/UX Design'],
+      matchScore: 85,
+      status: 'Active',
       appliedDate: 'Oct 22, 2024',
+      rating: 82,
+      organization: 'Tringapps Research Labs Pvt. Ltd.',
+      currentCTC: '$105,000',
+      expectedCTC: '$125,000',
     },
-  ];
+  ]);
 
-  const getMatchColor = (score: number) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+
+  const getStatusColor = (status: Candidate['status']) => {
+    const colors: Record<Candidate['status'], string> = {
+      'Active': 'bg-blue-100 text-blue-700 border-blue-200',
+      'Shortlisted': 'bg-green-100 text-green-700 border-green-200',
+      'Interview': 'bg-purple-100 text-purple-700 border-purple-200',
+      'Rejected': 'bg-red-100 text-red-700 border-red-200',
+      'On Hold': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
+  const getMatchColor = (score?: number) => {
+    if (!score) return 'bg-gray-100 text-gray-700';
     if (score >= 90) return 'bg-green-100 text-green-700';
     if (score >= 80) return 'bg-blue-100 text-blue-700';
     if (score >= 70) return 'bg-yellow-100 text-yellow-700';
     return 'bg-red-100 text-red-700';
   };
 
+  const filteredCandidates = candidates.filter((candidate) => {
+    const matchesSearch = 
+      candidate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'All' || candidate.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleDelete = (id: number) => {
+    setCandidates(candidates.filter(c => c.id !== id));
+    setShowDeleteModal(null);
+  };
+
+  const statusOptions = [
+    { value: 'All', label: 'All Status' },
+    { value: 'Active', label: 'Active' },
+    { value: 'Shortlisted', label: 'Shortlisted' },
+    { value: 'Interview', label: 'Interview' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'On Hold', label: 'On Hold' },
+  ];
+
   return (
     <MainLayout role={getUserRole()}>
-      <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-4xl font-bold text-gray-900">Candidates</h1>
-          <p className="text-gray-600 mt-2">Review and manage candidates</p>
-        </motion.div>
-
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search candidates..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <button className="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center space-x-2">
-            <Filter className="w-5 h-5" />
-            <span>Filter</span>
-          </button>
-        </div>
-
-        <div className="grid gap-4">
-          {candidates.map((candidate, index) => (
-            <motion.div
-              key={candidate.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow"
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage and track all candidate profiles
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/candidates/register')}
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl text-white w-12 h-12 flex items-center justify-center font-bold">
-                    {candidate.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {candidate.name}
-                    </h3>
-                    <p className="text-gray-600 mb-1">{candidate.email}</p>
-                    <p className="text-sm text-gray-500">
-                      Applied on {candidate.appliedDate}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-right">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
-                      <span className="text-lg font-bold text-gray-900">
-                        Match Score
-                      </span>
+              <UserPlus className="h-4 w-4" />
+              Register Candidate
+            </Button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by name, email, or skills..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+              <div className="w-full md:w-48">
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  options={statusOptions}
+                  placeholder="Filter by status"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Candidates Grid */}
+          <AnimatePresence mode="wait">
+            {filteredCandidates.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center"
+              >
+                <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No candidates found
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {searchTerm ? 'Try adjusting your search terms' : 'Get started by registering a new candidate'}
+                </p>
+                {!searchTerm && (
+                  <Button
+                    onClick={() => navigate('/candidates/register')}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    Register Candidate
+                  </Button>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {filteredCandidates.map((candidate, index) => (
+                  <motion.div
+                    key={candidate.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4 }}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-lg transition-all duration-300 group"
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                            {candidate.firstName.charAt(0)}{candidate.lastName.charAt(0)}
+                          </div>
+                          {candidate.rating && (
+                            <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1">
+                              <Star className="h-3 w-3 text-yellow-800 fill-current" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">
+                            {candidate.firstName} {candidate.lastName}
+                          </h3>
+                          <p className="text-xs text-gray-600 truncate">{candidate.email}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Phone className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">{candidate.mobile}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/candidates/edit/${candidate.id}`)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowDeleteModal(candidate.id)} className="text-red-600">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <span
-                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium ${getMatchColor(candidate.matchScore)}`}
-                    >
-                      {candidate.matchScore}%
-                    </span>
-                  </div>
-                  <button className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                    <Download className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  Matched Skills:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {candidate.matchedSkills.map((skill, skillIndex) => (
-                    <span
-                      key={skillIndex}
-                      className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
+                    {/* Candidate Info */}
+                    <div className="space-y-2 mb-4">
+                      {candidate.currentCompany && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Building2 className="h-3 w-3" />
+                          <span className="truncate">{candidate.currentCompany}</span>
+                        </div>
+                      )}
+                      {candidate.city && candidate.country && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <MapPin className="h-3 w-3" />
+                          <span>{candidate.city}, {candidate.country}</span>
+                        </div>
+                      )}
+                      {candidate.experience && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Briefcase className="h-3 w-3" />
+                          <span>{candidate.experience}</span>
+                        </div>
+                      )}
+                      {candidate.organization && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span className="truncate">{candidate.organization}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Calendar className="h-3 w-3" />
+                        <span>{candidate.appliedDate}</span>
+                      </div>
+                    </div>
 
-              <div className="flex items-center justify-between">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    candidate.status === 'Interview'
-                      ? 'bg-purple-100 text-purple-700'
-                      : candidate.status === 'Screening'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {candidate.status}
-                </span>
-                <div className="flex space-x-2">
-                  <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium">
-                    View Profile
-                  </button>
-                  <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all font-medium">
-                    Shortlist
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                    {/* Skills */}
+                    {candidate.skills.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {candidate.skills.slice(0, 3).map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-xs font-medium"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                          {candidate.skills.length > 3 && (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">
+                              +{candidate.skills.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)}`}>
+                          {candidate.status}
+                        </span>
+                        {candidate.matchScore && (
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3 text-blue-600" />
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}>
+                              {candidate.matchScore}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => navigate(`/candidates/view/${candidate.id}`)}
+                        >
+                          <User className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => navigate(`/candidates/edit/${candidate.id}`)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-10 backdrop-blur-sm" onClick={() => setShowDeleteModal(null)}>
+            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-blue-100" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Delete Candidate</h2>
+                <button onClick={() => setShowDeleteModal(null)} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete this candidate? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteModal(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleDelete(showDeleteModal)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

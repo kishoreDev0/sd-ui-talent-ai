@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CustomSelect from '@/components/ui/custom-select';
 import Breadcrumb from '@/components/ui/breadcrumb';
-import { ArrowLeft, ArrowRight, X, List, ListOrdered, Heading1, Heading2, Undo, Redo } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X, List, ListOrdered, Heading1, Heading2, Undo, Redo, Check } from 'lucide-react';
 
 interface JobFormData {
   jobTitle: string;
@@ -29,6 +29,7 @@ interface JobFormData {
 const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<JobFormData>({
     jobTitle: '',
     employmentType: '',
@@ -110,6 +111,9 @@ const RegisterJob: React.FC = () => {
     content: formData.jobDescription,
     onUpdate: ({ editor }) => {
       setFormData(prev => ({ ...prev, jobDescription: editor.getHTML() }));
+      if (errors.jobDescription) {
+        setErrors({ ...errors, jobDescription: '' });
+      }
     },
   });
 
@@ -118,6 +122,9 @@ const RegisterJob: React.FC = () => {
     content: formData.jobResponsibilities,
     onUpdate: ({ editor }) => {
       setFormData(prev => ({ ...prev, jobResponsibilities: editor.getHTML() }));
+      if (errors.jobResponsibilities) {
+        setErrors({ ...errors, jobResponsibilities: '' });
+      }
     },
   });
 
@@ -296,22 +303,100 @@ const RegisterJob: React.FC = () => {
     }));
   };
 
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 0) {
+      // Validate Basic Information
+      if (!formData.jobTitle.trim()) {
+        newErrors.jobTitle = 'Job Title is required';
+      }
+      if (!formData.employmentType) {
+        newErrors.employmentType = 'Employment Type is required';
+      }
+      if (!formData.experience) {
+        newErrors.experience = 'Experience is required';
+      }
+      if (!formData.majorSkill) {
+        newErrors.majorSkill = 'Major Skill is required';
+      }
+      if (!formData.organization) {
+        newErrors.organization = 'Organization is required';
+      }
+      if (!formData.currency) {
+        newErrors.currency = 'Currency is required';
+      }
+      if (!formData.jobCategory) {
+        newErrors.jobCategory = 'Job Category is required';
+      }
+      if (formData.majorSkill && formData.selectedSkills.length === 0) {
+        newErrors.selectedSkills = 'At least one skill is required';
+      }
+    } else if (step === 1) {
+      // Validate Description - check if editor has text content
+      if (editorDescription) {
+        const textContent = editorDescription.getText().trim();
+        if (!textContent) {
+          newErrors.jobDescription = 'Job Description is required';
+        }
+      } else if (!formData.jobDescription.trim()) {
+        newErrors.jobDescription = 'Job Description is required';
+      }
+    } else if (step === 2) {
+      // Validate Responsibilities - check if editor has text content
+      if (editorResponsibilities) {
+        const textContent = editorResponsibilities.getText().trim();
+        if (!textContent) {
+          newErrors.jobResponsibilities = 'Job Responsibilities is required';
+        }
+      } else if (!formData.jobResponsibilities.trim()) {
+        newErrors.jobResponsibilities = 'Job Responsibilities is required';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (validateStep(currentStep)) {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1);
+        setErrors({}); // Clear errors when moving to next step
+      }
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      setErrors({}); // Clear errors when going back
     }
   };
 
+  const handleStepClick = (targetStep: number) => {
+    // Allow navigation to previous or current steps without validation
+    if (targetStep <= currentStep) {
+      setCurrentStep(targetStep);
+      setErrors({});
+      return;
+    }
+    
+    // For future steps, validate current step first
+    if (validateStep(currentStep)) {
+      setCurrentStep(targetStep);
+      setErrors({});
+    }
+    // If validation fails, errors are already set and user stays on current step
+  };
+
   const handleSubmit = () => {
-    console.log('Job Registration Data:', formData);
-    // Here you would typically send the data to your backend
-    navigate('/job-board');
+    // Validate final step before submitting
+    if (validateStep(currentStep)) {
+      console.log('Job Registration Data:', formData);
+      // Here you would typically send the data to your backend
+      navigate('/job-board');
+    }
   };
 
   const renderBasicInformation = () => (
@@ -324,10 +409,18 @@ const RegisterJob: React.FC = () => {
           <Input
             type="text"
             value={formData.jobTitle}
-            onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+            onChange={(e) => {
+              handleInputChange('jobTitle', e.target.value);
+              if (errors.jobTitle) {
+                setErrors({ ...errors, jobTitle: '' });
+              }
+            }}
             placeholder="Enter job title"
-            className="w-full"
+            className={`w-full ${errors.jobTitle ? 'border-red-500' : ''}`}
           />
+          {errors.jobTitle && (
+            <p className="text-xs text-red-500 mt-1">{errors.jobTitle}</p>
+          )}
         </div>
         
         <div>
@@ -336,11 +429,19 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.employmentType}
-            onChange={(value) => handleInputChange('employmentType', value)}
+            onChange={(value) => {
+              handleInputChange('employmentType', value);
+              if (errors.employmentType) {
+                setErrors({ ...errors, employmentType: '' });
+              }
+            }}
             options={employmentTypes}
             placeholder="Select Type"
-            className="w-full"
+            className={`w-full ${errors.employmentType ? 'border-red-500' : ''}`}
           />
+          {errors.employmentType && (
+            <p className="text-xs text-red-500 mt-1">{errors.employmentType}</p>
+          )}
         </div>
 
         <div>
@@ -349,11 +450,19 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.experience}
-            onChange={(value) => handleInputChange('experience', value)}
+            onChange={(value) => {
+              handleInputChange('experience', value);
+              if (errors.experience) {
+                setErrors({ ...errors, experience: '' });
+              }
+            }}
             options={experienceLevels}
             placeholder="Select Experience"
-            className="w-full"
+            className={`w-full ${errors.experience ? 'border-red-500' : ''}`}
           />
+          {errors.experience && (
+            <p className="text-xs text-red-500 mt-1">{errors.experience}</p>
+          )}
         </div>
 
         <div>
@@ -362,11 +471,19 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.majorSkill}
-            onChange={(value) => handleInputChange('majorSkill', value)}
+            onChange={(value) => {
+              handleInputChange('majorSkill', value);
+              if (errors.majorSkill) {
+                setErrors({ ...errors, majorSkill: '' });
+              }
+            }}
             options={majorSkillsOptions}
             placeholder="Select Major Skill"
-            className="w-full"
+            className={`w-full ${errors.majorSkill ? 'border-red-500' : ''}`}
           />
+          {errors.majorSkill && (
+            <p className="text-xs text-red-500 mt-1">{errors.majorSkill}</p>
+          )}
         </div>
 
         <div>
@@ -375,11 +492,19 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.organization}
-            onChange={(value) => handleInputChange('organization', value)}
+            onChange={(value) => {
+              handleInputChange('organization', value);
+              if (errors.organization) {
+                setErrors({ ...errors, organization: '' });
+              }
+            }}
             options={organizations}
             placeholder="Select Organization"
-            className="w-full"
+            className={`w-full ${errors.organization ? 'border-red-500' : ''}`}
           />
+          {errors.organization && (
+            <p className="text-xs text-red-500 mt-1">{errors.organization}</p>
+          )}
         </div>
 
         <div>
@@ -400,10 +525,18 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.currency}
-            onChange={(value) => handleInputChange('currency', value)}
+            onChange={(value) => {
+              handleInputChange('currency', value);
+              if (errors.currency) {
+                setErrors({ ...errors, currency: '' });
+              }
+            }}
             options={currencies}
-            className="w-full"
+            className={`w-full ${errors.currency ? 'border-red-500' : ''}`}
           />
+          {errors.currency && (
+            <p className="text-xs text-red-500 mt-1">{errors.currency}</p>
+          )}
         </div>
 
         <div>
@@ -412,11 +545,19 @@ const RegisterJob: React.FC = () => {
           </label>
           <CustomSelect
             value={formData.jobCategory}
-            onChange={(value) => handleInputChange('jobCategory', value)}
+            onChange={(value) => {
+              handleInputChange('jobCategory', value);
+              if (errors.jobCategory) {
+                setErrors({ ...errors, jobCategory: '' });
+              }
+            }}
             options={jobCategories}
             placeholder="Select Category"
-            className="w-full"
+            className={`w-full ${errors.jobCategory ? 'border-red-500' : ''}`}
           />
+          {errors.jobCategory && (
+            <p className="text-xs text-red-500 mt-1">{errors.jobCategory}</p>
+          )}
         </div>
 
         <div>
@@ -464,7 +605,7 @@ const RegisterJob: React.FC = () => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Skills *
           </label>
-          <div className="border border-gray-200 rounded-lg p-2 max-h-48 overflow-y-auto">
+          <div className={`border ${errors.selectedSkills ? 'border-red-500' : 'border-gray-200'} rounded-lg p-2 max-h-48 overflow-y-auto`}>
             {availableSkills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {availableSkills.map((skill) => {
@@ -473,7 +614,12 @@ const RegisterJob: React.FC = () => {
                     <button
                       key={skill.value}
                       type="button"
-                      onClick={() => handleSkillToggle(skill.value)}
+                      onClick={() => {
+                        handleSkillToggle(skill.value);
+                        if (errors.selectedSkills) {
+                          setErrors({ ...errors, selectedSkills: '' });
+                        }
+                      }}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                         isSelected
                           ? 'bg-purple-600 text-white'
@@ -489,6 +635,9 @@ const RegisterJob: React.FC = () => {
               <p className="text-sm text-gray-500">No skills available for this major skill</p>
             )}
           </div>
+          {errors.selectedSkills && (
+            <p className="text-xs text-red-500 mt-1">{errors.selectedSkills}</p>
+          )}
           
           {/* Selected Skills */}
           {formData.selectedSkills.length > 0 && (
@@ -526,12 +675,15 @@ const RegisterJob: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Job Description *
         </label>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className={`border ${errors.jobDescription ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}>
           <MenuBar editor={editorDescription} />
           <div className="prose max-w-none p-3">
             <EditorContent editor={editorDescription} />
           </div>
         </div>
+        {errors.jobDescription && (
+          <p className="text-xs text-red-500 mt-1">{errors.jobDescription}</p>
+        )}
       </div>
     </div>
   );
@@ -542,12 +694,15 @@ const RegisterJob: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Job Responsibilities *
         </label>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className={`border ${errors.jobResponsibilities ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}>
           <MenuBar editor={editorResponsibilities} />
           <div className="prose max-w-none p-3">
             <EditorContent editor={editorResponsibilities} />
           </div>
         </div>
+        {errors.jobResponsibilities && (
+          <p className="text-xs text-red-500 mt-1">{errors.jobResponsibilities}</p>
+        )}
       </div>
     </div>
   );
@@ -571,21 +726,56 @@ const RegisterJob: React.FC = () => {
             <p className="text-sm text-gray-600">Create a new job posting.</p>
           </div>
 
-          {/* Steps */}
-          <div className="mb-4">
-            <div className="flex space-x-6">
+          {/* Stepper */}
+          <div className="mb-6 flex justify-center">
+            <div className="flex items-center">
               {steps.map((step, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentStep(index)}
-                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-                    currentStep === index
-                      ? 'border-purple-600 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  {step}
-                </button>
+                <React.Fragment key={index}>
+                  {/* Step Circle */}
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center">
+                      {/* Step Circle */}
+                      <div className="relative flex flex-col items-center">
+                        <button
+                          onClick={() => handleStepClick(index)}
+                          className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                            currentStep === index
+                              ? 'bg-purple-600 border-purple-600 text-white'
+                              : index < currentStep
+                              ? 'bg-green-500 border-green-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
+                          }`}
+                        >
+                          {index < currentStep ? (
+                            <Check className="h-5 w-5" />
+                          ) : (
+                            <span className="text-sm font-semibold">{index + 1}</span>
+                          )}
+                        </button>
+                        {/* Step Label */}
+                        <span
+                          className={`mt-2 text-xs font-medium ${
+                            currentStep === index
+                              ? 'text-purple-600'
+                              : index < currentStep
+                              ? 'text-green-600'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {step}
+                        </span>
+                      </div>
+                      {/* Connector Line */}
+                      {index < steps.length - 1 && (
+                        <div
+                          className={`w-24 h-0.5 mx-4 -mt-5 ${
+                            index < currentStep ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </React.Fragment>
               ))}
             </div>
           </div>
@@ -597,45 +787,41 @@ const RegisterJob: React.FC = () => {
             {currentStep === 2 && renderResponsibilities()}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-4">
-              <div>
-                {currentStep > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevious}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                )}
-              </div>
+            <div className="flex justify-end gap-3 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/job-board')}
+              >
+                Cancel
+              </Button>
               
-              <div className="flex gap-3">
+              {currentStep > 0 && (
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/job-board')}
+                  onClick={handlePrevious}
+                  className="flex items-center gap-2"
                 >
-                  Cancel
+                  <ArrowLeft className="h-4 w-4" />
+                  Previous
                 </Button>
-                
-                {currentStep < steps.length - 1 ? (
-                  <Button
-                    onClick={handleNext}
-                    className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
-                  >
-                    Next
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
-                    Submit Job
-                  </Button>
-                )}
-              </div>
+              )}
+              
+              {currentStep < steps.length - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Submit Job
+                </Button>
+              )}
             </div>
           </div>
         </div>

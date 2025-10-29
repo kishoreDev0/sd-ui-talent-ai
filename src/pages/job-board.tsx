@@ -394,7 +394,7 @@ const JobBoard: React.FC = () => {
   return (
     <MainLayout role="admin">
       <div className="min-h-screen bg-gray-50">
-        {/* Header Section */}
+          {/* Header Section */}
         <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 py-8 md:py-12">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-6 md:mb-8">
@@ -644,10 +644,10 @@ const JobBoard: React.FC = () => {
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => setIsUploadModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-10 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)}>
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-blue-100" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Upload Job</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Upload Job</h2>
               <button onClick={() => setIsUploadModalOpen(false)} className="text-gray-500 hover:text-gray-700">
                 <X className="h-5 w-5" />
               </button>
@@ -655,85 +655,68 @@ const JobBoard: React.FC = () => {
             
             <div className="space-y-4">
               {/* Download Template Button */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Download className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Download Template</h3>
-                    <p className="text-xs text-gray-600">Get a sample CSV file to fill in your job details</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleDownloadTemplate}
-                  variant="outline"
-                  className="w-full border-blue-300 text-blue-600 hover:bg-blue-100"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template (.csv)
-                </Button>
-              </div>
+              <Button
+                onClick={handleDownloadTemplate}
+                variant="outline"
+                className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 text-sm h-9"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Template
+              </Button>
 
               {/* Upload Area */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors">
-                  <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 mb-2">Drop your file here or click to browse</p>
-                  <p className="text-xs text-gray-500">Supported formats: CSV, Excel</p>
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload">
-                    <Button type="button" variant="outline" className="mt-4 cursor-pointer">
-                      Choose File
-                    </Button>
-                  </label>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload" className="block cursor-pointer">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Drop file here or click to browse</p>
+                  <p className="text-xs text-gray-500 mt-1">CSV, Excel formats</p>
                 </div>
-              </div>
+              </label>
 
               {/* Uploaded Files List */}
               {uploadFiles.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Uploaded Files</h3>
-                  <div className="space-y-2">
-                    {uploadFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-600" />
-                          <span className="text-sm text-gray-700">{file.name}</span>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                <div className="space-y-2">
+                  {uploadFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
                       </div>
-                    ))}
-                  </div>
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setIsUploadModalOpen(false);
                     setUploadFiles([]);
                   }}
-                  className="flex-1"
+                  className="flex-1 h-9"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleUploadSubmit}
                   disabled={uploadFiles.length === 0}
-                  className="flex-1 bg-black hover:bg-gray-800 text-white"
+                  className="flex-1 bg-black hover:bg-gray-800 text-white h-9"
                 >
                   Upload
                 </Button>
