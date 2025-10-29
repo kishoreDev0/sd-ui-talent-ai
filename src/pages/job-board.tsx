@@ -92,8 +92,8 @@ const JobBoard: React.FC = () => {
 
   const handleDownloadTemplate = async () => {
     try {
-      // Fetch the template file from the template folder
-      const response = await fetch('/template/jobImportTemplate.55fa75b25009a9a5d85bc4e765a97479.xlsx');
+      // Fetch the template file
+      const response = await fetch('/src/../template/jobImportTemplate.55fa75b25009a9a5d85bc4e765a97479.xlsx');
       if (!response.ok) {
         throw new Error('Failed to download template');
       }
@@ -107,15 +107,7 @@ const JobBoard: React.FC = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading template:', error);
-      // Fallback: create a simple CSV template
-      const csvContent = "Job Title,Company,Location,Employment Type,Experience,Description,Responsibilities\nSoftware Engineer,Tech Corp,Remote,Full-time,2-4 Years,We are looking for...,Job responsibilities...";
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'job_template.csv';
-      link.click();
-      window.URL.revokeObjectURL(url);
+      alert('Failed to download template. Please contact support.');
     }
   };
 
