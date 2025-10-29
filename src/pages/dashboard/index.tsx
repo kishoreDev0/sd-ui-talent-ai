@@ -1,4 +1,3 @@
-import Navbar from '@/components/navbar';
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store';
@@ -30,12 +29,9 @@ const Dashboard: React.FC = () => {
     userData.username || userData.userName || userData.name || 'User';
 
   return (
-    <div>
-      <Navbar />
-      <main className="p-3 pt-16">
-        <h2 className="text-xl font-bold">Hello, {displayName}</h2>
-      </main>
-    </div>
+    <main className="p-3 pt-16">
+      <h2 className="text-xl font-bold">Hello, {displayName}</h2>
+    </main>
   );
 };
 

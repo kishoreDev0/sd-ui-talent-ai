@@ -8,6 +8,7 @@ import { loginUser } from '@/store/action/authentication/login';
 import googleLogo from '@/assets/googleLogo.png';
 import githubLogo from '@/assets/github.png';
 import Loader from '../loader/loader';
+import RoleBypass from './role-bypass';
 
 interface LoginProps {
   logoSrc?: string;
@@ -104,6 +105,20 @@ const Login: React.FC<LoginProps> = ({ logoSrc, logoAlt = 'Company Logo' }) => {
               create a new account
             </button>
           </p>
+
+          {/* Role Bypass Section */}
+          <RoleBypass />
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--gray-300)]"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-[var(--gray-500)]">
+                Or login with credentials
+              </span>
+            </div>
+          </div>
 
           <div className="flex justify-center space-x-3 mb-4">
             <button

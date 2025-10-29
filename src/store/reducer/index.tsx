@@ -5,6 +5,7 @@ import changePasswordReducer from '../slices/authentication/changepassword';
 import resetPasswordReducer from '../slices/authentication/resetPassword';
 import inviteUserReducer from '../slices/authentication/inviteUser';
 import registerReducer from '../slices/authentication/registerForm';
+import resumeValidationReducer from '../slices/resume/resumeValidation';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   resetPassword: resetPasswordReducer,
   inviteUser: inviteUserReducer,
   register: registerReducer,
+  resumeValidation: resumeValidationReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
