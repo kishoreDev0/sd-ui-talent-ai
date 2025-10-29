@@ -4,6 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   Search, 
   Filter, 
@@ -19,7 +26,6 @@ import {
   Briefcase,
   Calendar,
   MoreVertical,
-  X,
   Star,
   CheckCircle2,
   Clock,
@@ -399,37 +405,32 @@ const CandidatesPage: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-10 backdrop-blur-sm" onClick={() => setShowDeleteModal(null)}>
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-blue-100" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Delete Candidate</h2>
-                <button onClick={() => setShowDeleteModal(null)} className="text-gray-500 hover:text-gray-700">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 mb-6">
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!showDeleteModal} onOpenChange={(open) => !open && setShowDeleteModal(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Candidate</DialogTitle>
+              <DialogDescription>
                 Are you sure you want to delete this candidate? This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteModal(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => handleDelete(showDeleteModal)}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Delete
-                </Button>
-              </div>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => showDeleteModal && handleDelete(showDeleteModal)}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </Button>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

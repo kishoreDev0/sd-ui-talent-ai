@@ -9,6 +9,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import CustomSelect from '@/components/ui/custom-select';
 
 interface Job {
@@ -642,89 +649,87 @@ const JobBoard: React.FC = () => {
         </div>
       </div>
 
-      {/* Upload Modal */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-10 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-blue-100" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Upload Job</h2>
-              <button onClick={() => setIsUploadModalOpen(false)} className="text-gray-500 hover:text-gray-700">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Download Template Button */}
-              <Button
-                onClick={handleDownloadTemplate}
-                variant="outline"
-                className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 text-sm h-9"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download Template
-              </Button>
+      {/* Upload Dialog */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Job</DialogTitle>
+            <DialogDescription>
+              Upload job postings via CSV or Excel file
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Download Template Button */}
+            <Button
+              onClick={handleDownloadTemplate}
+              variant="outline"
+              className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 text-sm h-9"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Template
+            </Button>
 
-              {/* Upload Area */}
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="block cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Drop file here or click to browse</p>
-                  <p className="text-xs text-gray-500 mt-1">CSV, Excel formats</p>
-                </div>
-              </label>
-
-              {/* Uploaded Files List */}
-              {uploadFiles.length > 0 && (
-                <div className="space-y-2">
-                  {uploadFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                        <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveFile(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsUploadModalOpen(false);
-                    setUploadFiles([]);
-                  }}
-                  className="flex-1 h-9"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleUploadSubmit}
-                  disabled={uploadFiles.length === 0}
-                  className="flex-1 bg-black hover:bg-gray-800 text-white h-9"
-                >
-                  Upload
-                </Button>
+            {/* Upload Area */}
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="file-upload"
+            />
+            <label htmlFor="file-upload" className="block cursor-pointer">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">Drop file here or click to browse</p>
+                <p className="text-xs text-gray-500 mt-1">CSV, Excel formats</p>
               </div>
+            </label>
+
+            {/* Uploaded Files List */}
+            {uploadFiles.length > 0 && (
+              <div className="space-y-2">
+                {uploadFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                      <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadFiles([]);
+                }}
+                className="flex-1 h-9"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUploadSubmit}
+                disabled={uploadFiles.length === 0}
+                className="flex-1 bg-black hover:bg-gray-800 text-white h-9"
+              >
+                Upload
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

@@ -76,13 +76,13 @@ const AdminDashboard: React.FC = () => {
       {/* Header Section with Glassmorphism */}
       <div className="backdrop-blur-xl bg-white/70 rounded-3xl p-8 shadow-xl border border-white/20">
         <div className="flex items-center justify-between">
-          <div>
+        <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Admin Dashboard
             </h1>
             <p className="text-gray-600 mt-2 text-lg">
-              Welcome back! Here's what's happening today.
-            </p>
+            Welcome back! Here's what's happening today.
+          </p>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>

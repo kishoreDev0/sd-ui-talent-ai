@@ -10,6 +10,13 @@ import { RootState } from '@/store';
 import { Snackbar } from '@/components/snackbar';
 import { useState } from 'react';
 import { SavedAnalysis } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const SavedAnalyses: React.FC = () => {
   const dispatch = useDispatch();
@@ -149,29 +156,20 @@ const SavedAnalyses: React.FC = () => {
         )}
       </div>
 
-      {/* Modal for viewing details */}
-      {selectedAnalysis && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Analysis Details</h2>
-              <button
-                onClick={() => setSelectedAnalysis(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <pre className="text-sm bg-gray-50 p-4 rounded-lg overflow-x-auto">
-              {JSON.stringify(selectedAnalysis, null, 2)}
-            </pre>
-          </motion.div>
-        </div>
-      )}
+      {/* Dialog for viewing details */}
+      <Dialog open={!!selectedAnalysis} onOpenChange={(open) => !open && setSelectedAnalysis(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Analysis Details</DialogTitle>
+            <DialogDescription>
+              View the complete analysis information
+            </DialogDescription>
+          </DialogHeader>
+          <pre className="text-sm bg-gray-50 p-4 rounded-lg overflow-x-auto">
+            {selectedAnalysis && JSON.stringify(selectedAnalysis, null, 2)}
+          </pre>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

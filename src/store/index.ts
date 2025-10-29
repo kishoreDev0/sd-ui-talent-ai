@@ -1,18 +1,6 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import rootReducer, { RootState } from './reducer';
+export { default as store } from './reducer/index';
+export type { RootState } from './reducer/index';
+export { useAppDispatch, useAppSelector } from './hooks';
 
-export const store = configureStore({
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
-});
-
-export type AppDispatch = typeof store.dispatch;
-
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
-
-export default store;
+// Export job actions for convenience
+export * from './job/actions/jobActions';

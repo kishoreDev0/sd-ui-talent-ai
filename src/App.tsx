@@ -12,8 +12,8 @@ import ForgotPassword from './components/forgot-password';
 import './App.css';
 import ChangePassword from './components/change-password';
 import DashboardRouter from './pages/dashboard/dashboard-router';
-import JobsPage from './pages/jobs';
 import CandidatesPage from './pages/candidates';
+import RegisterCandidate from './pages/candidates/register';
 import InterviewsPage from './pages/interviews';
 import AnalyticsPage from './pages/analytics';
 import UsersPage from './pages/users';
@@ -56,6 +56,18 @@ const App = () => {
             <Route
               path="/candidates"
               element={<PrivateRoute element={<CandidatesPage />} />}
+            />
+            <Route
+              path="/candidates/register"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
+              path="/candidates/edit/:id"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
+              path="/candidates/view/:id"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
             />
             <Route
               path="/interviews"
