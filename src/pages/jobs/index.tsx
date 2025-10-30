@@ -2,11 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout';
 import { Plus, Search, Filter, Briefcase } from 'lucide-react';
-import { UserRole } from '@/types';
+import { useUserRole } from '@/utils/getUserRole';
 
 const JobsPage: React.FC = () => {
-  // const { user } = useAppSelector((state) => state.auth);
-  const getUserRole = (): UserRole => 'admin'; // Simplified for now
+  const role = useUserRole();
 
   const jobs = [
     {
@@ -57,7 +56,7 @@ const JobsPage: React.FC = () => {
   ];
 
   return (
-    <MainLayout role={getUserRole()}>
+    <MainLayout role={role}>
       <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5010';
+// Import axios instance to get base URL dynamically
+import axiosInstance from '@/axios-setup/axios-instance';
+
+const API_BASE_URL = axiosInstance.defaults.baseURL || 'http://localhost:5010';
 
 export const JOB_ENDPOINTS = {
   // List all jobs
@@ -16,4 +19,3 @@ export const JOB_ENDPOINTS = {
   // Search/filter jobs
   search: `${API_BASE_URL}/jobs/search`,
 };
-

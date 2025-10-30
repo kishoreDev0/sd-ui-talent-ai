@@ -26,7 +26,7 @@ export const getAllJobsAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to load jobs');
     }
-  }
+  },
 );
 
 /**
@@ -48,7 +48,7 @@ export const getJobByIdAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to fetch job');
     }
-  }
+  },
 );
 
 /**
@@ -70,7 +70,7 @@ export const createJobAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to create job');
     }
-  }
+  },
 );
 
 /**
@@ -92,7 +92,7 @@ export const updateJobAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to update job');
     }
-  }
+  },
 );
 
 /**
@@ -114,7 +114,7 @@ export const deleteJobAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to delete job');
     }
-  }
+  },
 );
 
 /**
@@ -136,7 +136,7 @@ export const uploadJobsAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to upload jobs');
     }
-  }
+  },
 );
 
 /**
@@ -158,6 +158,5 @@ export const searchJobsAsync = createAsyncThunk(
       }
       return rejectWithValue('Failed to search jobs');
     }
-  }
+  },
 );
-

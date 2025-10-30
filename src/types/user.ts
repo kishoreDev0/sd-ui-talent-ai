@@ -1,17 +1,44 @@
 export type UserRole =
   | 'admin'
+  | 'ta_executive'
+  | 'ta_manager'
   | 'hiring_manager'
   | 'interviewer'
-  | 'ta_team'
   | 'hr_ops';
 
-export interface User {
-  id: string;
+export interface Role {
+  id: number;
   name: string;
+  display_name?: string;
+  description?: string;
+  active?: boolean;
+}
+
+export interface User {
+  id: number;
   email: string;
-  role: UserRole;
+  first_name: string;
+  last_name: string;
+  role_id: number; // Add role_id field
+  is_active: boolean;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number | null;
+  updated_by?: number | null;
+  role: Role;
   avatar?: string;
 }
+
+// Helper to get full name
+export const getUserFullName = (user: User): string => {
+  return `${user.first_name} ${user.last_name}`.trim();
+};
+
+// Helper to get display name (first name only or full name)
+export const getUserDisplayName = (user: User): string => {
+  return user.first_name || user.email;
+};
 
 export interface Job {
   id: string;

@@ -1,21 +1,28 @@
-export interface User {
-  userId: number;
-  roleId: number | null;
-  username: string;
-  email: string;
-  profileUrl: string | null;
-  accessToken: string;
+import { User } from '@/types';
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 }
 
 export interface AuthState {
   user: User | null;
+  tokens: AuthTokens | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 }
 
 export interface LoginResponse {
-  status: string;
-  message: string;
-  data: User;
+  success: boolean;
+  status_code: number;
+  timestamp: string;
+  error: string | null;
+  data: {
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    user: User;
+  };
 }

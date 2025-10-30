@@ -59,7 +59,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to load jobs';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to load jobs';
       })
       // Get job by ID
       .addCase(getJobByIdAsync.pending, (state) => {
@@ -76,7 +77,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to fetch job';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to fetch job';
       })
       // Create job
       .addCase(createJobAsync.pending, (state) => {
@@ -95,7 +97,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to create job';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to create job';
       })
       // Update job
       .addCase(updateJobAsync.pending, (state) => {
@@ -119,7 +122,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to update job';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to update job';
       })
       // Delete job
       .addCase(deleteJobAsync.pending, (state) => {
@@ -140,7 +144,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to delete job';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to delete job';
       })
       // Upload jobs
       .addCase(uploadJobsAsync.pending, (state) => {
@@ -157,7 +162,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to upload jobs';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to upload jobs';
       })
       // Search jobs
       .addCase(searchJobsAsync.pending, (state) => {
@@ -174,7 +180,8 @@ const jobSlice = createSlice({
         state.error =
           typeof action.payload === 'string'
             ? action.payload
-            : (action.payload as { message?: string })?.message || 'Failed to search jobs';
+            : (action.payload as { message?: string })?.message ||
+              'Failed to search jobs';
       });
   },
 });
@@ -188,4 +195,3 @@ export const {
 } = jobSlice.actions;
 
 export default jobSlice.reducer;
-

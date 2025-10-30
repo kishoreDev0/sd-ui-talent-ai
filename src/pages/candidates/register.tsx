@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
+import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CustomSelect from '@/components/ui/custom-select';
 import Breadcrumb from '@/components/ui/breadcrumb';
-import { X, ArrowLeft, ArrowRight, HelpCircle } from 'lucide-react';
+import { X, ArrowRight, HelpCircle } from 'lucide-react';
 
 interface CandidateFormData {
   resumeTitle: string;
@@ -91,7 +92,10 @@ const RegisterCandidate: React.FC = () => {
   ];
 
   const organizations = [
-    { value: 'Tringapps Research Labs Pvt. Ltd.', label: 'Tringapps Research Labs Pvt. Ltd.' },
+    {
+      value: 'Tringapps Research Labs Pvt. Ltd.',
+      label: 'Tringapps Research Labs Pvt. Ltd.',
+    },
     { value: 'Tringapps - BU2', label: 'Tringapps - BU2' },
   ];
 
@@ -141,28 +145,32 @@ const RegisterCandidate: React.FC = () => {
     { value: '90+ Days', label: '90+ Days' },
   ];
 
-  const currencies = [
-    { value: 'USD', label: 'USD ($)' },
-    { value: 'EUR', label: 'EUR (€)' },
-    { value: 'GBP', label: 'GBP (£)' },
-    { value: 'INR', label: 'INR (₹)' },
-  ];
+  // Currencies list (currently not used, reserved for future use)
+  // const currencies = [
+  //   { value: 'USD', label: 'USD ($)' },
+  //   { value: 'EUR', label: 'EUR (€)' },
+  //   { value: 'GBP', label: 'GBP (£)' },
+  //   { value: 'INR', label: 'INR (₹)' },
+  // ];
 
-  const handleInputChange = (field: keyof CandidateFormData, value: string | boolean | number | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: keyof CandidateFormData,
+    value: string | boolean | number | string[],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors({ ...errors, [field]: '' });
     }
   };
 
   const handleOrganizationToggle = (org: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isSelected = prev.organization.includes(org);
       return {
         ...prev,
         organization: isSelected
-          ? prev.organization.filter(o => o !== org)
-          : [...prev.organization, org]
+          ? prev.organization.filter((o) => o !== org)
+          : [...prev.organization, org],
       };
     });
     if (errors.organization) {
@@ -171,34 +179,37 @@ const RegisterCandidate: React.FC = () => {
   };
 
   const handleMajorSkillToggle = (skill: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isSelected = prev.majorSkills.includes(skill);
       return {
         ...prev,
         majorSkills: isSelected
-          ? prev.majorSkills.filter(s => s !== skill)
-          : [...prev.majorSkills, skill]
+          ? prev.majorSkills.filter((s) => s !== skill)
+          : [...prev.majorSkills, skill],
       };
     });
   };
 
   const handleSkillToggle = (skill: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isSelected = prev.skills.includes(skill);
       return {
         ...prev,
         skills: isSelected
-          ? prev.skills.filter(s => s !== skill)
-          : [...prev.skills, skill]
+          ? prev.skills.filter((s) => s !== skill)
+          : [...prev.skills, skill],
       };
     });
   };
 
   const handleSelectAll = () => {
     if (formData.skills.length === skillsOptions.length) {
-      setFormData(prev => ({ ...prev, skills: [] }));
+      setFormData((prev) => ({ ...prev, skills: [] }));
     } else {
-      setFormData(prev => ({ ...prev, skills: skillsOptions.map(s => s.value) }));
+      setFormData((prev) => ({
+        ...prev,
+        skills: skillsOptions.map((s) => s.value),
+      }));
     }
   };
 
@@ -247,22 +258,28 @@ const RegisterCandidate: React.FC = () => {
     }
   };
 
+  const role = useUserRole();
+
   return (
-    <MainLayout role="admin">
+    <MainLayout role={role}>
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-6xl mx-auto">
           <Breadcrumb
             items={[
               { label: 'Candidates', href: '/candidates' },
-              { label: 'Register Candidate' }
+              { label: 'Register Candidate' },
             ]}
           />
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Register Candidate</h1>
-                <p className="text-sm text-gray-600 mt-1">Add a new candidate to the system</p>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Register Candidate
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Add a new candidate to the system
+                </p>
               </div>
               <Button
                 variant="outline"
@@ -285,7 +302,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.resumeTitle}
-                      onChange={(e) => handleInputChange('resumeTitle', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('resumeTitle', e.target.value)
+                      }
                       placeholder="Enter resume title"
                       className="h-9 text-sm"
                     />
@@ -298,12 +317,16 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('email', e.target.value)
+                      }
                       placeholder="Enter Email"
                       className={`h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
                     />
                     {errors.email && (
-                      <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.email}
+                      </p>
                     )}
                   </div>
 
@@ -314,7 +337,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('city', e.target.value)
+                      }
                       placeholder="Enter city"
                       className="h-9 text-sm"
                     />
@@ -332,7 +357,9 @@ const RegisterCandidate: React.FC = () => {
                       className={`w-full ${errors.country ? 'border-red-500' : ''}`}
                     />
                     {errors.country && (
-                      <p className="text-xs text-red-500 mt-1">{errors.country}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.country}
+                      </p>
                     )}
                   </div>
 
@@ -352,12 +379,16 @@ const RegisterCandidate: React.FC = () => {
                             onChange={() => handleOrganizationToggle(org.value)}
                             className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                           />
-                          <span className="text-sm text-gray-700">{org.label}</span>
+                          <span className="text-sm text-gray-700">
+                            {org.label}
+                          </span>
                         </label>
                       ))}
                     </div>
                     {errors.organization && (
-                      <p className="text-xs text-red-500 mt-1">{errors.organization}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.organization}
+                      </p>
                     )}
                   </div>
 
@@ -368,7 +399,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.educationDetails}
-                      onChange={(e) => handleInputChange('educationDetails', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('educationDetails', e.target.value)
+                      }
                       placeholder="Enter education details"
                       className="h-9 text-sm"
                     />
@@ -381,7 +414,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.domainExpertise}
-                      onChange={(e) => handleInputChange('domainExpertise', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('domainExpertise', e.target.value)
+                      }
                       placeholder="Enter domain (Separated by Commas)"
                       className="h-9 text-sm"
                     />
@@ -394,7 +429,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.passportNumber}
-                      onChange={(e) => handleInputChange('passportNumber', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('passportNumber', e.target.value)
+                      }
                       placeholder="Enter passport number"
                       className="h-9 text-sm"
                     />
@@ -407,7 +444,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.currentCTC}
-                      onChange={(e) => handleInputChange('currentCTC', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('currentCTC', e.target.value)
+                      }
                       placeholder="Enter current CTC"
                       className="h-9 text-sm"
                     />
@@ -423,12 +462,16 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('firstName', e.target.value)
+                      }
                       placeholder="Enter first name"
                       className={`h-9 text-sm ${errors.firstName ? 'border-red-500' : ''}`}
                     />
                     {errors.firstName && (
-                      <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.firstName}
+                      </p>
                     )}
                   </div>
 
@@ -439,7 +482,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.address1}
-                      onChange={(e) => handleInputChange('address1', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('address1', e.target.value)
+                      }
                       placeholder="Enter address"
                       className="h-9 text-sm"
                     />
@@ -452,7 +497,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('state', e.target.value)
+                      }
                       placeholder="Enter state"
                       className="h-9 text-sm"
                     />
@@ -460,17 +507,22 @@ const RegisterCandidate: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Preferred Time Zone <span className="text-red-500">*</span>
+                      Preferred Time Zone{' '}
+                      <span className="text-red-500">*</span>
                     </label>
                     <CustomSelect
                       value={formData.preferredTimeZone}
-                      onChange={(value) => handleInputChange('preferredTimeZone', value)}
+                      onChange={(value) =>
+                        handleInputChange('preferredTimeZone', value)
+                      }
                       options={timeZones}
                       placeholder="Select Time Zone"
                       className={`w-full ${errors.preferredTimeZone ? 'border-red-500' : ''}`}
                     />
                     {errors.preferredTimeZone && (
-                      <p className="text-xs text-red-500 mt-1">{errors.preferredTimeZone}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.preferredTimeZone}
+                      </p>
                     )}
                   </div>
 
@@ -487,11 +539,17 @@ const RegisterCandidate: React.FC = () => {
                           >
                             <input
                               type="checkbox"
-                              checked={formData.majorSkills.includes(skill.value)}
-                              onChange={() => handleMajorSkillToggle(skill.value)}
+                              checked={formData.majorSkills.includes(
+                                skill.value,
+                              )}
+                              onChange={() =>
+                                handleMajorSkillToggle(skill.value)
+                              }
                               className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                             />
-                            <span className="text-xs text-gray-700">{skill.label}</span>
+                            <span className="text-xs text-gray-700">
+                              {skill.label}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -505,7 +563,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.currentCompany}
-                      onChange={(e) => handleInputChange('currentCompany', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('currentCompany', e.target.value)
+                      }
                       placeholder="Enter current company"
                       className="h-9 text-sm"
                     />
@@ -518,7 +578,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.reasonForChange}
-                      onChange={(e) => handleInputChange('reasonForChange', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('reasonForChange', e.target.value)
+                      }
                       placeholder="Enter reason"
                       className="h-9 text-sm"
                     />
@@ -530,7 +592,9 @@ const RegisterCandidate: React.FC = () => {
                     </label>
                     <CustomSelect
                       value={formData.experience}
-                      onChange={(value) => handleInputChange('experience', value)}
+                      onChange={(value) =>
+                        handleInputChange('experience', value)
+                      }
                       options={experienceOptions}
                       placeholder="Select Experience"
                       className="w-full"
@@ -544,7 +608,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.expectedCTC}
-                      onChange={(e) => handleInputChange('expectedCTC', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('expectedCTC', e.target.value)
+                      }
                       placeholder="Enter expected CTC"
                       className="h-9 text-sm"
                     />
@@ -560,12 +626,16 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('lastName', e.target.value)
+                      }
                       placeholder="Enter last name"
                       className={`h-9 text-sm ${errors.lastName ? 'border-red-500' : ''}`}
                     />
                     {errors.lastName && (
-                      <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.lastName}
+                      </p>
                     )}
                   </div>
 
@@ -576,7 +646,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.address2}
-                      onChange={(e) => handleInputChange('address2', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('address2', e.target.value)
+                      }
                       placeholder="Enter address"
                       className="h-9 text-sm"
                     />
@@ -589,7 +661,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('zipCode', e.target.value)
+                      }
                       placeholder="Enter zip code"
                       className="h-9 text-sm"
                     />
@@ -602,12 +676,16 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="tel"
                       value={formData.mobile}
-                      onChange={(e) => handleInputChange('mobile', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('mobile', e.target.value)
+                      }
                       placeholder="Enter mobile number"
                       className={`h-9 text-sm ${errors.mobile ? 'border-red-500' : ''}`}
                     />
                     {errors.mobile && (
-                      <p className="text-xs text-red-500 mt-1">{errors.mobile}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.mobile}
+                      </p>
                     )}
                   </div>
 
@@ -618,7 +696,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.currency}
-                      onChange={(e) => handleInputChange('currency', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('currency', e.target.value)
+                      }
                       placeholder="Enter currency"
                       className="h-9 text-sm"
                     />
@@ -632,11 +712,15 @@ const RegisterCandidate: React.FC = () => {
                       <label className="flex items-center gap-2 cursor-pointer mb-2 pb-2 border-b border-gray-200">
                         <input
                           type="checkbox"
-                          checked={formData.skills.length === skillsOptions.length}
+                          checked={
+                            formData.skills.length === skillsOptions.length
+                          }
                           onChange={handleSelectAll}
                           className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                         />
-                        <span className="text-xs font-semibold text-gray-700">Select All</span>
+                        <span className="text-xs font-semibold text-gray-700">
+                          Select All
+                        </span>
                       </label>
                       <div className="space-y-1.5">
                         {skillsOptions.map((skill) => (
@@ -650,7 +734,9 @@ const RegisterCandidate: React.FC = () => {
                               onChange={() => handleSkillToggle(skill.value)}
                               className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                             />
-                            <span className="text-xs text-gray-700">{skill.label}</span>
+                            <span className="text-xs text-gray-700">
+                              {skill.label}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -664,14 +750,23 @@ const RegisterCandidate: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleInputChange('directInterview', !formData.directInterview)}
+                        onClick={() =>
+                          handleInputChange(
+                            'directInterview',
+                            !formData.directInterview,
+                          )
+                        }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          formData.directInterview ? 'bg-purple-600' : 'bg-gray-300'
+                          formData.directInterview
+                            ? 'bg-purple-600'
+                            : 'bg-gray-300'
                         }`}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            formData.directInterview ? 'translate-x-6' : 'translate-x-1'
+                            formData.directInterview
+                              ? 'translate-x-6'
+                              : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -688,7 +783,9 @@ const RegisterCandidate: React.FC = () => {
                       min="0"
                       max="100"
                       value={formData.rating}
-                      onChange={(e) => handleInputChange('rating', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleInputChange('rating', parseInt(e.target.value))
+                      }
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
                     />
                   </div>
@@ -700,7 +797,9 @@ const RegisterCandidate: React.FC = () => {
                     <Input
                       type="text"
                       value={formData.skypeID}
-                      onChange={(e) => handleInputChange('skypeID', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('skypeID', e.target.value)
+                      }
                       placeholder="Enter Skype ID"
                       className="h-9 text-sm"
                     />
@@ -725,7 +824,9 @@ const RegisterCandidate: React.FC = () => {
                     </label>
                     <CustomSelect
                       value={formData.noticePeriod}
-                      onChange={(value) => handleInputChange('noticePeriod', value)}
+                      onChange={(value) =>
+                        handleInputChange('noticePeriod', value)
+                      }
                       options={noticePeriodOptions}
                       placeholder="Select notice period"
                       className="w-full"
@@ -760,4 +861,3 @@ const RegisterCandidate: React.FC = () => {
 };
 
 export default RegisterCandidate;
-

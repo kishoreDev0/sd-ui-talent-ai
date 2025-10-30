@@ -1,13 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { MainLayout } from '@/components/layout';
+import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CustomSelect from '@/components/ui/custom-select';
 import Breadcrumb from '@/components/ui/breadcrumb';
-import { ArrowLeft, ArrowRight, X, List, ListOrdered, Heading1, Heading2, Undo, Redo, Check } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  X,
+  List,
+  ListOrdered,
+  Heading1,
+  Heading2,
+  Undo,
+  Redo,
+  Check,
+} from 'lucide-react';
 
 interface JobFormData {
   jobTitle: string;
@@ -28,6 +40,7 @@ interface JobFormData {
 
 const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
+  const role = useUserRole();
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<JobFormData>({
@@ -44,11 +57,13 @@ const RegisterJob: React.FC = () => {
     compensationRange: '',
     numberOfVacancies: '',
     jobDescription: '',
-    jobResponsibilities: ''
+    jobResponsibilities: '',
   });
 
   // Mock skills database filtered by major skill
-  const getSkillsByMajorSkill = (majorSkill: string): { value: string; label: string }[] => {
+  const getSkillsByMajorSkill = (
+    majorSkill: string,
+  ): { value: string; label: string }[] => {
     const skillsMap: Record<string, { value: string; label: string }[]> = {
       'Web Development': [
         { value: 'React', label: 'React' },
@@ -58,7 +73,7 @@ const RegisterJob: React.FC = () => {
         { value: 'Express', label: 'Express' },
         { value: 'TypeScript', label: 'TypeScript' },
         { value: 'JavaScript', label: 'JavaScript' },
-        { value: 'HTML/CSS', label: 'HTML/CSS' }
+        { value: 'HTML/CSS', label: 'HTML/CSS' },
       ],
       'Mobile Development': [
         { value: 'iOS', label: 'iOS' },
@@ -67,7 +82,7 @@ const RegisterJob: React.FC = () => {
         { value: 'Flutter', label: 'Flutter' },
         { value: 'Swift', label: 'Swift' },
         { value: 'Kotlin', label: 'Kotlin' },
-        { value: 'Java', label: 'Java' }
+        { value: 'Java', label: 'Java' },
       ],
       'UI/UX Design': [
         { value: 'Figma', label: 'Figma' },
@@ -76,7 +91,7 @@ const RegisterJob: React.FC = () => {
         { value: 'InVision', label: 'InVision' },
         { value: 'Prototyping', label: 'Prototyping' },
         { value: 'User Research', label: 'User Research' },
-        { value: 'Wireframing', label: 'Wireframing' }
+        { value: 'Wireframing', label: 'Wireframing' },
       ],
       'Data Science': [
         { value: 'Python', label: 'Python' },
@@ -84,21 +99,21 @@ const RegisterJob: React.FC = () => {
         { value: 'SQL', label: 'SQL' },
         { value: 'Machine Learning', label: 'Machine Learning' },
         { value: 'Data Visualization', label: 'Data Visualization' },
-        { value: 'Pandas', label: 'Pandas' }
+        { value: 'Pandas', label: 'Pandas' },
       ],
-      'DevOps': [
+      DevOps: [
         { value: 'Docker', label: 'Docker' },
         { value: 'Kubernetes', label: 'Kubernetes' },
         { value: 'AWS', label: 'AWS' },
         { value: 'CI/CD', label: 'CI/CD' },
-        { value: 'Jenkins', label: 'Jenkins' }
+        { value: 'Jenkins', label: 'Jenkins' },
       ],
       'Machine Learning': [
         { value: 'TensorFlow', label: 'TensorFlow' },
         { value: 'PyTorch', label: 'PyTorch' },
         { value: 'Scikit-learn', label: 'Scikit-learn' },
-        { value: 'Deep Learning', label: 'Deep Learning' }
-      ]
+        { value: 'Deep Learning', label: 'Deep Learning' },
+      ],
     };
     return skillsMap[majorSkill] || [];
   };
@@ -110,7 +125,7 @@ const RegisterJob: React.FC = () => {
     extensions: [StarterKit],
     content: formData.jobDescription,
     onUpdate: ({ editor }) => {
-      setFormData(prev => ({ ...prev, jobDescription: editor.getHTML() }));
+      setFormData((prev) => ({ ...prev, jobDescription: editor.getHTML() }));
       if (errors.jobDescription) {
         setErrors({ ...errors, jobDescription: '' });
       }
@@ -121,7 +136,10 @@ const RegisterJob: React.FC = () => {
     extensions: [StarterKit],
     content: formData.jobResponsibilities,
     onUpdate: ({ editor }) => {
-      setFormData(prev => ({ ...prev, jobResponsibilities: editor.getHTML() }));
+      setFormData((prev) => ({
+        ...prev,
+        jobResponsibilities: editor.getHTML(),
+      }));
       if (errors.jobResponsibilities) {
         setErrors({ ...errors, jobResponsibilities: '' });
       }
@@ -129,7 +147,7 @@ const RegisterJob: React.FC = () => {
   });
 
   // Toolbar button component
-  const MenuBar = ({ editor }: { editor: any }) => {
+  const MenuBar = ({ editor }: { editor: Editor | null }) => {
     if (!editor) {
       return null;
     }
@@ -174,7 +192,9 @@ const RegisterJob: React.FC = () => {
         <div className="h-4 w-px bg-gray-300 mx-1" />
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
           className={`p-1 hover:bg-gray-200 rounded text-xs ${
             editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''
           }`}
@@ -183,7 +203,9 @@ const RegisterJob: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           className={`p-1 hover:bg-gray-200 rounded text-xs ${
             editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''
           }`}
@@ -220,7 +242,7 @@ const RegisterJob: React.FC = () => {
     { value: 'Part-time', label: 'Part-time' },
     { value: 'Contract', label: 'Contract' },
     { value: 'Freelance', label: 'Freelance' },
-    { value: 'Internship', label: 'Internship' }
+    { value: 'Internship', label: 'Internship' },
   ];
 
   const experienceLevels = [
@@ -228,7 +250,7 @@ const RegisterJob: React.FC = () => {
     { value: '1-2 Years', label: '1-2 Years' },
     { value: '2-4 Years', label: '2-4 Years' },
     { value: '4-6 Years', label: '4-6 Years' },
-    { value: '6+ Years', label: '6+ Years' }
+    { value: '6+ Years', label: '6+ Years' },
   ];
 
   const majorSkillsOptions = [
@@ -237,7 +259,7 @@ const RegisterJob: React.FC = () => {
     { value: 'UI/UX Design', label: 'UI/UX Design' },
     { value: 'Data Science', label: 'Data Science' },
     { value: 'DevOps', label: 'DevOps' },
-    { value: 'Machine Learning', label: 'Machine Learning' }
+    { value: 'Machine Learning', label: 'Machine Learning' },
   ];
 
   const organizations = [
@@ -245,20 +267,20 @@ const RegisterJob: React.FC = () => {
     { value: 'Design Studio', label: 'Design Studio' },
     { value: 'Startup Inc', label: 'Startup Inc' },
     { value: 'Global Solutions', label: 'Global Solutions' },
-    { value: 'Creative Agency', label: 'Creative Agency' }
+    { value: 'Creative Agency', label: 'Creative Agency' },
   ];
 
   const priorities = [
     { value: 'High', label: 'High' },
     { value: 'Medium', label: 'Medium' },
-    { value: 'Low', label: 'Low' }
+    { value: 'Low', label: 'Low' },
   ];
 
   const currencies = [
     { value: 'USD', label: 'USD' },
     { value: 'EUR', label: 'EUR' },
     { value: 'GBP', label: 'GBP' },
-    { value: 'INR', label: 'INR' }
+    { value: 'INR', label: 'INR' },
   ];
 
   const jobCategories = [
@@ -266,30 +288,33 @@ const RegisterJob: React.FC = () => {
     { value: 'Design', label: 'Design' },
     { value: 'Marketing', label: 'Marketing' },
     { value: 'Sales', label: 'Sales' },
-    { value: 'Operations', label: 'Operations' }
+    { value: 'Operations', label: 'Operations' },
   ];
 
   const levels = [
     { value: 'Entry Level', label: 'Entry Level' },
     { value: 'Mid Level', label: 'Mid Level' },
     { value: 'Senior Level', label: 'Senior Level' },
-    { value: 'Lead Level', label: 'Lead Level' }
+    { value: 'Lead Level', label: 'Lead Level' },
   ];
 
   const handleInputChange = (field: keyof JobFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear selected skills when major skill changes
     if (field === 'majorSkill') {
-      setFormData(prev => ({ ...prev, selectedSkills: [] }));
+      setFormData((prev) => ({ ...prev, selectedSkills: [] }));
     }
   };
 
   const handleSkillToggle = (skill: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isSelected = prev.selectedSkills.includes(skill);
       if (isSelected) {
-        return { ...prev, selectedSkills: prev.selectedSkills.filter(s => s !== skill) };
+        return {
+          ...prev,
+          selectedSkills: prev.selectedSkills.filter((s) => s !== skill),
+        };
       } else {
         return { ...prev, selectedSkills: [...prev.selectedSkills, skill] };
       }
@@ -297,9 +322,9 @@ const RegisterJob: React.FC = () => {
   };
 
   const handleRemoveSkill = (skill: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      selectedSkills: prev.selectedSkills.filter(s => s !== skill)
+      selectedSkills: prev.selectedSkills.filter((s) => s !== skill),
     }));
   };
 
@@ -381,7 +406,7 @@ const RegisterJob: React.FC = () => {
       setErrors({});
       return;
     }
-    
+
     // For future steps, validate current step first
     if (validateStep(currentStep)) {
       setCurrentStep(targetStep);
@@ -422,7 +447,7 @@ const RegisterJob: React.FC = () => {
             <p className="text-xs text-red-500 mt-1">{errors.jobTitle}</p>
           )}
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Employment Type *
@@ -579,7 +604,9 @@ const RegisterJob: React.FC = () => {
           <Input
             type="text"
             value={formData.compensationRange}
-            onChange={(e) => handleInputChange('compensationRange', e.target.value)}
+            onChange={(e) =>
+              handleInputChange('compensationRange', e.target.value)
+            }
             placeholder="e.g., $50,000 - $80,000"
             className="w-full"
           />
@@ -592,7 +619,9 @@ const RegisterJob: React.FC = () => {
           <Input
             type="text"
             value={formData.numberOfVacancies}
-            onChange={(e) => handleInputChange('numberOfVacancies', e.target.value)}
+            onChange={(e) =>
+              handleInputChange('numberOfVacancies', e.target.value)
+            }
             placeholder="Enter number of vacancies"
             className="w-full"
           />
@@ -605,11 +634,15 @@ const RegisterJob: React.FC = () => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Skills *
           </label>
-          <div className={`border ${errors.selectedSkills ? 'border-red-500' : 'border-gray-200'} rounded-lg p-2 max-h-48 overflow-y-auto`}>
+          <div
+            className={`border ${errors.selectedSkills ? 'border-red-500' : 'border-gray-200'} rounded-lg p-2 max-h-48 overflow-y-auto`}
+          >
             {availableSkills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {availableSkills.map((skill) => {
-                  const isSelected = formData.selectedSkills.includes(skill.value);
+                  const isSelected = formData.selectedSkills.includes(
+                    skill.value,
+                  );
                   return (
                     <button
                       key={skill.value}
@@ -632,13 +665,15 @@ const RegisterJob: React.FC = () => {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No skills available for this major skill</p>
+              <p className="text-sm text-gray-500">
+                No skills available for this major skill
+              </p>
             )}
           </div>
           {errors.selectedSkills && (
             <p className="text-xs text-red-500 mt-1">{errors.selectedSkills}</p>
           )}
-          
+
           {/* Selected Skills */}
           {formData.selectedSkills.length > 0 && (
             <div className="mt-2">
@@ -675,7 +710,9 @@ const RegisterJob: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Job Description *
         </label>
-        <div className={`border ${errors.jobDescription ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}>
+        <div
+          className={`border ${errors.jobDescription ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}
+        >
           <MenuBar editor={editorDescription} />
           <div className="prose max-w-none p-3">
             <EditorContent editor={editorDescription} />
@@ -694,35 +731,43 @@ const RegisterJob: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Job Responsibilities *
         </label>
-        <div className={`border ${errors.jobResponsibilities ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}>
+        <div
+          className={`border ${errors.jobResponsibilities ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}
+        >
           <MenuBar editor={editorResponsibilities} />
           <div className="prose max-w-none p-3">
             <EditorContent editor={editorResponsibilities} />
           </div>
         </div>
         {errors.jobResponsibilities && (
-          <p className="text-xs text-red-500 mt-1">{errors.jobResponsibilities}</p>
+          <p className="text-xs text-red-500 mt-1">
+            {errors.jobResponsibilities}
+          </p>
         )}
       </div>
     </div>
   );
 
   return (
-    <MainLayout role="admin">
+    <MainLayout role={role}>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-5xl mx-auto px-8 py-3
-">
+        <div
+          className="max-w-5xl mx-auto px-8 py-3
+"
+        >
           {/* Breadcrumb */}
-          <Breadcrumb 
+          <Breadcrumb
             items={[
               { label: 'Job Board', href: '/job-board' },
-              { label: 'Register Job' }
-            ]} 
+              { label: 'Register Job' },
+            ]}
           />
 
           {/* Header */}
           <div className="mb-4">
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Register Job</h1>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">
+              Register Job
+            </h1>
             <p className="text-sm text-gray-600">Create a new job posting.</p>
           </div>
 
@@ -742,14 +787,16 @@ const RegisterJob: React.FC = () => {
                             currentStep === index
                               ? 'bg-purple-600 border-purple-600 text-white'
                               : index < currentStep
-                              ? 'bg-green-500 border-green-500 text-white'
-                              : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
+                                ? 'bg-green-500 border-green-500 text-white'
+                                : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
                           }`}
                         >
                           {index < currentStep ? (
                             <Check className="h-5 w-5" />
                           ) : (
-                            <span className="text-sm font-semibold">{index + 1}</span>
+                            <span className="text-sm font-semibold">
+                              {index + 1}
+                            </span>
                           )}
                         </button>
                         {/* Step Label */}
@@ -758,8 +805,8 @@ const RegisterJob: React.FC = () => {
                             currentStep === index
                               ? 'text-purple-600'
                               : index < currentStep
-                              ? 'text-green-600'
-                              : 'text-gray-500'
+                                ? 'text-green-600'
+                                : 'text-gray-500'
                           }`}
                         >
                           {step}
@@ -788,13 +835,10 @@ const RegisterJob: React.FC = () => {
 
             {/* Navigation Buttons */}
             <div className="flex justify-end gap-3 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/job-board')}
-              >
+              <Button variant="outline" onClick={() => navigate('/job-board')}>
                 Cancel
               </Button>
-              
+
               {currentStep > 0 && (
                 <Button
                   variant="outline"
@@ -805,7 +849,7 @@ const RegisterJob: React.FC = () => {
                   Previous
                 </Button>
               )}
-              
+
               {currentStep < steps.length - 1 ? (
                 <Button
                   onClick={handleNext}

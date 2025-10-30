@@ -124,4 +124,3 @@ export interface UploadJobsResponse {
     errors?: string[];
   };
 }
-

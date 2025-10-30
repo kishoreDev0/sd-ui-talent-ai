@@ -1,9 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
+import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, X, CheckCircle, DollarSign, FileText, EllipsisVertical, Filter, Briefcase, Building2, User, DollarSign as DollarSignIcon, Upload, Download } from 'lucide-react';
+import {
+  Search,
+  MapPin,
+  X,
+  CheckCircle,
+  DollarSign,
+  FileText,
+  EllipsisVertical,
+  Filter,
+  Briefcase,
+  Building2,
+  User,
+  DollarSign as DollarSignIcon,
+  Upload,
+  Download,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,20 +52,25 @@ interface Job {
 
 const JobBoard: React.FC = () => {
   const navigate = useNavigate();
+  const role = useUserRole();
   const [searchTerm, setSearchTerm] = useState('Product/UIUX designer');
   const [locationTerm, setLocationTerm] = useState('Country or timezone');
   const [sortBy, setSortBy] = useState('Newest');
-  
+
   // New filter states
   const [jobTitle, setJobTitle] = useState('');
   const [majorSkills, setMajorSkills] = useState('');
   const [minCompensation, setMinCompensation] = useState('');
   const [maxCompensation, setMaxCompensation] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
-  const [priority, setPriority] = useState<{high: boolean, medium: boolean, low: boolean}>({
+  const [priority, setPriority] = useState<{
+    high: boolean;
+    medium: boolean;
+    low: boolean;
+  }>({
     high: false,
     medium: false,
-    low: false
+    low: false,
   });
   const [selectedCreator, setSelectedCreator] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -62,7 +83,7 @@ const JobBoard: React.FC = () => {
     { value: 'Design Studio', label: 'Design Studio' },
     { value: 'Startup Inc', label: 'Startup Inc' },
     { value: 'Global Solutions', label: 'Global Solutions' },
-    { value: 'Creative Agency', label: 'Creative Agency' }
+    { value: 'Creative Agency', label: 'Creative Agency' },
   ];
 
   const creators = [
@@ -70,13 +91,13 @@ const JobBoard: React.FC = () => {
     { value: 'Jane Smith', label: 'Jane Smith' },
     { value: 'Mike Johnson', label: 'Mike Johnson' },
     { value: 'Sarah Wilson', label: 'Sarah Wilson' },
-    { value: 'David Brown', label: 'David Brown' }
+    { value: 'David Brown', label: 'David Brown' },
   ];
 
   const handlePriorityChange = (priorityType: 'high' | 'medium' | 'low') => {
-    setPriority(prev => ({
+    setPriority((prev) => ({
       ...prev,
-      [priorityType]: !prev[priorityType]
+      [priorityType]: !prev[priorityType],
     }));
   };
 
@@ -100,11 +121,13 @@ const JobBoard: React.FC = () => {
   const handleDownloadTemplate = async () => {
     try {
       // Fetch the template file
-      const response = await fetch('/src/../template/jobImportTemplate.55fa75b25009a9a5d85bc4e765a97479.xlsx');
+      const response = await fetch(
+        '/src/../template/jobImportTemplate.55fa75b25009a9a5d85bc4e765a97479.xlsx',
+      );
       if (!response.ok) {
         throw new Error('Failed to download template');
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -119,7 +142,7 @@ const JobBoard: React.FC = () => {
   };
 
   const handleRemoveFile = (index: number) => {
-    setUploadFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUploadSubmit = () => {
@@ -136,7 +159,9 @@ const JobBoard: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Briefcase className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Job Information</h4>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Job Information
+          </h4>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -171,7 +196,9 @@ const JobBoard: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <DollarSignIcon className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Compensation</h4>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Compensation
+          </h4>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -208,7 +235,9 @@ const JobBoard: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Building2 className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Organization</h4>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Organization
+          </h4>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -228,12 +257,24 @@ const JobBoard: React.FC = () => {
           </label>
           <div className="space-y-2 bg-gray-50 rounded-md p-2">
             {[
-              { key: 'high', label: 'High', color: 'bg-red-100 text-red-700 border-red-200' },
-              { key: 'medium', label: 'Medium', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-              { key: 'low', label: 'Low', color: 'bg-green-100 text-green-700 border-green-200' }
+              {
+                key: 'high',
+                label: 'High',
+                color: 'bg-red-100 text-red-700 border-red-200',
+              },
+              {
+                key: 'medium',
+                label: 'Medium',
+                color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+              },
+              {
+                key: 'low',
+                label: 'Low',
+                color: 'bg-green-100 text-green-700 border-green-200',
+              },
             ].map((item) => (
-              <label 
-                key={item.key} 
+              <label
+                key={item.key}
                 className={`flex items-center gap-2 cursor-pointer p-2 rounded-md border transition-colors ${
                   priority[item.key as keyof typeof priority]
                     ? item.color
@@ -243,7 +284,9 @@ const JobBoard: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={priority[item.key as keyof typeof priority]}
-                  onChange={() => handlePriorityChange(item.key as 'high' | 'medium' | 'low')}
+                  onChange={() =>
+                    handlePriorityChange(item.key as 'high' | 'medium' | 'low')
+                  }
                   className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded cursor-pointer"
                 />
                 <span className="text-xs font-medium">{item.label}</span>
@@ -260,7 +303,9 @@ const JobBoard: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <User className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Creator</h4>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Creator
+          </h4>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -275,7 +320,6 @@ const JobBoard: React.FC = () => {
           />
         </div>
       </div>
-
     </div>
   );
 
@@ -288,12 +332,18 @@ const JobBoard: React.FC = () => {
       paymentVerified: true,
       location: 'Remote',
       applicants: 120,
-      description: 'We are looking for a skilled professional to join our team full-time. Your responsibilities will include building, editing, and managing our website, creating engaging PowerPoint presentations.',
-      tags: ['Web Designer', 'UI/UX Designer', 'Framer Designer', 'Webflow Designer'],
+      description:
+        'We are looking for a skilled professional to join our team full-time. Your responsibilities will include building, editing, and managing our website, creating engaging PowerPoint presentations.',
+      tags: [
+        'Web Designer',
+        'UI/UX Designer',
+        'Framer Designer',
+        'Webflow Designer',
+      ],
       hourlyRate: '$25 - $50/hr',
       proposals: 25,
       priority: 'high',
-      creator: 'John Doe'
+      creator: 'John Doe',
     },
     {
       id: 2,
@@ -303,12 +353,19 @@ const JobBoard: React.FC = () => {
       paymentVerified: true,
       location: 'Remote',
       applicants: 24,
-      description: 'We are seeking a talented and experienced Senior Product Designer / UI/UX Designer to join our team at Anyday Design This role involves working independently on the design of web applications.',
-      tags: ['Product Designer', 'UI/UX Designer', 'Design System', 'Figma', 'Figjam'],
+      description:
+        'We are seeking a talented and experienced Senior Product Designer / UI/UX Designer to join our team at Anyday Design This role involves working independently on the design of web applications.',
+      tags: [
+        'Product Designer',
+        'UI/UX Designer',
+        'Design System',
+        'Figma',
+        'Figjam',
+      ],
       hourlyRate: '$30 - $60/hr',
       proposals: 18,
       priority: 'medium',
-      creator: 'Jane Smith'
+      creator: 'Jane Smith',
     },
     {
       id: 3,
@@ -318,12 +375,13 @@ const JobBoard: React.FC = () => {
       paymentVerified: true,
       location: 'Hybrid',
       applicants: 45,
-      description: 'Looking for a frontend developer with strong React skills to join our growing team. You will work on building responsive web applications and collaborate with our design team.',
+      description:
+        'Looking for a frontend developer with strong React skills to join our growing team. You will work on building responsive web applications and collaborate with our design team.',
       tags: ['React', 'JavaScript', 'Frontend', 'CSS', 'HTML'],
       hourlyRate: '$20 - $40/hr',
       proposals: 12,
       priority: 'low',
-      creator: 'Mike Johnson'
+      creator: 'Mike Johnson',
     },
     {
       id: 4,
@@ -333,13 +391,20 @@ const JobBoard: React.FC = () => {
       paymentVerified: false,
       location: 'On-site',
       applicants: 78,
-      description: 'We need a creative graphic designer to work on various marketing materials, social media graphics, and brand identity projects.',
-      tags: ['Graphic Design', 'Photoshop', 'Illustrator', 'Branding', 'Marketing'],
+      description:
+        'We need a creative graphic designer to work on various marketing materials, social media graphics, and brand identity projects.',
+      tags: [
+        'Graphic Design',
+        'Photoshop',
+        'Illustrator',
+        'Branding',
+        'Marketing',
+      ],
       hourlyRate: '$15 - $35/hr',
       proposals: 32,
       priority: 'medium',
-      creator: 'Sarah Wilson'
-    }
+      creator: 'Sarah Wilson',
+    },
   ];
 
   // Filter jobs based on criteria
@@ -365,12 +430,12 @@ const JobBoard: React.FC = () => {
       if (rateMatch) {
         const minRate = parseInt(rateMatch[1]);
         const maxRate = parseInt(rateMatch[2]);
-        
+
         if (minCompensation) {
           const minComp = parseInt(minCompensation);
           if (maxRate < minComp) return false;
         }
-        
+
         if (maxCompensation) {
           const maxComp = parseInt(maxCompensation);
           if (minRate > maxComp) return false;
@@ -384,7 +449,7 @@ const JobBoard: React.FC = () => {
     }
 
     // Priority filter (using actual job priority)
-    if ((priority.high || priority.medium || priority.low)) {
+    if (priority.high || priority.medium || priority.low) {
       if (priority.high && job.priority !== 'high') return false;
       if (priority.medium && job.priority !== 'medium') return false;
       if (priority.low && job.priority !== 'low') return false;
@@ -399,9 +464,9 @@ const JobBoard: React.FC = () => {
   });
 
   return (
-    <MainLayout role="admin">
+    <MainLayout role={role}>
       <div className="min-h-screen bg-gray-50">
-          {/* Header Section */}
+        {/* Header Section */}
         <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 py-8 md:py-12">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-6 md:mb-8">
@@ -469,7 +534,7 @@ const JobBoard: React.FC = () => {
                     options={[
                       { value: 'Newest', label: 'Newest' },
                       { value: 'Oldest', label: 'Oldest' },
-                      { value: 'Relevant', label: 'Most Relevant' }
+                      { value: 'Relevant', label: 'Most Relevant' },
                     ]}
                     className="min-w-[100px]"
                   />
@@ -483,7 +548,9 @@ const JobBoard: React.FC = () => {
                   <DropdownMenuContent className="w-[320px] p-0" align="end">
                     <div className="p-4 max-h-96 overflow-auto">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold text-gray-900">Filter & Actions</h3>
+                        <h3 className="text-base font-semibold text-gray-900">
+                          Filter & Actions
+                        </h3>
                         <button
                           onClick={handleClear}
                           className="text-red-600 hover:text-red-700 font-medium text-sm"
@@ -541,14 +608,16 @@ const JobBoard: React.FC = () => {
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm text-gray-600">Sort:</span>
+                    <span className="text-xs sm:text-sm text-gray-600">
+                      Sort:
+                    </span>
                     <CustomSelect
                       value={sortBy}
                       onChange={setSortBy}
                       options={[
                         { value: 'Newest', label: 'Newest' },
                         { value: 'Oldest', label: 'Oldest' },
-                        { value: 'Relevant', label: 'Most Relevant' }
+                        { value: 'Relevant', label: 'Most Relevant' },
                       ]}
                       className="min-w-[120px]"
                     />
@@ -559,14 +628,19 @@ const JobBoard: React.FC = () => {
               {/* Job Cards */}
               <div className="space-y-4">
                 {filteredJobs.map((job) => (
-                  <div key={job.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                  <div
+                    key={job.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
+                  >
                     {/* Company Header */}
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-lg">
                         {job.companyIcon}
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">{job.company}</h3>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {job.company}
+                        </h3>
                         <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
                           {job.paymentVerified && (
                             <div className="flex items-center gap-1">
@@ -587,7 +661,9 @@ const JobBoard: React.FC = () => {
 
                     {/* Job Title */}
                     <button
-                      onClick={() => navigate(`/jobs/${job.id}`, { state: { job } })}
+                      onClick={() =>
+                        navigate(`/jobs/${job.id}`, { state: { job } })
+                      }
                       className="text-left text-lg font-bold text-gray-900 mb-2 hover:underline"
                     >
                       {job.title}
@@ -622,8 +698,10 @@ const JobBoard: React.FC = () => {
                           <span>{job.proposals} proposal</span>
                         </div>
                       </div>
-                      <Button 
-                        onClick={() => navigate(`/jobs/${job.id}`, { state: { job } })}
+                      <Button
+                        onClick={() =>
+                          navigate(`/jobs/${job.id}`, { state: { job } })
+                        }
                         className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium"
                       >
                         See details
@@ -638,13 +716,13 @@ const JobBoard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-4">
                 <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
                   <Filter className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-base font-semibold text-gray-900">Filters</h3>
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Filters
+                  </h3>
                 </div>
                 {renderFilterForm()}
               </div>
             </div>
-
-           
           </div>
         </div>
       </div>
@@ -658,7 +736,7 @@ const JobBoard: React.FC = () => {
               Upload job postings via CSV or Excel file
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Download Template Button */}
             <Button
@@ -681,7 +759,9 @@ const JobBoard: React.FC = () => {
             <label htmlFor="file-upload" className="block cursor-pointer">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                 <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Drop file here or click to browse</p>
+                <p className="text-sm text-gray-600">
+                  Drop file here or click to browse
+                </p>
                 <p className="text-xs text-gray-500 mt-1">CSV, Excel formats</p>
               </div>
             </label>
@@ -690,11 +770,18 @@ const JobBoard: React.FC = () => {
             {uploadFiles.length > 0 && (
               <div className="space-y-2">
                 {uploadFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-gray-50 rounded-lg p-2"
+                  >
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                      <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
+                      <span className="text-sm text-gray-700 truncate">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({(file.size / 1024).toFixed(2)} KB)
+                      </span>
                     </div>
                     <button
                       onClick={() => handleRemoveFile(index)}

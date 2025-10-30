@@ -25,8 +25,16 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
-  const displayName =
-    userData.username || userData.userName || userData.name || 'User';
+  // Support both new structure (first_name, last_name) and old structure (name, username)
+  const displayName = userData?.first_name
+    ? `${userData.first_name} ${userData.last_name || ''}`.trim() ||
+      userData.email ||
+      'User'
+    : userData?.username ||
+      userData?.userName ||
+      userData?.name ||
+      userData?.email ||
+      'User';
 
   return (
     <main className="p-3 pt-16">
