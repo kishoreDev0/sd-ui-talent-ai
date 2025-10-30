@@ -14,7 +14,19 @@ const UsersPage: React.FC = () => {
     JSON.parse(localStorage.getItem('user') || 'null')?.role_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<Array<any>>([]);
+  interface UserRow {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    email: string;
+    role?: { id?: number; name?: string };
+    role_id?: number;
+    role_name?: string;
+    is_active?: boolean;
+    created_at?: string;
+    name?: string;
+  }
+  const [users, setUsers] = useState<UserRow[]>([]);
 
   useEffect(() => {
     const canView = roleId === 1 || roleId === 2;
@@ -32,16 +44,20 @@ const UsersPage: React.FC = () => {
           params: { page: 1, page_size: 20 },
         });
         const data = res.data?.data || res.data;
-        const items = data?.items || data || [];
+        const items: UserRow[] = (data?.items || data || []) as UserRow[];
         // TA Executive should not see admin users
         const filtered =
           roleId === 2
-            ? items.filter((u: any) => (u.role?.id ?? u.role_id) !== 1)
+            ? items.filter((u) => (u.role?.id ?? u.role_id) !== 1)
             : items;
         setUsers(filtered);
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const err = e as {
+          response?: { data?: { detail?: string } };
+          message?: string;
+        };
         setError(
-          e?.response?.data?.detail || e?.message || 'Failed to load users',
+          err?.response?.data?.detail || err?.message || 'Failed to load users',
         );
       } finally {
         setLoading(false);

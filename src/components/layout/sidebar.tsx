@@ -73,43 +73,43 @@ const navItems: NavItem[] = [
     path: '/job-management',
     icon: <User className="h-4 w-4" />,
     label: 'Job Management',
-    roles: ['admin', 'ta_executive'],
+    roles: ['ta_executive'],
     children: [
       {
         path: '/jobs',
         icon: <FileText className="h-4 w-4" />,
         label: 'Job',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
       {
         path: '/job-requirements',
         icon: <FileText className="h-4 w-4" />,
         label: 'Job Requirements',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
       {
         path: '/organizations',
         icon: <Building2 className="h-4 w-4" />,
         label: 'Organizations',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
       {
         path: '/skills',
         icon: <Lightbulb className="h-4 w-4" />,
         label: 'Skills',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
       {
         path: '/major-skills',
         icon: <Zap className="h-4 w-4" />,
         label: 'Major Skills',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
       {
         path: '/job-categories',
         icon: <Tag className="h-4 w-4" />,
         label: 'Job Categories',
-        roles: ['admin', 'ta_executive'],
+        roles: ['ta_executive'],
       },
     ],
   },
@@ -117,25 +117,13 @@ const navItems: NavItem[] = [
     path: '/candidates',
     icon: <Users className="h-4 w-4" />,
     label: 'Candidates',
-    roles: [
-      'admin',
-      'ta_executive',
-      'ta_manager',
-      'hiring_manager',
-      'interviewer',
-    ],
+    roles: ['ta_executive', 'ta_manager', 'hiring_manager', 'interviewer'],
   },
   {
     path: '/interviews',
     icon: <Calendar className="h-4 w-4" />,
     label: 'Interviews',
-    roles: [
-      'admin',
-      'ta_executive',
-      'ta_manager',
-      'hiring_manager',
-      'interviewer',
-    ],
+    roles: ['ta_executive', 'ta_manager', 'hiring_manager', 'interviewer'],
   },
   {
     path: '/analytics',
@@ -149,12 +137,24 @@ const navItems: NavItem[] = [
     label: 'Users',
     roles: ['admin'],
   },
-  {},
+  {
+    path: '/admin/access',
+    icon: <Shield className="h-4 w-4" />,
+    label: 'Access Control',
+    roles: ['admin'],
+  },
   {
     path: '/settings',
     icon: <Settings className="h-4 w-4" />,
     label: 'Settings',
-    roles: ['admin', 'ta_executive', 'ta_manager', 'hiring_manager', 'interviewer', 'hr_ops'],
+    roles: [
+      'admin',
+      'ta_executive',
+      'ta_manager',
+      'hiring_manager',
+      'interviewer',
+      'hr_ops',
+    ],
   },
 ];
 
@@ -162,10 +162,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isDark, setIsDark] = useState<boolean>(false);
-  const effectiveRole = (role || 'admin') as UserRole;
-  const filteredNavItems = navItems.filter(
-    (item) => item.roles && item.roles.includes(effectiveRole),
-  );
+  const effectiveRole = role as UserRole | undefined;
+  const filteredNavItems = effectiveRole
+    ? navItems.filter((item) => item.roles?.includes(effectiveRole))
+    : [];
 
   useEffect(() => {
     const saved = localStorage.getItem('theme');
@@ -331,7 +331,11 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
               className="h-8 w-8 p-0"
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </Button>
             <Button
               variant="ghost"

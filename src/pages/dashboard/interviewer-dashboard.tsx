@@ -139,8 +139,16 @@ const InterviewerDashboard: React.FC = () => {
     const y = today.getFullYear();
     const m = today.getMonth();
     const dayIso = (d: number) => new Date(y, m, d).toISOString().split('T')[0];
-    const timeSlots = ['09:30 AM', '11:00 AM', '02:00 PM', '03:30 PM', '05:00 PM'];
-    const onlyScheduled = candidates.filter((c) => c.status === 'interview_scheduled');
+    const timeSlots = [
+      '09:30 AM',
+      '11:00 AM',
+      '02:00 PM',
+      '03:30 PM',
+      '05:00 PM',
+    ];
+    const onlyScheduled = candidates.filter(
+      (c) => c.status === 'interview_scheduled',
+    );
 
     // Ensure exactly 3 interviews on the 10th
     const first = onlyScheduled[0] || candidates[0];
@@ -166,9 +174,12 @@ const InterviewerDashboard: React.FC = () => {
   }, [candidates]);
   const interviewsCount = scheduledInterviews.length;
 
-  const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
-  const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const addMonths = (date: Date, delta: number) => new Date(date.getFullYear(), date.getMonth() + delta, 1);
+  const startOfMonth = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), 1);
+  const endOfMonth = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const addMonths = (date: Date, delta: number) =>
+    new Date(date.getFullYear(), date.getMonth() + delta, 1);
   const getMonthMatrix = (date: Date) => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
@@ -212,45 +223,79 @@ const InterviewerDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Your Interviews
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Assigned to you</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Assigned to you
+              </p>
               <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg">
                 <Calendar className="w-5 h-5" />
                 <span className="text-xl font-semibold">{interviewsCount}</span>
               </div>
               <div className="mt-6 inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
-                <button onClick={() => setViewMode('calendar')} className={`px-4 py-2 text-sm ${viewMode==='calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}>Calendar</button>
-                <button onClick={() => setViewMode('list')} className={`px-4 py-2 text-sm ${viewMode==='list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}>List</button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`px-4 py-2 text-sm ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+                >
+                  Calendar
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 text-sm ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+                >
+                  List
+                </button>
               </div>
             </div>
 
             <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-white/10">
               {viewMode === 'list' ? (
                 <>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Scheduled Interviews</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Scheduled Interviews
+                  </h2>
                   {scheduledInterviews.length === 0 ? (
-                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">No scheduled interviews</div>
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                      No scheduled interviews
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {scheduledInterviews.map((candidate) => (
                         <button
                           key={candidate.id}
-                          onClick={() => { setSelectedCandidate(candidate); setIsDetailModalOpen(true); }}
+                          onClick={() => {
+                            setSelectedCandidate(candidate);
+                            setIsDetailModalOpen(true);
+                          }}
                           className="w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-white/10 hover:shadow-md transition-all"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">{candidate.avatar}</div>
+                              <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">
+                                {candidate.avatar}
+                              </div>
                               <div>
-                                <div className="font-medium text-gray-900 dark:text-gray-100">{candidate.name}</div>
-                                <div className="text-xs text-gray-600 dark:text-gray-300">{candidate.position}</div>
+                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                  {candidate.name}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-300">
+                                  {candidate.position}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
                               <Clock className="w-4 h-4 text-gray-500 dark:text-gray-300" />
                               <span>
-                                {candidate.interviewDate ? new Date(candidate.interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
-                                {candidate.interviewTime ? ` at ${candidate.interviewTime}` : ''}
-                            </span>
+                                {candidate.interviewDate
+                                  ? new Date(
+                                      candidate.interviewDate,
+                                    ).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })
+                                  : ''}
+                                {candidate.interviewTime
+                                  ? ` at ${candidate.interviewTime}`
+                                  : ''}
+                              </span>
                             </div>
                           </div>
                         </button>
@@ -261,32 +306,79 @@ const InterviewerDashboard: React.FC = () => {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Interview Calendar</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Interview Calendar
+                    </h2>
                     <div className="flex gap-2">
-                      <button onClick={() => setCurrentMonth(addMonths(currentMonth, -1))} className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm">Prev</button>
-                      <div className="px-2 text-sm text-gray-700 dark:text-gray-200">{currentMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</div>
-                      <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm">Next</button>
+                      <button
+                        onClick={() =>
+                          setCurrentMonth(addMonths(currentMonth, -1))
+                        }
+                        className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
+                      >
+                        Prev
+                      </button>
+                      <div className="px-2 text-sm text-gray-700 dark:text-gray-200">
+                        {currentMonth.toLocaleString('en-US', {
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <button
+                        onClick={() =>
+                          setCurrentMonth(addMonths(currentMonth, 1))
+                        }
+                        className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
+                      >
+                        Next
+                      </button>
                     </div>
                   </div>
                   <div className="grid grid-cols-7 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d)=> <div key={d} className="p-2 text-center">{d}</div>)}
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
+                      (d) => (
+                        <div key={d} className="p-2 text-center">
+                          {d}
+                        </div>
+                      ),
+                    )}
                   </div>
                   <div className="grid grid-cols-7 gap-2">
                     {getMonthMatrix(currentMonth).map((cell, idx) => {
                       const dayEvents = cell.date
-                        ? scheduledInterviews.filter((c) => c.interviewDate && new Date(c.interviewDate).toDateString() === cell.date!.toDateString())
+                        ? scheduledInterviews.filter(
+                            (c) =>
+                              c.interviewDate &&
+                              new Date(c.interviewDate).toDateString() ===
+                                cell.date!.toDateString(),
+                          )
                         : [];
                       return (
-                        <div key={idx} className={`min-h-32 rounded-lg border border-gray-200 dark:border-white/10 p-2 ${cell.d ? 'bg-white/70 dark:bg-slate-900/40' : 'bg-transparent'}`}>
-                          <div className="text-right text-[10px] text-gray-500 dark:text-gray-400">{cell.d || ''}</div>
+                        <div
+                          key={idx}
+                          className={`min-h-32 rounded-lg border border-gray-200 dark:border-white/10 p-2 ${cell.d ? 'bg-white/70 dark:bg-slate-900/40' : 'bg-transparent'}`}
+                        >
+                          <div className="text-right text-[10px] text-gray-500 dark:text-gray-400">
+                            {cell.d || ''}
+                          </div>
                           <div className="space-y-1 mt-1 max-h-24 overflow-y-auto pr-1">
                             {dayEvents.map((ev) => (
                               <button
                                 key={`${ev.id}-${ev.interviewTime}`}
-                                onClick={() => { setSelectedDay(ev.interviewDate ? new Date(ev.interviewDate) : null); setIsDayModalOpen(true); }}
+                                onClick={() => {
+                                  setSelectedDay(
+                                    ev.interviewDate
+                                      ? new Date(ev.interviewDate)
+                                      : null,
+                                  );
+                                  setIsDayModalOpen(true);
+                                }}
                                 className="w-full text-left text-[11px] px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition truncate"
                               >
-                                {ev.name} {ev.interviewTime ? `• ${ev.interviewTime}` : ''}
+                                {ev.name}{' '}
+                                {ev.interviewTime
+                                  ? `• ${ev.interviewTime}`
+                                  : ''}
                               </button>
                             ))}
                           </div>
@@ -294,10 +386,10 @@ const InterviewerDashboard: React.FC = () => {
                       );
                     })}
                   </div>
-                 </>
+                </>
               )}
             </div>
-        </div>
+          </div>
         </motion.div>
       </div>
 
@@ -422,41 +514,70 @@ const InterviewerDashboard: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-  {/* Day Schedule Modal */}
-  <Dialog open={isDayModalOpen} onOpenChange={setIsDayModalOpen}>
-    <DialogContent className="max-w-xl">
-      <DialogHeader>
-        <DialogTitle>Interviews on {selectedDay ? selectedDay.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : ''}</DialogTitle>
-        <DialogDescription>Click play to join the meeting</DialogDescription>
-      </DialogHeader>
-      <div className="space-y-3">
-        {scheduledInterviews
-          .filter((c) => selectedDay && c.interviewDate && new Date(c.interviewDate).toDateString() === selectedDay.toDateString())
-          .sort((a,b) => parseTimeToMinutes(a.interviewTime) - parseTimeToMinutes(b.interviewTime))
-          .map((c) => (
-            <div key={`${c.id}-${c.interviewTime}`} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800">
-              <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">{c.name}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-300">{c.position}</div>
-                <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200 mt-1">
-                  <Clock className="w-3 h-3" /> {c.interviewTime}
+      {/* Day Schedule Modal */}
+      <Dialog open={isDayModalOpen} onOpenChange={setIsDayModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Interviews on{' '}
+              {selectedDay
+                ? selectedDay.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Click play to join the meeting
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {scheduledInterviews
+              .filter(
+                (c) =>
+                  selectedDay &&
+                  c.interviewDate &&
+                  new Date(c.interviewDate).toDateString() ===
+                    selectedDay.toDateString(),
+              )
+              .sort(
+                (a, b) =>
+                  parseTimeToMinutes(a.interviewTime) -
+                  parseTimeToMinutes(b.interviewTime),
+              )
+              .map((c) => (
+                <div
+                  key={`${c.id}-${c.interviewTime}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800"
+                >
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">
+                      {c.name}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      {c.position}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200 mt-1">
+                      <Clock className="w-3 h-3" /> {c.interviewTime}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() =>
+                      window.open(`https://meet.example.com/${c.id}`, '_blank')
+                    }
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
+                  >
+                    <Play className="w-4 h-4" /> Join
+                  </button>
                 </div>
-              </div>
-              <button
-                onClick={() => window.open(`https://meet.example.com/${c.id}`, '_blank')}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
-              >
-                <Play className="w-4 h-4" /> Join
-              </button>
-            </div>
-        ))}
-      </div>
-    </DialogContent>
-  </Dialog>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Feedback and add candidate modals removed for simplified view */}
     </div>
   );
 };
 
 export default InterviewerDashboard;
-

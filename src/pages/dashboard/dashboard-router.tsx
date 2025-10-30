@@ -16,12 +16,8 @@ const DashboardRouter: React.FC = () => {
   const storedUser = localStorage.getItem('user')
     ? JSON.parse(localStorage.getItem('user')!)
     : null;
-  const roleId: number =
-    user?.role?.id ??
-    user?.role_id ??
-    storedUser?.role?.id ??
-    storedUser?.role_id ??
-    1;
+  const roleId: number | undefined =
+    user?.role?.id ?? user?.role_id ?? storedUser?.role?.id ?? storedUser?.role_id;
 
   const renderDashboard = () => {
     switch (roleId) {
@@ -38,7 +34,7 @@ const DashboardRouter: React.FC = () => {
       case 6: // hr_ops
         return <HROpsDashboard />;
       default:
-        return <AdminDashboard />;
+        return null;
     }
   };
 
@@ -56,6 +52,9 @@ const DashboardRouter: React.FC = () => {
               ? 'interviewer'
               : 'hr_ops';
 
+  if (!roleId) {
+    return <MainLayout role={'admin'}>{null}</MainLayout>;
+  }
   return <MainLayout role={roleForDisplay}>{renderDashboard()}</MainLayout>;
 };
 

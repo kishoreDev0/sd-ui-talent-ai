@@ -6,6 +6,7 @@ import resetPasswordReducer from '../slices/authentication/resetPassword';
 import inviteUserReducer from '../slices/authentication/inviteUser';
 import registerReducer from '../slices/authentication/registerForm';
 import jobReducer from '../job/slices/jobSlice';
+import roleReducer from '../role/slices/roleSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -14,8 +15,8 @@ const rootReducer = combineReducers({
   resetPassword: resetPasswordReducer,
   inviteUser: inviteUserReducer,
   register: registerReducer,
-
   job: jobReducer,
+  role: roleReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
