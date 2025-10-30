@@ -21,8 +21,7 @@ import SettingsPage from './pages/settings';
 import JobBoard from './pages/job-board';
 import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
- 
- 
+
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
 import Organizations from './pages/organizations';
@@ -84,7 +83,7 @@ const App = () => {
               path="/settings"
               element={<PrivateRoute element={<SettingsPage />} />}
             />
-            
+
             <Route
               path="/skills"
               element={<PrivateRoute element={<Skills />} />}
@@ -101,7 +100,7 @@ const App = () => {
               path="/job-categories"
               element={<PrivateRoute element={<JobCategories />} />}
             />
-            
+
             <Route
               path="/job-board"
               element={<PrivateRoute element={<JobBoard />} />}

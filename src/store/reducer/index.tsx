@@ -14,7 +14,7 @@ const rootReducer = combineReducers({
   resetPassword: resetPasswordReducer,
   inviteUser: inviteUserReducer,
   register: registerReducer,
-  
+
   job: jobReducer,
 });
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './sidebar';
 import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
+  const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -21,7 +23,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
-  const showSidebar = role !== 'interviewer';
+  // Always show sidebar for all roles and routes
+  const showSidebar = true;
 
   return (
     <div className="flex h-screen relative">
@@ -56,7 +59,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-white">
+      <main className="flex-1 overflow-y-auto bg-background">
         {/* Mobile Header */}
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <Button

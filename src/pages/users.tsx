@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
+import { useAppSelector } from '@/store';
 import axiosInstance from '@/axios-setup/axios-instance';
 
 const UsersPage: React.FC = () => {
   const role = useUserRole();
+  const { user } = useAppSelector((state) => state.auth);
+  const roleId =
+    user?.role?.id ??
+    user?.role_id ??
+    JSON.parse(localStorage.getItem('user') || 'null')?.role?.id ??
+    JSON.parse(localStorage.getItem('user') || 'null')?.role_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<Array<any>>([]);
 
   useEffect(() => {
-    if (role !== 'admin') {
+    const canView = roleId === 1 || roleId === 2;
+    if (!canView) {
       setLoading(false);
       return;
     }
@@ -25,7 +33,12 @@ const UsersPage: React.FC = () => {
         });
         const data = res.data?.data || res.data;
         const items = data?.items || data || [];
-        setUsers(items);
+        // TA Executive should not see admin users
+        const filtered =
+          roleId === 2
+            ? items.filter((u: any) => (u.role?.id ?? u.role_id) !== 1)
+            : items;
+        setUsers(filtered);
       } catch (e: any) {
         setError(
           e?.response?.data?.detail || e?.message || 'Failed to load users',
@@ -36,7 +49,7 @@ const UsersPage: React.FC = () => {
     };
 
     fetchUsers();
-  }, [role]);
+  }, [roleId]);
 
   return (
     <MainLayout role={role}>
@@ -46,8 +59,10 @@ const UsersPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage team members</p>
         </div>
 
-        {role !== 'admin' ? (
-          <div className="text-sm text-gray-600">Only admins can view users.</div>
+        {!(roleId === 1 || roleId === 2) ? (
+          <div className="text-sm text-gray-600">
+            Only admins and TA executives can view users.
+          </div>
         ) : loading ? (
           <div className="text-sm text-gray-600">Loading users…</div>
         ) : error ? (
@@ -67,7 +82,9 @@ const UsersPage: React.FC = () => {
               <tbody className="text-sm">
                 {users.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-3 border-b" colSpan={5}>No users found.</td>
+                    <td className="px-4 py-3 border-b" colSpan={5}>
+                      No users found.
+                    </td>
                   </tr>
                 ) : (
                   users.map((u) => (
@@ -78,10 +95,16 @@ const UsersPage: React.FC = () => {
                           : u.name || '—'}
                       </td>
                       <td className="px-4 py-3 border-b">{u.email}</td>
-                      <td className="px-4 py-3 border-b">{u.role?.name || u.role_name || '—'}</td>
-                      <td className="px-4 py-3 border-b">{u.is_active ? 'Active' : 'Inactive'}</td>
                       <td className="px-4 py-3 border-b">
-                        {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                        {u.role?.name || u.role_name || '—'}
+                      </td>
+                      <td className="px-4 py-3 border-b">
+                        {u.is_active ? 'Active' : 'Inactive'}
+                      </td>
+                      <td className="px-4 py-3 border-b">
+                        {u.created_at
+                          ? new Date(u.created_at).toLocaleDateString()
+                          : '—'}
                       </td>
                     </tr>
                   ))

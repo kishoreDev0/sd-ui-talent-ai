@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -20,6 +20,8 @@ import {
   ChevronUp,
   ChevronRight,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { UserRole } from '@/types';
 import {
@@ -30,7 +32,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import InviteUserForm from '@/components/invite-user';
 import { Button } from '@/components/ui/button';
 
@@ -142,22 +149,40 @@ const navItems: NavItem[] = [
     label: 'Users',
     roles: ['admin'],
   },
-  {
-    
-  },
+  {},
   {
     path: '/settings',
     icon: <Settings className="h-4 w-4" />,
     label: 'Settings',
-    roles: ['admin'],
+    roles: ['admin', 'ta_executive', 'ta_manager', 'hiring_manager', 'interviewer', 'hr_ops'],
   },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [isDark, setIsDark] = useState<boolean>(false);
   const effectiveRole = (role || 'admin') as UserRole;
-  const filteredNavItems = navItems.filter((item) => item.roles && item.roles.includes(effectiveRole));
+  const filteredNavItems = navItems.filter(
+    (item) => item.roles && item.roles.includes(effectiveRole),
+  );
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    setIsDark(saved === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   const toggleExpanded = (path: string) => {
     setExpandedItems((prev) =>
@@ -298,14 +323,26 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
           {!isCollapsed && <span className="font-semibold">Talent AI</span>}
         </div>
         {!isCollapsed && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="ml-auto h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="h-8 w-8 p-0"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="h-8 w-8 p-0"
+              title="Collapse sidebar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -336,6 +373,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleTheme}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
               </DropdownMenuItem>
               {role === 'admin' && (
                 <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
@@ -379,6 +420,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleTheme}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
               </DropdownMenuItem>
               {role === 'admin' && (
                 <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
