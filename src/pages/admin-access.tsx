@@ -3,7 +3,9 @@ import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { getAllRole } from '@/store/role/actions/roleActions';
 
@@ -38,6 +40,13 @@ const AdminAccessPage: React.FC = () => {
         .includes(searchTerm.toLowerCase()),
     );
 
+  // Fallback mock roles (2 entries) if API returns empty
+  const mockRoles = [
+    { id: 2, name: 'TA_Executive', description: 'Recruitment operations', active: true },
+    { id: 5, name: 'Interview_Panel', description: 'Conduct interviews', active: true },
+  ];
+  const rolesToRender = displayRoles.length > 0 ? displayRoles : mockRoles;
+
   // Selection logic
   const handleSelectAll = () => {
     const next = !selectAll;
@@ -54,6 +63,48 @@ const AdminAccessPage: React.FC = () => {
     setRoleTab(tab);
     setSelectedRoles([]);
     setSelectAll(false);
+  };
+
+  // Row actions: Edit & Manage Permissions
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isPermOpen, setIsPermOpen] = useState(false);
+  const [currentRole, setCurrentRole] = useState<{ id: number; name: string; description?: string; active?: boolean } | null>(null);
+
+  type Access = { read: boolean; write: boolean; update: boolean; edit: boolean; delete: boolean };
+  type PermissionMatrix = Record<string, Access>;
+  const defaultMatrix: PermissionMatrix = {
+    Jobs: { read: false, write: false, update: false, edit: false, delete: false },
+    Candidates: { read: false, write: false, update: false, edit: false, delete: false },
+    Interviews: { read: false, write: false, update: false, edit: false, delete: false },
+    Analytics: { read: false, write: false, update: false, edit: false, delete: false },
+    Users: { read: false, write: false, update: false, edit: false, delete: false },
+    Settings: { read: false, write: false, update: false, edit: false, delete: false },
+  };
+  const [permMatrix, setPermMatrix] = useState<PermissionMatrix>(defaultMatrix);
+
+  const openEdit = (r: { id: number; name: string; description?: string; active?: boolean }) => {
+    setCurrentRole(r);
+    setIsEditOpen(true);
+  };
+
+  const openManagePermissions = (r: { id: number; name: string }) => {
+    setCurrentRole(r);
+    const seeded: PermissionMatrix = JSON.parse(JSON.stringify(defaultMatrix));
+    if (r.name === 'TA_Executive') {
+      seeded.Jobs = { read: true, write: true, update: true, edit: true, delete: true };
+    }
+    if (r.name === 'Interview_Panel') {
+      seeded.Jobs = { read: true, write: false, update: false, edit: false, delete: false };
+    }
+    setPermMatrix(seeded);
+    setIsPermOpen(true);
+  };
+
+  const togglePerm = (module: string, key: keyof Access) => {
+    setPermMatrix((prev) => ({
+      ...prev,
+      [module]: { ...prev[module], [key]: !prev[module][key] },
+    }));
   };
 
   return (
@@ -171,10 +222,13 @@ const AdminAccessPage: React.FC = () => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Updated
                       </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-white/10">
-                    {displayRoles.map((role) => (
+                    {rolesToRender.map((role) => (
                       <tr
                         key={role.id}
                         className="hover:bg-gray-50 dark:hover:bg-slate-900"
@@ -199,7 +253,7 @@ const AdminAccessPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.created_by || ''}
+                            {(role as any).created_by || ''}
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -217,13 +271,28 @@ const AdminAccessPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.createdAt || ''}
+                            {(role as any).createdAt || ''}
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.updatedAt || ''}
+                            {(role as any).updatedAt || ''}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEdit(role)}>Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openManagePermissions(role)}>
+                                Manage Permissions
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}
@@ -234,7 +303,7 @@ const AdminAccessPage: React.FC = () => {
             {/* Pagination */}
             <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-white/10">
               <div className="text-sm text-gray-700 dark:text-gray-200">
-                Showing 1 to {displayRoles.length} of {roles.length} roles.
+                Showing 1 to {rolesToRender.length} of {rolesToRender.length} roles.
               </div>
               <div className="flex items-center space-x-2">
                 <Button variant="outline" disabled className="text-gray-400">
@@ -306,6 +375,87 @@ const AdminAccessPage: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Edit Role Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm text-gray-700">Role Name</label>
+              <Input
+                value={currentRole?.name || ''}
+                onChange={(e) => setCurrentRole((prev) => ({ ...(prev as any), name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-gray-700">Description</label>
+              <Input
+                value={currentRole?.description || ''}
+                onChange={(e) => setCurrentRole((prev) => ({ ...(prev as any), description: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={!!currentRole?.active}
+                onChange={(e) => setCurrentRole((prev) => ({ ...(prev as any), active: e.target.checked }))}
+                className="h-4 w-4"
+              />
+              <span className="text-sm">Active</span>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+              <Button onClick={() => setIsEditOpen(false)}>Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Permissions Dialog */}
+      <Dialog open={isPermOpen} onOpenChange={setIsPermOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Permissions — {currentRole?.name || ''}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-600">
+                  <th className="py-2 pr-4">Module</th>
+                  <th className="py-2 pr-4">Read</th>
+                  <th className="py-2 pr-4">Write</th>
+                  <th className="py-2 pr-4">Update</th>
+                  <th className="py-2 pr-4">Edit</th>
+                  <th className="py-2 pr-4">Delete</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-900 dark:text-gray-100">
+                {Object.keys(permMatrix).map((mod) => (
+                  <tr key={mod} className="border-t">
+                    <td className="py-2 pr-4 font-medium">{mod}</td>
+                    {(['read','write','update','edit','delete'] as Array<'read'|'write'|'update'|'edit'|'delete'>).map((k) => (
+                      <td key={k} className="py-2 pr-4">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={permMatrix[mod][k]}
+                          onChange={() => togglePerm(mod, k)}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end gap-2 pt-3">
+            <Button variant="outline" onClick={() => setIsPermOpen(false)}>Cancel</Button>
+            <Button onClick={() => setIsPermOpen(false)}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

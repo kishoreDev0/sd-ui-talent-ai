@@ -11,13 +11,10 @@ import axios, {
 } from 'axios';
 
 // Get API URL from environment variables
-const USE_PROXY = import.meta.env.VITE_USE_PROXY === 'true';
-const WITH_CREDENTIALS = import.meta.env.VITE_WITH_CREDENTIALS === 'true';
-const API_BASE_URL = USE_PROXY
-  ? ''
-  : import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:5010';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:5010';
 
 /**
  * Create axios instance with default configuration
@@ -29,7 +26,6 @@ export const axiosInstance: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  withCredentials: WITH_CREDENTIALS,
 });
 
 /**
