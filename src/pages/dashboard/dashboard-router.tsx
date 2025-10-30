@@ -12,9 +12,12 @@ import { UserRole } from '@/types';
 const DashboardRouter: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
 
-  // Strict role-based rendering: no localStorage, no dynamic fallbacks
-  const role: UserRole = user?.role?.name || 'admin';
-  const roleId: number | undefined = user?.role?.id;
+  // Strict role ID-based rendering with localStorage fallback for reloads
+  const storedUser = localStorage.getItem('user')
+    ? JSON.parse(localStorage.getItem('user')!)
+    : null;
+  const roleId: number | undefined =
+    user?.role?.id ?? user?.role_id ?? storedUser?.role?.id ?? storedUser?.role_id;
 
   const renderDashboard = () => {
     switch (roleId) {
@@ -31,17 +34,28 @@ const DashboardRouter: React.FC = () => {
       case 6: // hr_ops
         return <HROpsDashboard />;
       default:
-        // Fallback strictly by role name if id missing
-        if (role === 'interviewer') return <InterviewerDashboard />;
-        if (role === 'hiring_manager') return <HiringManagerDashboard />;
-        if (role === 'ta_manager') return <TAManagerDashboard />;
-        if (role === 'ta_executive') return <TAExecutiveDashboard />;
-        if (role === 'hr_ops') return <HROpsDashboard />;
-        return <AdminDashboard />;
+        return null;
     }
   };
 
-  return <MainLayout role={role}>{renderDashboard()}</MainLayout>;
+  // Pass a role string only for display; comparisons use roleId strictly
+  const roleForDisplay: UserRole =
+    roleId === 1
+      ? 'admin'
+      : roleId === 2
+        ? 'ta_executive'
+        : roleId === 3
+          ? 'ta_manager'
+          : roleId === 4
+            ? 'hiring_manager'
+            : roleId === 5
+              ? 'interviewer'
+              : 'hr_ops';
+
+  if (!roleId) {
+    return <MainLayout role={'admin'}>{null}</MainLayout>;
+  }
+  return <MainLayout role={roleForDisplay}>{renderDashboard()}</MainLayout>;
 };
 
 export default DashboardRouter;

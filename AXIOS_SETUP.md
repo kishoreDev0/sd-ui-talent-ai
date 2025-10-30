@@ -1,30 +1,34 @@
 # Axios Configuration Guide
 
 ## Overview
+
 This application uses a centralized Axios instance configured with backend URL, authentication token management, and automatic request/response interceptors.
 
 ## Configuration Files
 
 ### 1. **Centralized Axios Instance** (`src/axios-setup/axios-instance.ts`)
-   - **Base URL**: Configured from environment variables (`VITE_API_URL` or `VITE_API_BASE_URL`)
-   - **Default Fallback**: `http://localhost:5010` (only used if `.env` is not configured)
-   - **Timeout**: 30 seconds
-   - **Default Headers**: 
-     - `Content-Type: application/json`
-     - `Accept: application/json`
-     - `Authorization: Bearer <token>` (added automatically)
+
+- **Base URL**: Configured from environment variables (`VITE_API_URL` or `VITE_API_BASE_URL`)
+- **Default Fallback**: `http://localhost:5010` (only used if `.env` is not configured)
+- **Timeout**: 30 seconds
+- **Default Headers**:
+  - `Content-Type: application/json`
+  - `Accept: application/json`
+  - `Authorization: Bearer <token>` (added automatically)
 
 ### 2. **Request Interceptor**
-   - Automatically adds authentication token from localStorage (`access_token` or `token`)
-   - Token is attached as `Bearer` token in Authorization header
+
+- Automatically adds authentication token from localStorage (`access_token` or `token`)
+- Token is attached as `Bearer` token in Authorization header
 
 ### 3. **Response Interceptor**
-   - **401 Handling**: Automatically attempts token refresh
-     - Calls `/api/v1/auth/refresh` endpoint
-     - Updates tokens in localStorage
-     - Retries original request
-   - **Error Handling**: Handles 403, 404, 500, and network errors
-   - **Auto-Logout**: Redirects to login page on authentication failures
+
+- **401 Handling**: Automatically attempts token refresh
+  - Calls `/api/v1/auth/refresh` endpoint
+  - Updates tokens in localStorage
+  - Retries original request
+- **Error Handling**: Handles 403, 404, 500, and network errors
+- **Auto-Logout**: Redirects to login page on authentication failures
 
 ## Environment Variables
 
@@ -41,6 +45,7 @@ VITE_API_URL=http://192.168.1.188:8000
 **Important**: After creating or modifying the `.env` file, restart your development server for changes to take effect.
 
 **Example endpoints:**
+
 - Login: `http://192.168.1.188:8000/api/v1/auth/login`
 - Jobs: `http://192.168.1.188:8000/jobs`
 - Permissions: `http://192.168.1.188:8000/api/permissions`
@@ -50,11 +55,13 @@ VITE_API_URL=http://192.168.1.188:8000
 ## Usage
 
 ### Import the axios instance:
+
 ```typescript
 import axiosInstance from '@/axios-setup/axios-instance';
 ```
 
 ### Making API Calls:
+
 ```typescript
 // GET request
 const response = await axiosInstance.get('/api/endpoint');
@@ -105,6 +112,7 @@ const { httpClient } = initializeHttpClient();
 ## Token Management
 
 Tokens are automatically managed:
+
 - **Storage**: Tokens stored in localStorage as `access_token` and `refresh_token`
 - **Auto-attachment**: Bearer token automatically added to all requests
 - **Refresh**: Automatic token refresh on 401 errors
@@ -113,6 +121,7 @@ Tokens are automatically managed:
 ## Base URL Configuration
 
 The base URL is configured in priority order:
+
 1. `import.meta.env.VITE_API_URL` (primary) - **Set this in `.env` file**
 2. `import.meta.env.VITE_API_BASE_URL` (fallback)
 3. `http://localhost:5010` (default, only if `.env` not configured)
@@ -120,12 +129,14 @@ The base URL is configured in priority order:
 **Current Configuration**: `http://192.168.1.188:8000` (set in `.env`)
 
 All API endpoints are relative to the base URL:
+
 - ❌ **Don't**: `await axios.get('http://localhost:5010/api/endpoint')`
 - ✅ **Do**: `await axiosInstance.get('/api/endpoint')`
 
 ## Error Handling
 
 The interceptor handles common errors:
+
 - **401 Unauthorized**: Attempts token refresh, redirects to login if fails
 - **403 Forbidden**: Logs error message
 - **404 Not Found**: Logs error message
@@ -133,4 +144,3 @@ The interceptor handles common errors:
 - **Network Errors**: Logs connection error
 
 All errors are rejected with the error object for component-level handling.
-

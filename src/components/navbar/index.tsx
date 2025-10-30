@@ -11,7 +11,7 @@ import { logout } from '@/store/slices/authentication/login';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  
+
   const [isResetModalOpen, setResetModalOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isConfirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
@@ -193,7 +193,7 @@ const Navbar: React.FC = () => {
                 >
                   Profile
                 </p>
-                
+
                 {user && (
                   <p
                     onClick={() => {
@@ -280,7 +280,7 @@ const Navbar: React.FC = () => {
           </p>
         </div>
       </div>
-      
+
       <Modal isOpen={isResetModalOpen} onClose={() => setResetModalOpen(false)}>
         <ResetPassword onClose={() => setResetModalOpen(false)} />
       </Modal>

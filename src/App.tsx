@@ -21,8 +21,9 @@ import SettingsPage from './pages/settings';
 import JobBoard from './pages/job-board';
 import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
- 
- 
+import AdminAccessPage from './pages/admin-access';
+import InterviewDetailPage from './pages/interview-detail';
+
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
 import Organizations from './pages/organizations';
@@ -73,6 +74,10 @@ const App = () => {
               element={<PrivateRoute element={<InterviewsPage />} />}
             />
             <Route
+              path="/interviews/:id"
+              element={<PrivateRoute element={<InterviewDetailPage />} />}
+            />
+            <Route
               path="/analytics"
               element={<PrivateRoute element={<AnalyticsPage />} />}
             />
@@ -81,10 +86,14 @@ const App = () => {
               element={<PrivateRoute element={<UsersPage />} />}
             />
             <Route
+              path="/admin/access"
+              element={<PrivateRoute element={<AdminAccessPage />} />}
+            />
+            <Route
               path="/settings"
               element={<PrivateRoute element={<SettingsPage />} />}
             />
-            
+
             <Route
               path="/skills"
               element={<PrivateRoute element={<Skills />} />}
@@ -101,7 +110,7 @@ const App = () => {
               path="/job-categories"
               element={<PrivateRoute element={<JobCategories />} />}
             />
-            
+
             <Route
               path="/job-board"
               element={<PrivateRoute element={<JobBoard />} />}

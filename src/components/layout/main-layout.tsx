@@ -21,7 +21,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
-  const showSidebar = role !== 'interviewer';
+  // Always show sidebar for all roles and routes
+  const showSidebar = true;
 
   return (
     <div className="flex h-screen relative">
@@ -56,7 +57,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-white">
+      <main className="flex-1 overflow-y-auto bg-background">
         {/* Mobile Header */}
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <Button
