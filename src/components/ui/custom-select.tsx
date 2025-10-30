@@ -18,15 +18,18 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   value,
   onChange,
   options,
-  placeholder = "Select an option",
-  className = ""
+  placeholder = 'Select an option',
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+      if (
+        selectRef.current &&
+        !selectRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -37,7 +40,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     };
   }, []);
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
 
   return (
     <div ref={selectRef} className={`relative ${className}`}>
@@ -46,13 +49,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white hover:border-gray-300 transition-all duration-200 flex items-center justify-between"
       >
-        <span className={selectedOption ? "text-gray-900" : "text-gray-500"}>
+        <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown 
+        <ChevronDown
           className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
-          }`} 
+          }`}
         />
       </button>
 
@@ -68,7 +71,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                   setIsOpen(false);
                 }}
                 className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors duration-150 flex items-center justify-between ${
-                  value === option.value ? 'bg-purple-50 text-purple-700' : 'text-gray-900'
+                  value === option.value
+                    ? 'bg-purple-50 text-purple-700'
+                    : 'text-gray-900'
                 }`}
               >
                 <span>{option.label}</span>

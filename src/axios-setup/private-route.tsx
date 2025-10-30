@@ -22,7 +22,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ element }) => {
       name: 'Demo User',
       username: 'demo@company.com',
       email: 'demo@company.com',
-      role: 'admin', // Change to 'admin', 'hiring_manager', 'interviewer', 'ta_team'
+      role: 'admin', // Change to 'admin', 'ta_executive', 'ta_manager', 'hiring_manager', 'interviewer', 'hr_ops'
       roleId: 1,
     };
     if (!localStorage.getItem('user')) {

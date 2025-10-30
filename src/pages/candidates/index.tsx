@@ -4,26 +4,28 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Search, 
-  Filter, 
-  TrendingUp, 
-  Download, 
-  Edit, 
-  Trash2, 
-  UserPlus, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Search,
+  TrendingUp,
+  Edit,
+  Trash2,
+  UserPlus,
+  Phone,
+  MapPin,
   Building2,
   Briefcase,
   Calendar,
   MoreVertical,
-  X,
   Star,
   CheckCircle2,
-  Clock,
-  User
+  User,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,7 +34,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import CustomSelect from '@/components/ui/custom-select';
-import { UserRole } from '@/types';
+import { useUserRole } from '@/utils/getUserRole';
 
 interface Candidate {
   id: number;
@@ -58,7 +60,6 @@ interface Candidate {
 
 const CandidatesPage: React.FC = () => {
   const navigate = useNavigate();
-  const getUserRole = (): UserRole => 'admin';
 
   const [candidates, setCandidates] = useState<Candidate[]>([
     {
@@ -132,10 +133,10 @@ const CandidatesPage: React.FC = () => {
 
   const getStatusColor = (status: Candidate['status']) => {
     const colors: Record<Candidate['status'], string> = {
-      'Active': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Shortlisted': 'bg-green-100 text-green-700 border-green-200',
-      'Interview': 'bg-purple-100 text-purple-700 border-purple-200',
-      'Rejected': 'bg-red-100 text-red-700 border-red-200',
+      Active: 'bg-blue-100 text-blue-700 border-blue-200',
+      Shortlisted: 'bg-green-100 text-green-700 border-green-200',
+      Interview: 'bg-purple-100 text-purple-700 border-purple-200',
+      Rejected: 'bg-red-100 text-red-700 border-red-200',
       'On Hold': 'bg-yellow-100 text-yellow-700 border-yellow-200',
     };
     return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
@@ -150,19 +151,22 @@ const CandidatesPage: React.FC = () => {
   };
 
   const filteredCandidates = candidates.filter((candidate) => {
-    const matchesSearch = 
+    const matchesSearch =
       candidate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'All' || candidate.status === statusFilter;
-    
+      candidate.skills.some((skill) =>
+        skill.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+
+    const matchesStatus =
+      statusFilter === 'All' || candidate.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
   const handleDelete = (id: number) => {
-    setCandidates(candidates.filter(c => c.id !== id));
+    setCandidates(candidates.filter((c) => c.id !== id));
     setShowDeleteModal(null);
   };
 
@@ -175,8 +179,10 @@ const CandidatesPage: React.FC = () => {
     { value: 'On Hold', label: 'On Hold' },
   ];
 
+  const role = useUserRole();
+
   return (
-    <MainLayout role={getUserRole()}>
+    <MainLayout role={role}>
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -235,7 +241,9 @@ const CandidatesPage: React.FC = () => {
                   No candidates found
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  {searchTerm ? 'Try adjusting your search terms' : 'Get started by registering a new candidate'}
+                  {searchTerm
+                    ? 'Try adjusting your search terms'
+                    : 'Get started by registering a new candidate'}
                 </p>
                 {!searchTerm && (
                   <Button
@@ -267,7 +275,8 @@ const CandidatesPage: React.FC = () => {
                       <div className="flex items-start gap-3 flex-1">
                         <div className="relative">
                           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                            {candidate.firstName.charAt(0)}{candidate.lastName.charAt(0)}
+                            {candidate.firstName.charAt(0)}
+                            {candidate.lastName.charAt(0)}
                           </div>
                           {candidate.rating && (
                             <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1">
@@ -279,25 +288,40 @@ const CandidatesPage: React.FC = () => {
                           <h3 className="text-base font-semibold text-gray-900 truncate">
                             {candidate.firstName} {candidate.lastName}
                           </h3>
-                          <p className="text-xs text-gray-600 truncate">{candidate.email}</p>
+                          <p className="text-xs text-gray-600 truncate">
+                            {candidate.email}
+                          </p>
                           <div className="flex items-center gap-1 mt-1">
                             <Phone className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">{candidate.mobile}</span>
+                            <span className="text-xs text-gray-500">
+                              {candidate.mobile}
+                            </span>
                           </div>
                         </div>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/candidates/edit/${candidate.id}`)}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigate(`/candidates/edit/${candidate.id}`)
+                            }
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setShowDeleteModal(candidate.id)} className="text-red-600">
+                          <DropdownMenuItem
+                            onClick={() => setShowDeleteModal(candidate.id)}
+                            className="text-red-600"
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -310,13 +334,17 @@ const CandidatesPage: React.FC = () => {
                       {candidate.currentCompany && (
                         <div className="flex items-center gap-2 text-xs text-gray-600">
                           <Building2 className="h-3 w-3" />
-                          <span className="truncate">{candidate.currentCompany}</span>
+                          <span className="truncate">
+                            {candidate.currentCompany}
+                          </span>
                         </div>
                       )}
                       {candidate.city && candidate.country && (
                         <div className="flex items-center gap-2 text-xs text-gray-600">
                           <MapPin className="h-3 w-3" />
-                          <span>{candidate.city}, {candidate.country}</span>
+                          <span>
+                            {candidate.city}, {candidate.country}
+                          </span>
                         </div>
                       )}
                       {candidate.experience && (
@@ -328,7 +356,9 @@ const CandidatesPage: React.FC = () => {
                       {candidate.organization && (
                         <div className="flex items-center gap-2 text-xs text-gray-600">
                           <CheckCircle2 className="h-3 w-3" />
-                          <span className="truncate">{candidate.organization}</span>
+                          <span className="truncate">
+                            {candidate.organization}
+                          </span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -361,13 +391,17 @@ const CandidatesPage: React.FC = () => {
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <div className="flex items-center gap-3">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)}`}>
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)}`}
+                        >
                           {candidate.status}
                         </span>
                         {candidate.matchScore && (
                           <div className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3 text-blue-600" />
-                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}
+                            >
                               {candidate.matchScore}%
                             </span>
                           </div>
@@ -378,7 +412,9 @@ const CandidatesPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => navigate(`/candidates/view/${candidate.id}`)}
+                          onClick={() =>
+                            navigate(`/candidates/view/${candidate.id}`)
+                          }
                         >
                           <User className="h-4 w-4" />
                         </Button>
@@ -386,7 +422,9 @@ const CandidatesPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => navigate(`/candidates/edit/${candidate.id}`)}
+                          onClick={() =>
+                            navigate(`/candidates/edit/${candidate.id}`)
+                          }
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -399,37 +437,36 @@ const CandidatesPage: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-10 backdrop-blur-sm" onClick={() => setShowDeleteModal(null)}>
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 border border-blue-100" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Delete Candidate</h2>
-                <button onClick={() => setShowDeleteModal(null)} className="text-gray-500 hover:text-gray-700">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 mb-6">
-                Are you sure you want to delete this candidate? This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteModal(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => handleDelete(showDeleteModal)}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Delete
-                </Button>
-              </div>
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={!!showDeleteModal}
+          onOpenChange={(open) => !open && setShowDeleteModal(null)}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Candidate</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this candidate? This action
+                cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => showDeleteModal && handleDelete(showDeleteModal)}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </Button>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

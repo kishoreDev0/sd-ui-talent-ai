@@ -1,274 +1,290 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Calendar, Clock, Mail, Phone } from 'lucide-react';
 import {
-  Clock,
-  CheckCircle2,
-  Calendar,
-  User,
-  FileText,
-  MessageSquare,
-} from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+ 
+
+interface Candidate {
+  id: number;
+  name: string;
+  position: string;
+  experience: string;
+  skills: string[];
+  avatar: string;
+  status: 'applied' | 'screening' | 'interview_scheduled' | 'feedback_pending' | 'selected' | 'rejected';
+  interviewDate?: string;
+  interviewTime?: string;
+  matchScore?: number;
+  email: string;
+  phone: string;
+}
+
+// Simplified dashboard: no internal sidebar or kanban
 
 const InterviewerDashboard: React.FC = () => {
-  // Dashboard: Candidate details, questions, scorecard
-  // Permissions: Feedback only
-
-  const upcomingInterviews = [
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [candidates] = useState<Candidate[]>([
     {
       id: 1,
-      candidate: 'Sarah Johnson',
-      job: 'Product Designer',
-      time: 'Today, 10:00 AM',
-      duration: '45 min',
-      type: 'Technical',
-      questionsCount: 8,
-      resume: 'Download',
-      scorecard: 'View',
+      name: 'Sarah Johnson',
+      position: 'Senior Product Designer',
+      experience: '5 years',
+      skills: ['Figma', 'UI/UX', 'Prototyping', 'Design Systems'],
+      avatar: 'SJ',
+      status: 'applied',
+      email: 'sarah.johnson@email.com',
+      phone: '+1 (555) 123-4567',
+      matchScore: 92,
     },
     {
       id: 2,
-      candidate: 'Michael Chen',
-      job: 'Frontend Developer',
-      time: 'Tomorrow, 2:00 PM',
-      duration: '60 min',
-      type: 'Behavioral',
-      questionsCount: 6,
-      resume: 'Download',
-      scorecard: 'View',
+      name: 'Michael Chen',
+      position: 'Frontend Developer',
+      experience: '3 years',
+      skills: ['React', 'TypeScript', 'Next.js', 'Tailwind'],
+      avatar: 'MC',
+      status: 'screening',
+      email: 'michael.chen@email.com',
+      phone: '+1 (555) 234-5678',
+      matchScore: 88,
     },
     {
       id: 3,
-      candidate: 'Emily Davis',
-      job: 'UI/UX Designer',
-      time: 'Oct 25, 11:00 AM',
-      duration: '45 min',
-      type: 'Final',
-      questionsCount: 10,
-      resume: 'Download',
-      scorecard: 'View',
+      name: 'Emily Davis',
+      position: 'UI/UX Designer',
+      experience: '4 years',
+      skills: ['Sketch', 'Figma', 'Adobe XD', 'User Research'],
+      avatar: 'ED',
+      status: 'interview_scheduled',
+      interviewDate: '2024-01-28',
+      interviewTime: '10:00 AM',
+      email: 'emily.davis@email.com',
+      phone: '+1 (555) 345-6789',
+      matchScore: 85,
     },
-  ];
-
-  const interviewQuestions = [
-    {
-      category: 'Technical Skills',
-      questions: [
-        'Explain your experience with design systems',
-        'How do you approach user research?',
-        'Walk me through your portfolio',
-      ],
-    },
-    {
-      category: 'Behavioral Questions',
-      questions: [
-        'Tell me about a challenging project',
-        'How do you handle feedback?',
-        'Describe your design process',
-      ],
-    },
-  ];
-
-  const completedInterviews = [
     {
       id: 4,
-      candidate: 'John Smith',
-      job: 'Engineering Manager',
-      date: 'Oct 20',
-      rating: 4,
-      feedback: 'Submitted',
+      name: 'David Park',
+      position: 'Backend Engineer',
+      experience: '6 years',
+      skills: ['Node.js', 'Python', 'PostgreSQL', 'AWS'],
+      avatar: 'DP',
+      status: 'interview_scheduled',
+      interviewDate: '2024-01-29',
+      interviewTime: '2:00 PM',
+      email: 'david.park@email.com',
+      phone: '+1 (555) 456-7890',
+      matchScore: 90,
     },
     {
       id: 5,
-      candidate: 'Lisa Wang',
-      job: 'Product Manager',
-      date: 'Oct 19',
-      rating: 5,
-      feedback: 'Submitted',
+      name: 'Jessica Martinez',
+      position: 'Full Stack Developer',
+      experience: '4 years',
+      skills: ['React', 'Node.js', 'MongoDB', 'GraphQL'],
+      avatar: 'JM',
+      status: 'feedback_pending',
+      interviewDate: '2024-01-25',
+      interviewTime: '11:00 AM',
+      email: 'jessica.martinez@email.com',
+      phone: '+1 (555) 567-8901',
+      matchScore: 87,
     },
-  ];
+    {
+      id: 6,
+      name: 'Robert Wilson',
+      position: 'DevOps Engineer',
+      experience: '5 years',
+      skills: ['Docker', 'Kubernetes', 'CI/CD', 'Terraform'],
+      avatar: 'RW',
+      status: 'selected',
+      email: 'robert.wilson@email.com',
+      phone: '+1 (555) 678-9012',
+      matchScore: 95,
+    },
+    {
+      id: 7,
+      name: 'Lisa Anderson',
+      position: 'Product Manager',
+      experience: '7 years',
+      skills: ['Agile', 'Product Strategy', 'Analytics', 'User Research'],
+      avatar: 'LA',
+      status: 'rejected',
+      email: 'lisa.anderson@email.com',
+      phone: '+1 (555) 789-0123',
+      matchScore: 75,
+    },
+  ]);
+
+  const scheduledInterviews = useMemo(
+    () => candidates.filter((c) => c.status === 'interview_scheduled'),
+    [candidates],
+  );
+  const interviewsCount = scheduledInterviews.length;
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-4xl font-bold text-gray-900">
-          Interview Panel Dashboard
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Candidate details, questions, scorecard
-        </p>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
-              Upcoming Interviews
-            </h2>
-            <Calendar className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-4">
-            {upcomingInterviews.map((interview, index) => (
-              <motion.div
-                key={interview.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all"
-              >
-                {/* Candidate Details */}
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <User className="w-5 h-5 text-blue-600" />
-                      {interview.candidate}
-                    </h3>
-                    <p className="text-sm text-gray-600 ml-7">
-                      {interview.job}
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                    {interview.type}
-                  </span>
-                </div>
-
-                {/* Questions Count */}
-                <div className="ml-7 mb-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <FileText className="w-4 h-4" />
-                    <span>{interview.questionsCount} questions prepared</span>
-                    <span>•</span>
-                    <span>{interview.duration}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="ml-7 flex items-center space-x-2">
-                  <button className="text-xs text-blue-600 hover:text-blue-800 hover:underline">
-                    {interview.scorecard}
-                  </button>
-                  <span>•</span>
-                  <button className="text-xs text-blue-600 hover:text-blue-800 hover:underline">
-                    {interview.resume}
-                  </button>
-                </div>
-
-                {/* Start Interview */}
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <div className="flex items-center text-sm text-gray-600 ml-7">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {interview.time}
-                  </div>
-                  <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all">
-                    Start Interview
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Interview Questions Section */}
-          <div className="mt-8 pt-6 border-t">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Interview Questions
-            </h3>
-            <div className="space-y-4">
-              {interviewQuestions.map((category, idx) => (
-                <div
-                  key={idx}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    {category.category}
-                  </h4>
-                  <ul className="space-y-1">
-                    {category.questions.map((q, i) => (
-                      <li
-                        key={i}
-                        className="text-sm text-gray-600 flex items-start"
-                      >
-                        <MessageSquare className="w-4 h-4 mr-2 text-blue-600 mt-0.5 flex-shrink-0" />
-                        {q}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-6 py-6"
+        >
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-8 shadow-lg border border-gray-200/50 text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Interviews</h1>
+              <p className="text-sm text-gray-600 mb-4">Assigned to you</p>
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg">
+                <Calendar className="w-5 h-5" />
+                <span className="text-xl font-semibold">{interviewsCount}</span>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Scorecard & Completed */}
-        <div className="space-y-6">
-          {/* Scorecard Template */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Scorecard Template
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Technical Skills</span>
-                <span className="text-sm font-medium text-gray-900">/10</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Communication</span>
-                <span className="text-sm font-medium text-gray-900">/10</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Problem Solving</span>
-                <span className="text-sm font-medium text-gray-900">/10</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Cultural Fit</span>
-                <span className="text-sm font-medium text-gray-900">/10</span>
-              </div>
-              <button className="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200">
-                Submit Feedback
-              </button>
-            </div>
-          </div>
-
-          {/* Recently Completed */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Recently Completed
-            </h2>
-            <div className="space-y-4">
-              {completedInterviews.map((interview) => (
-                <div
-                  key={interview.id}
-                  className="p-4 rounded-xl border border-gray-100"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {interview.candidate}
-                      </h3>
-                      <p className="text-sm text-gray-600">{interview.job}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{interview.date}</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center">
-                        <CheckCircle2 className="w-4 h-4 mr-1 text-green-500" />
-                        <span className="font-medium">
-                          {interview.rating}/5
-                        </span>
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Scheduled Interviews</h2>
+              {scheduledInterviews.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">No scheduled interviews</div>
+              ) : (
+                <div className="space-y-3">
+                  {scheduledInterviews.map((candidate) => (
+                    <button
+                      key={candidate.id}
+                      onClick={() => { setSelectedCandidate(candidate); setIsDetailModalOpen(true); }}
+                      className="w-full text-left bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">
+                            {candidate.avatar}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{candidate.name}</div>
+                            <div className="text-xs text-gray-600">{candidate.position}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span>
+                            {candidate.interviewDate ? new Date(candidate.interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                            {candidate.interviewTime ? ` at ${candidate.interviewTime}` : ''}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs text-green-600 font-medium">
-                        {interview.feedback}
-                      </span>
-                    </div>
-                  </div>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
+
+      {/* Candidate Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedCandidate && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                    {selectedCandidate.avatar}
+                  </div>
+                  <div className="flex-1">
+                    <DialogTitle className="text-2xl font-bold">
+                      {selectedCandidate.name}
+                    </DialogTitle>
+                    <p className="text-gray-600 mt-1">{selectedCandidate.position}</p>
+                  </div>
+                  {/* Status badge removed in simplified view */}
+                </div>
+              </DialogHeader>
+
+              <DialogDescription>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Experience</h3>
+                    <p className="text-gray-600">{selectedCandidate.experience}</p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCandidate.skills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Contact</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Mail className="w-4 h-4" />
+                          <span className="text-sm">{selectedCandidate.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Phone className="w-4 h-4" />
+                          <span className="text-sm">{selectedCandidate.phone}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedCandidate.interviewDate && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Interview</h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-sm">
+                              {new Date(selectedCandidate.interviewDate).toLocaleDateString(
+                                'en-US',
+                                { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' },
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Clock className="w-4 h-4" />
+                            <span className="text-sm">{selectedCandidate.interviewTime}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedCandidate.matchScore && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Match Score</h3>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full"
+                          style={{ width: `${selectedCandidate.matchScore}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {selectedCandidate.matchScore}% match with job requirements
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </DialogDescription>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Feedback and add candidate modals removed for simplified view */}
     </div>
   );
 };

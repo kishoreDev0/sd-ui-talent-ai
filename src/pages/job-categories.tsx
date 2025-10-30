@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout';
+import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Check } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 
 const JobCategories: React.FC = () => {
+  const role = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('All');
   const [selectAll, setSelectAll] = useState(false);
@@ -16,7 +18,8 @@ const JobCategories: React.FC = () => {
     {
       id: 1,
       category: 'Information technology',
-      description: 'Information technology (IT) is the use of computers to store, retrieve, transmit, and manipulate data or information.',
+      description:
+        'Information technology (IT) is the use of computers to store, retrieve, transmit, and manipulate data or information.',
       createdBy: 'admin',
       active: true,
       createdDate: '1 days ago',
@@ -26,14 +29,12 @@ const JobCategories: React.FC = () => {
 
   const handleSelectAll = () => {
     setSelectAll(!selectAll);
-    setSelectedItems(selectAll ? [] : categories.map(item => item.id));
+    setSelectedItems(selectAll ? [] : categories.map((item) => item.id));
   };
 
   const handleSelectItem = (id: number) => {
-    setSelectedItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -42,12 +43,14 @@ const JobCategories: React.FC = () => {
   };
 
   return (
-    <MainLayout role="admin">
+    <MainLayout role={role}>
       <div className="space-y-4">
         {/* Header */}
         <div className="px-4 py-2">
           <h1 className="text-2xl font-bold text-gray-900">Job Categories</h1>
-          <p className="text-gray-600 text-sm">Manage job categories and their settings.</p>
+          <p className="text-gray-600 text-sm">
+            Manage job categories and their settings.
+          </p>
         </div>
 
         {/* Tabs */}
@@ -79,7 +82,9 @@ const JobCategories: React.FC = () => {
                 onChange={handleSelectAll}
                 className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
               />
-              <label className="text-sm font-medium text-gray-700">Select All</label>
+              <label className="text-sm font-medium text-gray-700">
+                Select All
+              </label>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -105,7 +110,10 @@ const JobCategories: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input type="checkbox" className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded" />
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                    />
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     CATEGORY

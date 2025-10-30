@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Briefcase,
   Users,
   Calendar,
   Settings,
@@ -20,7 +19,6 @@ import {
   FileText,
   ChevronUp,
   ChevronRight,
-  Menu,
   X,
 } from 'lucide-react';
 import { UserRole } from '@/types';
@@ -32,6 +30,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import InviteUserForm from '@/components/invite-user';
 import { Button } from '@/components/ui/button';
 
 interface SidebarProps {
@@ -53,49 +53,56 @@ const navItems: NavItem[] = [
     path: '/dashboard',
     icon: <LayoutDashboard className="h-4 w-4" />,
     label: 'Dashboard',
-    roles: ['admin', 'hiring_manager', 'interviewer', 'ta_team', 'hr_ops'],
+    roles: [
+      'admin',
+      'ta_executive',
+      'ta_manager',
+      'hiring_manager',
+      'interviewer',
+      'hr_ops',
+    ],
   },
   {
     path: '/job-management',
     icon: <User className="h-4 w-4" />,
     label: 'Job Management',
-    roles: ['admin'],
+    roles: ['admin', 'ta_executive'],
     children: [
       {
         path: '/jobs',
         icon: <FileText className="h-4 w-4" />,
         label: 'Job',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
       {
         path: '/job-requirements',
         icon: <FileText className="h-4 w-4" />,
         label: 'Job Requirements',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
       {
         path: '/organizations',
         icon: <Building2 className="h-4 w-4" />,
         label: 'Organizations',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
       {
         path: '/skills',
         icon: <Lightbulb className="h-4 w-4" />,
         label: 'Skills',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
       {
         path: '/major-skills',
         icon: <Zap className="h-4 w-4" />,
         label: 'Major Skills',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
       {
         path: '/job-categories',
         icon: <Tag className="h-4 w-4" />,
         label: 'Job Categories',
-        roles: ['admin'],
+        roles: ['admin', 'ta_executive'],
       },
     ],
   },
@@ -103,31 +110,40 @@ const navItems: NavItem[] = [
     path: '/candidates',
     icon: <Users className="h-4 w-4" />,
     label: 'Candidates',
-    roles: ['admin', 'hiring_manager', 'interviewer', 'ta_team'],
-  },
-  {
-    path: '/resume-validation',
-    icon: <Sparkles className="h-4 w-4" />,
-    label: 'Resume Validation',
-    roles: ['ta_team'],
+    roles: [
+      'admin',
+      'ta_executive',
+      'ta_manager',
+      'hiring_manager',
+      'interviewer',
+    ],
   },
   {
     path: '/interviews',
     icon: <Calendar className="h-4 w-4" />,
     label: 'Interviews',
-    roles: ['admin', 'hiring_manager', 'interviewer', 'ta_team'],
+    roles: [
+      'admin',
+      'ta_executive',
+      'ta_manager',
+      'hiring_manager',
+      'interviewer',
+    ],
   },
   {
     path: '/analytics',
     icon: <TrendingUp className="h-4 w-4" />,
     label: 'Analytics',
-    roles: ['admin', 'hiring_manager'],
+    roles: ['admin', 'ta_executive', 'ta_manager', 'hiring_manager'],
   },
   {
     path: '/users',
     icon: <UserCog className="h-4 w-4" />,
     label: 'Users',
     roles: ['admin'],
+  },
+  {
+    
   },
   {
     path: '/settings',
@@ -140,13 +156,14 @@ const navItems: NavItem[] = [
 const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const filteredNavItems = navItems.filter((item) => item.roles.includes(role));
+  const effectiveRole = (role || 'admin') as UserRole;
+  const filteredNavItems = navItems.filter((item) => item.roles && item.roles.includes(effectiveRole));
 
   const toggleExpanded = (path: string) => {
     setExpandedItems((prev) =>
       prev.includes(path)
         ? prev.filter((item) => item !== path)
-        : [...prev, path]
+        : [...prev, path],
     );
   };
 
@@ -234,7 +251,17 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
     const userData = localStorage.getItem('user')
       ? JSON.parse(localStorage.getItem('user')!)
       : null;
-    return userData?.name || userData?.username || 'Admin User';
+    // Support both new structure (first_name, last_name) and old structure (name, username)
+    if (userData?.first_name) {
+      return (
+        `${userData.first_name} ${userData.last_name || ''}`.trim() ||
+        userData.email ||
+        'Admin User'
+      );
+    }
+    return (
+      userData?.name || userData?.username || userData?.email || 'Admin User'
+    );
   };
 
   const getUserEmail = () => {
@@ -251,13 +278,17 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
     window.location.href = '/login';
   };
 
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+
   return (
-    <div className={`flex h-screen flex-col border-r bg-background transition-all duration-300 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    } lg:relative lg:z-auto z-50`}>
+    <div
+      className={`flex h-screen flex-col border-r bg-background transition-all duration-300 ${
+        isCollapsed ? 'w-16' : 'w-64'
+      } lg:relative lg:z-auto z-50`}
+    >
       {/* Header */}
       <div className="flex h-14 items-center border-b px-4">
-        <div 
+        <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={isCollapsed ? onToggle : undefined}
         >
@@ -277,7 +308,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
           </Button>
         )}
       </div>
-
 
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-2">
@@ -307,6 +337,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
+              {role === 'admin' && (
+                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Send Invite</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Admin Panel</span>
@@ -344,6 +380,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
+              {role === 'admin' && (
+                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Send Invite</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Admin Panel</span>
@@ -357,6 +399,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
           </DropdownMenu>
         )}
       </div>
+
+      {/* Send Invite Dialog */}
+      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send Invite</DialogTitle>
+          </DialogHeader>
+          <InviteUserForm onClose={() => setIsInviteOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

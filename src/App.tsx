@@ -12,8 +12,8 @@ import ForgotPassword from './components/forgot-password';
 import './App.css';
 import ChangePassword from './components/change-password';
 import DashboardRouter from './pages/dashboard/dashboard-router';
-import JobsPage from './pages/jobs';
 import CandidatesPage from './pages/candidates';
+import RegisterCandidate from './pages/candidates/register';
 import InterviewsPage from './pages/interviews';
 import AnalyticsPage from './pages/analytics';
 import UsersPage from './pages/users';
@@ -21,9 +21,8 @@ import SettingsPage from './pages/settings';
 import JobBoard from './pages/job-board';
 import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
-import ResumeValidation from './pages/resume-validation';
-import SavedAnalyses from './pages/saved-analyses';
-import ShortlistedResumes from './pages/shortlisted-resumes';
+ 
+ 
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
 import Organizations from './pages/organizations';
@@ -58,6 +57,18 @@ const App = () => {
               element={<PrivateRoute element={<CandidatesPage />} />}
             />
             <Route
+              path="/candidates/register"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
+              path="/candidates/edit/:id"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
+              path="/candidates/view/:id"
+              element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
               path="/interviews"
               element={<PrivateRoute element={<InterviewsPage />} />}
             />
@@ -73,6 +84,7 @@ const App = () => {
               path="/settings"
               element={<PrivateRoute element={<SettingsPage />} />}
             />
+            
             <Route
               path="/skills"
               element={<PrivateRoute element={<Skills />} />}
@@ -89,18 +101,7 @@ const App = () => {
               path="/job-categories"
               element={<PrivateRoute element={<JobCategories />} />}
             />
-            <Route
-              path="/resume-validation"
-              element={<PrivateRoute element={<ResumeValidation />} />}
-            />
-            <Route
-              path="/saved-analyses"
-              element={<PrivateRoute element={<SavedAnalyses />} />}
-            />
-            <Route
-              path="/shortlisted-resumes"
-              element={<PrivateRoute element={<ShortlistedResumes />} />}
-            />
+            
             <Route
               path="/job-board"
               element={<PrivateRoute element={<JobBoard />} />}

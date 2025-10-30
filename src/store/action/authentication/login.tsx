@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { AxiosInstance } from 'axios';
 import { AuthAPI } from '../../service/authentication/login';
+import { AuthTokens } from '../../types/authentication/login';
 
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -20,17 +21,40 @@ export const loginUser = createAsyncThunk(
       const authAPI = new AuthAPI(api);
       const response = await authAPI.login(email, password);
 
-      if (response.data.status === 'success') {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        localStorage.setItem('token', response.data.data.accessToken);
+      // Handle new response format
+      if (response.data.success && response.data.data) {
+        const { user, access_token, refresh_token, token_type } =
+          response.data.data;
 
-        return response.data.data;
+        const tokens: AuthTokens = {
+          access_token,
+          refresh_token,
+          token_type,
+        };
+
+        // Return the structure expected by the slice
+        return {
+          user,
+          tokens,
+        };
       } else {
-        return rejectWithValue(response.data.message || 'Login failed');
+        return rejectWithValue(response.data.error || 'Login failed');
       }
-    } catch (error) {
-      return rejectWithValue(error);
+    } catch (error: unknown) {
+      const errorMessage =
+        (
+          error as {
+            response?: { data?: { error?: string; message?: string } };
+          }
+        )?.response?.data?.error ||
+        (
+          error as {
+            response?: { data?: { error?: string; message?: string } };
+          }
+        )?.response?.data?.message ||
+        (error as { message?: string })?.message ||
+        'An error occurred during login';
+      return rejectWithValue(errorMessage);
     }
   },
 );

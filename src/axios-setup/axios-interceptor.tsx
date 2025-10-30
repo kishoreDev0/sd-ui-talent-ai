@@ -1,19 +1,13 @@
-import axios, { AxiosInstance } from 'axios';
+import { axiosInstance } from './axios-instance';
 
 export interface HttpClientInstance {
-  httpClient: AxiosInstance;
+  httpClient: typeof axiosInstance;
 }
 
+/**
+ * Initialize HTTP Client using the centralized axios instance
+ * This maintains backward compatibility with existing code
+ */
 export const initializeHttpClient = (): HttpClientInstance => {
-  const token = localStorage.getItem('token');
-  const httpClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return { httpClient };
+  return { httpClient: axiosInstance };
 };

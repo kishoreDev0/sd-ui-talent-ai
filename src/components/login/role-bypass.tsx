@@ -31,12 +31,20 @@ const RoleBypass: React.FC = () => {
       gradient: 'from-purple-500 to-purple-600',
     },
     {
-      role: 'ta_team',
-      title: 'TA Team',
-      description: 'Resume validation, sourcing, and pipeline',
+      role: 'ta_executive',
+      title: 'TA Executive',
+      description: 'Full create/edit • Job Management',
+      icon: Shield,
+      color: 'text-indigo-600',
+      gradient: 'from-indigo-500 to-indigo-600',
+    },
+    {
+      role: 'ta_manager',
+      title: 'TA Manager',
+      description: 'Team activity, time-to-fill, metrics',
       icon: Users,
-      color: 'text-blue-600',
-      gradient: 'from-blue-500 to-blue-600',
+      color: 'text-cyan-600',
+      gradient: 'from-cyan-500 to-cyan-600',
     },
     {
       role: 'hiring_manager',
@@ -57,20 +65,49 @@ const RoleBypass: React.FC = () => {
     {
       role: 'hr_ops',
       title: 'HR Operations',
-      description: 'Offers, onboarding, and documentation',
+      description: 'Offers, onboarding, documentation',
       icon: FileText,
       color: 'text-teal-600',
       gradient: 'from-teal-500 to-teal-600',
     },
   ];
 
+  // Map role name to role_id
+  const getRoleId = (roleName: string): number => {
+    switch (roleName) {
+      case 'admin':
+        return 1;
+      case 'ta_executive':
+        return 2;
+      case 'ta_manager':
+        return 3;
+      case 'hiring_manager':
+        return 4;
+      case 'interviewer':
+        return 5;
+      case 'hr_ops':
+        return 6;
+      default:
+        return 1;
+    }
+  };
+
   const handleRoleSelect = (role: string) => {
-    // Store role in localStorage for bypass
+    // Get role_id for the selected role
+    const roleId = getRoleId(role);
+
+    // Store role in localStorage for bypass with role.id
     const mockUser = {
-      id: '1',
-      name: `${role.charAt(0).toUpperCase() + role.slice(1)} User`,
+      id: 1,
+      first_name: role.charAt(0).toUpperCase() + role.slice(1),
+      last_name: 'User',
       email: `${role}@example.com`,
-      role: role,
+      role_id: roleId,
+      is_active: true,
+      role: {
+        id: roleId,
+        name: role,
+      },
     };
 
     localStorage.setItem('user', JSON.stringify(mockUser));
@@ -93,7 +130,7 @@ const RoleBypass: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {roles.map((option) => {
           const IconComponent = option.icon;
           return (

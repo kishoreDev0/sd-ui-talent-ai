@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '../../assets/vite.svg';
 import userlogo from '../../assets/user-image.jpg';
 import Modal from '../modal';
-import InviteUserForm from '../invite-user';
 import ResetPassword from '../reset-password';
 import ConfirmationModal from '../confirmation-modal';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -12,7 +11,7 @@ import { logout } from '@/store/slices/authentication/login';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isInviteModalOpen, setInviteModalOpen] = useState<boolean>(false);
+  
   const [isResetModalOpen, setResetModalOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isConfirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
@@ -82,10 +81,22 @@ const Navbar: React.FC = () => {
   };
 
   const userData = getUserData();
-  const displayName =
-    userData.username || userData.userName || userData.name || 'User';
+  // Support both new structure (first_name, last_name) and old structure (name, username)
+  const displayName = userData?.first_name
+    ? `${userData.first_name} ${userData.last_name || ''}`.trim() ||
+      userData.email ||
+      'User'
+    : userData?.username ||
+      userData?.userName ||
+      userData?.name ||
+      userData?.email ||
+      'User';
   const profileImage = userData.profileUrl || userData.picture || userlogo;
-  const userRole = userData.roleId ? `Role ID: ${userData.roleId}` : 'User';
+  // Get role name from nested role object or role_id
+  const roleName =
+    userData?.role?.name ||
+    (userData?.role_id ? `Role ID: ${userData.role_id}` : 'User');
+  const userRole = roleName;
 
   return (
     <nav
@@ -182,20 +193,7 @@ const Navbar: React.FC = () => {
                 >
                   Profile
                 </p>
-                <p
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setDropdownOpen(false);
-                    setInviteModalOpen(true);
-                  }}
-                  className={`block px-4 py-2 text-sm transition-colors duration-200 ${
-                    isScrolled
-                      ? 'text-gray-700 hover:bg-gray-100'
-                      : 'text-gray-200 hover:bg-gray-700'
-                  }`}
-                >
-                  Invite User
-                </p>
+                
                 {user && (
                   <p
                     onClick={() => {
@@ -282,12 +280,7 @@ const Navbar: React.FC = () => {
           </p>
         </div>
       </div>
-      <Modal
-        isOpen={isInviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-      >
-        <InviteUserForm onClose={() => setInviteModalOpen(false)} />
-      </Modal>
+      
       <Modal isOpen={isResetModalOpen} onClose={() => setResetModalOpen(false)}>
         <ResetPassword onClose={() => setResetModalOpen(false)} />
       </Modal>
