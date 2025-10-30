@@ -16,6 +16,10 @@ const initialState: RolesState = {
   roles: [],
   loading: false,
   error: null,
+  total: 0,
+  page: 1,
+  pageSize: 10,
+  totalPages: 0,
 };
 
 const roleReducer = createSlice({
@@ -30,8 +34,17 @@ const roleReducer = createSlice({
       .addCase(
         getAllRole.fulfilled,
         (state, action: PayloadAction<ListRolesResponse>) => {
-          const list = action.payload?.data as Role[] | undefined;
+        const payloadData: any = action.payload?.data as any;
+          const list: Role[] | undefined = Array.isArray(payloadData)
+            ? (payloadData as Role[])
+            : (payloadData?.results as Role[] | undefined);
           state.roles = Array.isArray(list) ? list : [];
+        if (payloadData && !Array.isArray(payloadData)) {
+          state.total = payloadData.total ?? 0;
+          state.page = payloadData.page ?? 1;
+          state.pageSize = payloadData.page_size ?? state.pageSize;
+          state.totalPages = payloadData.total_pages ?? 0;
+        }
           state.loading = false;
           state.error = null;
         },

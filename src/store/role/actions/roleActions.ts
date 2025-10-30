@@ -11,11 +11,11 @@ const roleAPI = new RoleAPI();
 
 export const getAllRole = createAsyncThunk<
   ListRolesResponse,
-  void,
+  { page?: number; page_size?: number; active_only?: boolean } | void,
   { rejectValue: { message: string } }
->('role/getAllRole', async (_, { rejectWithValue }) => {
+>('role/getAllRole', async (params, { rejectWithValue }) => {
   try {
-    const res = await roleAPI.getAllRole();
+    const res = await roleAPI.getAllRole(params as any);
     return res.data as ListRolesResponse;
   } catch {
     return rejectWithValue({ message: 'Failed to load roles' });

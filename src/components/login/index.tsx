@@ -8,7 +8,6 @@ import { loginUser } from '@/store/action/authentication/login';
 import googleLogo from '@/assets/googleLogo.png';
 import githubLogo from '@/assets/github.png';
 import Loader from '../loader/loader';
-import RoleBypass from './role-bypass';
 
 interface LoginProps {
   logoSrc?: string;
@@ -105,9 +104,6 @@ const Login: React.FC<LoginProps> = ({ logoSrc, logoAlt = 'Company Logo' }) => {
               create a new account
             </button>
           </p>
-
-          {/* Role Bypass Section */}
-          <RoleBypass />
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">

@@ -49,6 +49,9 @@ const authSlice = createSlice({
       Object.values(AUTH_STORAGE_KEYS).forEach((key) => {
         localStorage.removeItem(key);
       });
+          // Explicitly clear any legacy/bypass keys
+          localStorage.removeItem('role');
+          localStorage.removeItem('user_id');
       const keysToAlwaysCheck = [
         'user',
         'token',
@@ -56,6 +59,8 @@ const authSlice = createSlice({
         'session',
         'access_token',
         'refresh_token',
+            'role',
+            'user_id',
       ];
 
       for (let i = 0; i < localStorage.length; i++) {
@@ -92,6 +97,13 @@ const authSlice = createSlice({
             AUTH_STORAGE_KEYS.USER,
             JSON.stringify(action.payload.user),
           );
+          // store user id for quick access
+          try {
+            const uid = (action.payload.user as any)?.id;
+            if (uid !== undefined && uid !== null) {
+              localStorage.setItem('user_id', String(uid));
+            }
+          } catch {}
           localStorage.setItem(
             AUTH_STORAGE_KEYS.ACCESS_TOKEN,
             action.payload.tokens.access_token,

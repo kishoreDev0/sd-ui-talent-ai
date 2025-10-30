@@ -40,6 +40,9 @@ import {
 } from '@/components/ui/dialog';
 import InviteUserForm from '@/components/invite-user';
 import { Button } from '@/components/ui/button';
+import { useAppDispatch } from '@/store';
+import { logout } from '@/store/slices/authentication/login';
+// duplicate import removed
 
 interface SidebarProps {
   role: UserRole;
@@ -160,6 +163,7 @@ const navItems: NavItem[] = [
 
 const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   const location = useLocation();
+  const dispatch = useAppDispatch();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isDark, setIsDark] = useState<boolean>(false);
   const effectiveRole = role as UserRole | undefined;
@@ -297,13 +301,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-    window.location.href = '/login';
+    try {
+      dispatch(logout());
+    } finally {
+      window.location.href = '/login';
+    }
   };
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
 
   return (
     <div
@@ -393,7 +399,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
                 <span>Admin Panel</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -440,7 +446,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
                 <span>Admin Panel</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -456,6 +462,22 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
             <DialogTitle>Send Invite</DialogTitle>
           </DialogHeader>
           <InviteUserForm onClose={() => setIsInviteOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Logout Confirm Dialog */}
+      <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Logout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Are you sure you want to log out?</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleLogout}>Log out</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

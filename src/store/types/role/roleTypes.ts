@@ -52,4 +52,8 @@ export interface RolesState {
   roles: Role[];
   loading: boolean;
   error: null | string | unknown;
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 }
