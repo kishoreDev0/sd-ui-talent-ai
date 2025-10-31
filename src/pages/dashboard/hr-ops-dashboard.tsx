@@ -105,14 +105,14 @@ const HROpsDashboard: React.FC = () => {
                 key={task.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-all"
+                className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 transition-all bg-white dark:bg-slate-800"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                       {task.candidate}
                     </h3>
-                    <p className="text-sm text-gray-600">{task.position}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{task.position}</p>
                   </div>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}
@@ -120,7 +120,7 @@ const HROpsDashboard: React.FC = () => {
                     {task.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <span>Priority: {task.priority}</span>
                 </div>
               </motion.div>
