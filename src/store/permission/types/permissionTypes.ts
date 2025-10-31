@@ -11,12 +11,14 @@ export interface SyncPermissionsResponse {
   timestamp: string;
   error: null | string;
   data: {
-    message: string;
-    created: string[];
-    existing: string[];
-    updated: string[];
-    deleted: string[];
-    errors: string[];
+    result: {
+      message: string;
+      created: string[];
+      existing: string[];
+      updated: string[];
+      deleted: string[];
+      errors: string[];
+    };
   };
 }
 
@@ -30,4 +32,3 @@ export interface PermissionsState {
   pageSize: number;
   totalPages: number;
 }
-

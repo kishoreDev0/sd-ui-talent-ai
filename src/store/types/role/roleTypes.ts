@@ -1,6 +1,6 @@
 export interface RolePermission {
   permission_id: number;
-  role_permission_id: number;
+  role_permission_id: number | null;
   has_permission: boolean;
 }
 
@@ -17,8 +17,10 @@ export interface Role {
   description?: string;
   createdAt?: string;
   updatedAt?: string;
-  created_by?: number;
-  updated_by?: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number | null;
+  updated_by?: number | null;
   active?: boolean;
   resources?: RoleResource[];
 }

@@ -36,7 +36,9 @@ const roleReducer = createSlice({
         (state, action: PayloadAction<ListRolesResponse>) => {
           const response = action.payload;
           if (response?.data) {
-            state.roles = Array.isArray(response.data.result) ? response.data.result : [];
+            state.roles = Array.isArray(response.data.result)
+              ? response.data.result
+              : [];
             state.total = response.data.total ?? 0;
             state.page = response.data.page ?? 1;
             state.pageSize = response.data.page_size ?? state.pageSize;

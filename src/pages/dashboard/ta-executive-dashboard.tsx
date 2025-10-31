@@ -14,7 +14,13 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   ChartContainer,
   ChartTooltip,
@@ -173,21 +179,27 @@ const TAExecutiveDashboard: React.FC = () => {
                 <Card className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`${metric.color} p-2 rounded-lg shadow-md`}>
+                      <div
+                        className={`${metric.color} p-2 rounded-lg shadow-md`}
+                      >
                         <Icon className="h-4 w-4 text-white" />
-                  </div>
-                  <span
+                      </div>
+                      <span
                         className={`text-xs font-semibold ${
-                      metric.trend === 'up' ? 'text-green-600' : 'text-blue-600'
-                    }`}
-                  >
-                    {metric.change}
-                  </span>
-                </div>
+                          metric.trend === 'up'
+                            ? 'text-green-600'
+                            : 'text-blue-600'
+                        }`}
+                      >
+                        {metric.change}
+                      </span>
+                    </div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
-                  {metric.value}
-                </h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{metric.label}</p>
+                      {metric.value}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {metric.label}
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -208,39 +220,45 @@ const TAExecutiveDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-            <button
-              onClick={() => navigate('/register-job')}
+                <button
+                  onClick={() => navigate('/register-job')}
                   className="group p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   <Briefcase className="h-4 w-4 text-white mb-1" />
                   <p className="text-white font-semibold text-xs">Create Job</p>
-                  <p className="text-purple-100 text-[10px]">Post new position</p>
-            </button>
-            <button
-              onClick={() => navigate('/candidates/register')}
+                  <p className="text-purple-100 text-[10px]">
+                    Post new position
+                  </p>
+                </button>
+                <button
+                  onClick={() => navigate('/candidates/register')}
                   className="group p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   <Users className="h-4 w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-xs">Add Candidate</p>
-                  <p className="text-blue-100 text-[10px]">Register new candidate</p>
-            </button>
-            <button
-              onClick={() => navigate('/jobs')}
+                  <p className="text-white font-semibold text-xs">
+                    Add Candidate
+                  </p>
+                  <p className="text-blue-100 text-[10px]">
+                    Register new candidate
+                  </p>
+                </button>
+                <button
+                  onClick={() => navigate('/jobs')}
                   className="group p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   <FileText className="h-4 w-4 text-white mb-1" />
                   <p className="text-white font-semibold text-xs">Job Board</p>
                   <p className="text-green-100 text-[10px]">View all jobs</p>
-            </button>
-            <button
-              onClick={() => navigate('/analytics')}
+                </button>
+                <button
+                  onClick={() => navigate('/analytics')}
                   className="group p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   <BarChart3 className="h-4 w-4 text-white mb-1" />
                   <p className="text-white font-semibold text-xs">Analytics</p>
                   <p className="text-orange-100 text-[10px]">View reports</p>
-            </button>
-          </div>
+                </button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -256,8 +274,12 @@ const TAExecutiveDashboard: React.FC = () => {
           >
             <Card>
               <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-base">Monthly Hiring Trends</CardTitle>
-                <CardDescription className="text-xs">Hired vs Offers over time</CardDescription>
+                <CardTitle className="text-base">
+                  Monthly Hiring Trends
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Hired vs Offers over time
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <ChartContainer config={chartConfig} className="h-[200px]">
@@ -295,8 +317,12 @@ const TAExecutiveDashboard: React.FC = () => {
           >
             <Card>
               <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-base">Source Effectiveness</CardTitle>
-                <CardDescription className="text-xs">Candidate sources breakdown</CardDescription>
+                <CardTitle className="text-base">
+                  Source Effectiveness
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Candidate sources breakdown
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <ChartContainer config={chartConfig} className="h-[200px]">
@@ -306,7 +332,9 @@ const TAExecutiveDashboard: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${(percent * 100).toFixed(0)}%`
+                      }
                       outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
@@ -316,9 +344,11 @@ const TAExecutiveDashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend 
+                    <Legend
                       wrapperStyle={{ fontSize: '10px' }}
-                      formatter={(value) => <span style={{ fontSize: '10px' }}>{value}</span>}
+                      formatter={(value) => (
+                        <span style={{ fontSize: '10px' }}>{value}</span>
+                      )}
                     />
                   </PieChart>
                 </ChartContainer>
@@ -337,8 +367,12 @@ const TAExecutiveDashboard: React.FC = () => {
           >
             <Card>
               <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-base">Average Time to Fill by Role</CardTitle>
-                <CardDescription className="text-xs">Days from posting to hire</CardDescription>
+                <CardTitle className="text-base">
+                  Average Time to Fill by Role
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Days from posting to hire
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <ChartContainer config={chartConfig} className="h-[200px]">
@@ -347,7 +381,11 @@ const TAExecutiveDashboard: React.FC = () => {
                     <XAxis dataKey="role" />
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="days" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
+                    <Bar
+                      dataKey="days"
+                      fill="hsl(var(--chart-1))"
+                      radius={[8, 8, 0, 0]}
+                    />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -362,8 +400,12 @@ const TAExecutiveDashboard: React.FC = () => {
           >
             <Card>
               <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-base">Recruitment Pipeline</CardTitle>
-                <CardDescription className="text-xs">Candidates at each stage</CardDescription>
+                <CardTitle className="text-base">
+                  Recruitment Pipeline
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Candidates at each stage
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <ChartContainer config={chartConfig} className="h-[200px]">
@@ -396,7 +438,9 @@ const TAExecutiveDashboard: React.FC = () => {
             <Card>
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base">Team Performance</CardTitle>
-                <CardDescription className="text-xs">Recruiter statistics</CardDescription>
+                <CardDescription className="text-xs">
+                  Recruiter statistics
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <ChartContainer config={chartConfig} className="h-[180px]">
@@ -406,9 +450,21 @@ const TAExecutiveDashboard: React.FC = () => {
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Legend />
-                    <Bar dataKey="candidates" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="interviews" fill="hsl(var(--chart-2))" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="feedbacks" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                    <Bar
+                      dataKey="candidates"
+                      fill="hsl(var(--chart-1))"
+                      radius={[8, 8, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="interviews"
+                      fill="hsl(var(--chart-2))"
+                      radius={[8, 8, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="feedbacks"
+                      fill="#f59e0b"
+                      radius={[8, 8, 0, 0]}
+                    />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -425,50 +481,50 @@ const TAExecutiveDashboard: React.FC = () => {
               <CardHeader className="p-3 pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Job Management</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/jobs')}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/jobs')}
                     className="h-7 px-2 text-xs"
-              >
-                View All
-              </Button>
-            </div>
+                  >
+                    View All
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="space-y-2">
-              <button
-                onClick={() => navigate('/register-job')}
+                  <button
+                    onClick={() => navigate('/register-job')}
                     className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
                         <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
-                      Create New Job
-                    </p>
+                          Create New Job
+                        </p>
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
-                      Post a new job opening
-                    </p>
-                  </div>
+                          Post a new job opening
+                        </p>
+                      </div>
                       <Plus className="h-3 w-3 text-gray-400" />
-                </div>
-              </button>
-              <button
-                onClick={() => navigate('/organizations')}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/organizations')}
                     className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
                         <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
-                      Manage Organizations
-                    </p>
+                          Manage Organizations
+                        </p>
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
-                      Add or edit organizations
-                    </p>
-                  </div>
+                          Add or edit organizations
+                        </p>
+                      </div>
                       <Target className="h-3 w-3 text-gray-400" />
-                </div>
-              </button>
+                    </div>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -485,7 +541,9 @@ const TAExecutiveDashboard: React.FC = () => {
           <Card>
             <CardHeader className="p-3 pb-2">
               <CardTitle className="text-base">Recruitment Pipeline</CardTitle>
-              <CardDescription className="text-xs">Candidates by stage</CardDescription>
+              <CardDescription className="text-xs">
+                Candidates by stage
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
@@ -522,20 +580,20 @@ const TAExecutiveDashboard: React.FC = () => {
                   },
                 ].map((stage, i) => (
                   <motion.div
-                key={stage.label}
+                    key={stage.label}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 * i }}
                     className="p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900"
-              >
-                <div
+                  >
+                    <div
                       className={`w-full h-8 rounded-lg bg-gradient-to-r ${stage.gradient} text-white flex items-center justify-center font-semibold text-xs shadow`}
-                >
-                  {stage.count}
-                </div>
+                    >
+                      {stage.count}
+                    </div>
                     <p className="mt-2 text-[10px] font-semibold text-gray-700 dark:text-gray-200 text-center">
-                  {stage.label}
-                </p>
+                      {stage.label}
+                    </p>
                     <div className="mt-1 h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded">
                       <div
                         className="h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded"
@@ -560,7 +618,9 @@ const TAExecutiveDashboard: React.FC = () => {
             <Card>
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base">Upcoming Interviews</CardTitle>
-                <CardDescription className="text-xs">Scheduled interviews for this week</CardDescription>
+                <CardDescription className="text-xs">
+                  Scheduled interviews for this week
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="grid md:grid-cols-2 gap-2">
@@ -620,7 +680,9 @@ const TAExecutiveDashboard: React.FC = () => {
             <Card>
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base">Recent Activity</CardTitle>
-                <CardDescription className="text-xs">Latest actions and updates</CardDescription>
+                <CardDescription className="text-xs">
+                  Latest actions and updates
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="space-y-2">
@@ -635,7 +697,9 @@ const TAExecutiveDashboard: React.FC = () => {
                       <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
                         {activity.resource}
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{activity.time}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                        {activity.time}
+                      </p>
                     </div>
                   ))}
                 </div>

@@ -71,4 +71,3 @@ export const INTERVIEWS = {
   UPDATE: (id: number) => `/api/v1/interviews/${id}`,
   DELETE: (id: number) => `/api/v1/interviews/${id}`,
 } as const;
-

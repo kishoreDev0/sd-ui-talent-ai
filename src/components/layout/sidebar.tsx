@@ -310,6 +310,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   return (
     <div
@@ -366,7 +367,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
       {/* Footer with Profile Dropdown */}
       <div className="border-t p-4">
         {isCollapsed ? (
-          <DropdownMenu>
+          <DropdownMenu open={profileDropdownOpen} onOpenChange={setProfileDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -381,20 +382,26 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {role === 'admin' && (
-                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                <DropdownMenuItem onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setIsInviteOpen(true);
+                }}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
+              <DropdownMenuItem onClick={() => {
+                setProfileDropdownOpen(false);
+                setIsLogoutOpen(true);
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <DropdownMenu>
+          <DropdownMenu open={profileDropdownOpen} onOpenChange={setProfileDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -416,13 +423,19 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {role === 'admin' && (
-                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                <DropdownMenuItem onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setIsInviteOpen(true);
+                }}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
+              <DropdownMenuItem onClick={() => {
+                setProfileDropdownOpen(false);
+                setIsLogoutOpen(true);
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -442,16 +455,36 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
       </Dialog>
 
       {/* Logout Confirm Dialog */}
-      <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
+      <Dialog 
+        open={isLogoutOpen} 
+        onOpenChange={(open) => {
+          setIsLogoutOpen(open);
+          if (!open) {
+            setProfileDropdownOpen(false);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Are you sure you want to log out?</p>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to log out?
+            </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={handleLogout}>Log out</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsLogoutOpen(false);
+                  setProfileDropdownOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleLogout}>
+                Log out
+              </Button>
             </div>
           </div>
         </DialogContent>

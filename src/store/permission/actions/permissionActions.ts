@@ -16,4 +16,3 @@ export const syncPermissions = createAsyncThunk<
     return rejectWithValue({ message: 'Failed to sync permissions' });
   }
 });
-

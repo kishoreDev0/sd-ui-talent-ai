@@ -17,9 +17,7 @@ import type {
  */
 export const getAllJobs = async (): Promise<Job[]> => {
   try {
-    const response = await axiosInstance.get<ListJobsResponse>(
-      JOBS.LIST,
-    );
+    const response = await axiosInstance.get<ListJobsResponse>(JOBS.LIST);
     // Handle different response formats
     return (
       response.data.data ||

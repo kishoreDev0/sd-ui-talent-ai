@@ -32,7 +32,9 @@ export const getRoleWithPermissions = createAsyncThunk<
     const res = await roleAPI.getAllRoleWithPermissions(params as any);
     return res.data as ListRolesResponse;
   } catch {
-    return rejectWithValue({ message: 'Failed to load roles with permissions' });
+    return rejectWithValue({
+      message: 'Failed to load roles with permissions',
+    });
   }
 });
 

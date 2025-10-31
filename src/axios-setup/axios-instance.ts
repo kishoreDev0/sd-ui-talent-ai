@@ -11,10 +11,7 @@ import axios, {
 } from 'axios';
 
 // Get API URL from environment variables
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:5010';
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5010';
 
 /**
  * Create axios instance with default configuration

@@ -17,7 +17,10 @@ const DashboardRouter: React.FC = () => {
     ? JSON.parse(localStorage.getItem('user')!)
     : null;
   const roleId: number | undefined =
-    user?.role?.id ?? user?.role_id ?? storedUser?.role?.id ?? storedUser?.role_id;
+    user?.role?.id ??
+    user?.role_id ??
+    storedUser?.role?.id ??
+    storedUser?.role_id;
 
   const renderDashboard = () => {
     switch (roleId) {

@@ -72,53 +72,53 @@ const UsersPage: React.FC = () => {
     <MainLayout role={role}>
       <div className="space-y-6 p-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-600 mt-2">Manage team members</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">Users</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Manage team members</p>
         </div>
 
         {!(roleId === 1 || roleId === 2) ? (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-300">
             Only admins and TA executives can view users.
           </div>
         ) : loading ? (
-          <div className="text-sm text-gray-600">Loading users…</div>
+          <div className="text-sm text-gray-600 dark:text-gray-300">Loading users…</div>
         ) : error ? (
-          <div className="text-sm text-red-600">{error}</div>
+          <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-              <thead className="bg-gray-50 text-left text-sm text-gray-700">
+            <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
+              <thead className="bg-gray-50 dark:bg-slate-900 text-left text-sm text-gray-700 dark:text-gray-300">
                 <tr>
-                  <th className="px-4 py-2 border-b">Name</th>
-                  <th className="px-4 py-2 border-b">Email</th>
-                  <th className="px-4 py-2 border-b">Role</th>
-                  <th className="px-4 py-2 border-b">Status</th>
-                  <th className="px-4 py-2 border-b">Created</th>
+                  <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">Name</th>
+                  <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">Email</th>
+                  <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">Role</th>
+                  <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">Status</th>
+                  <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">Created</th>
                 </tr>
               </thead>
-              <tbody className="text-sm">
+              <tbody className="text-sm bg-white dark:bg-slate-800">
                 {users.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-3 border-b" colSpan={5}>
+                    <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-center" colSpan={5}>
                       No users found.
                     </td>
                   </tr>
                 ) : (
                   users.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 border-b">
+                    <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-200 dark:border-gray-700">
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         {u.first_name || u.last_name
                           ? `${u.first_name || ''} ${u.last_name || ''}`.trim()
                           : u.name || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b">{u.email}</td>
-                      <td className="px-4 py-3 border-b">
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">{u.email}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         {u.role?.name || u.role_name || '—'}
                       </td>
-                      <td className="px-4 py-3 border-b">
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         {u.is_active ? 'Active' : 'Inactive'}
                       </td>
-                      <td className="px-4 py-3 border-b">
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         {u.created_at
                           ? new Date(u.created_at).toLocaleDateString()
                           : '—'}

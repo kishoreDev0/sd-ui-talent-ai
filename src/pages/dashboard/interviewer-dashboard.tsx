@@ -255,32 +255,32 @@ const InterviewerDashboard: React.FC = () => {
                   {scheduledInterviews.length === 0 ? (
                     <div className="text-center text-gray-500 dark:text-gray-400 py-10">
                       No scheduled interviews
-                        </div>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {scheduledInterviews.map((candidate) => (
                         <button
-                              key={candidate.id}
-                              onClick={() => {
-                                setSelectedCandidate(candidate);
-                                setIsDetailModalOpen(true);
-                              }}
+                          key={candidate.id}
+                          onClick={() => {
+                            setSelectedCandidate(candidate);
+                            setIsDetailModalOpen(true);
+                          }}
                           className="w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-white/10 hover:shadow-md transition-all"
-                            >
+                        >
                           <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">
-                                    {candidate.avatar}
-                                  </div>
+                                {candidate.avatar}
+                              </div>
                               <div>
                                 <div className="font-medium text-gray-900 dark:text-gray-100">
-                                      {candidate.name}
-                                  </div>
+                                  {candidate.name}
+                                </div>
                                 <div className="text-xs text-gray-600 dark:text-gray-300">
                                   {candidate.position}
                                 </div>
                               </div>
-                              </div>
+                            </div>
                             <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
                               <Clock className="w-4 h-4 text-gray-500 dark:text-gray-300" />
                               <span>
@@ -295,7 +295,7 @@ const InterviewerDashboard: React.FC = () => {
                                 {candidate.interviewTime
                                   ? ` at ${candidate.interviewTime}`
                                   : ''}
-                                  </span>
+                              </span>
                             </div>
                           </div>
                         </button>
@@ -383,13 +383,13 @@ const InterviewerDashboard: React.FC = () => {
                             ))}
                           </div>
                         </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
                 </>
-          )}
+              )}
             </div>
-        </div>
+          </div>
         </motion.div>
       </div>
 
@@ -551,7 +551,7 @@ const InterviewerDashboard: React.FC = () => {
                   key={`${c.id}-${c.interviewTime}`}
                   className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800"
                 >
-            <div>
+                  <div>
                     <div className="font-medium text-gray-900 dark:text-gray-100">
                       {c.name}
                     </div>

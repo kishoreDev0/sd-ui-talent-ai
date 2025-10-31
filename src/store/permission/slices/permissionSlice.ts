@@ -1,5 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { PermissionsState, PermissionItem } from '@/store/permission/types/permissionTypes';
+import type {
+  PermissionsState,
+  PermissionItem,
+} from '@/store/permission/types/permissionTypes';
 import { syncPermissions } from '../actions/permissionActions';
 
 const initialState: PermissionsState = {
@@ -24,25 +27,45 @@ const parsePermissions = (data: {
   // Process existing
   (data.existing || []).forEach((key: string) => {
     const [module, action] = key.split('.');
-    allPerms.push({ key, module: module || '', action: action || '', status: 'existing' });
+    allPerms.push({
+      key,
+      module: module || '',
+      action: action || '',
+      status: 'existing',
+    });
   });
 
   // Process created
   (data.created || []).forEach((key: string) => {
     const [module, action] = key.split('.');
-    allPerms.push({ key, module: module || '', action: action || '', status: 'created' });
+    allPerms.push({
+      key,
+      module: module || '',
+      action: action || '',
+      status: 'created',
+    });
   });
 
   // Process updated
   (data.updated || []).forEach((key: string) => {
     const [module, action] = key.split('.');
-    allPerms.push({ key, module: module || '', action: action || '', status: 'updated' });
+    allPerms.push({
+      key,
+      module: module || '',
+      action: action || '',
+      status: 'updated',
+    });
   });
 
   // Process deleted
   (data.deleted || []).forEach((key: string) => {
     const [module, action] = key.split('.');
-    allPerms.push({ key, module: module || '', action: action || '', status: 'deleted' });
+    allPerms.push({
+      key,
+      module: module || '',
+      action: action || '',
+      status: 'deleted',
+    });
   });
 
   return allPerms;
@@ -68,9 +91,9 @@ const permissionReducer = createSlice({
         state.error = null;
       })
       .addCase(syncPermissions.fulfilled, (state, action) => {
-        const data = action.payload?.data;
-        if (data) {
-          const allPerms = parsePermissions(data);
+        const result = action.payload?.data?.result;
+        if (result) {
+          const allPerms = parsePermissions(result);
           state.permissions = allPerms;
           state.total = allPerms.length;
           state.totalPages = Math.ceil(allPerms.length / state.pageSize);
@@ -86,6 +109,6 @@ const permissionReducer = createSlice({
   },
 });
 
-export const { setPermissionPage, setPermissionPageSize } = permissionReducer.actions;
+export const { setPermissionPage, setPermissionPageSize } =
+  permissionReducer.actions;
 export default permissionReducer.reducer;
-
