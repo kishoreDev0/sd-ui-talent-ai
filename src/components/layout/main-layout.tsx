@@ -68,7 +68,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-900">Talent AI</h1>
+          <h1 className="text-lg font-semibold text-gray-900">TalentEdge AI</h1>
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 

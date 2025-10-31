@@ -326,7 +326,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
-          {!isCollapsed && <span className="font-semibold">Talent AI</span>}
+          {!isCollapsed && <span className="font-semibold">TalentEdge AI</span>}
         </div>
         {!isCollapsed && (
           <div className="ml-auto flex items-center gap-1">
@@ -380,24 +380,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-              </DropdownMenuItem>
               {role === 'admin' && (
                 <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -427,24 +415,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-              </DropdownMenuItem>
               {role === 'admin' && (
                 <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setIsLogoutOpen(true)}>
                 <LogOut className="mr-2 h-4 w-4" />

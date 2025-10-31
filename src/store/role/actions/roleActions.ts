@@ -15,10 +15,24 @@ export const getAllRole = createAsyncThunk<
   { rejectValue: { message: string } }
 >('role/getAllRole', async (params, { rejectWithValue }) => {
   try {
-    const res = await roleAPI.getAllRole(params as any);
+    const res = await roleAPI.getAllRoleWithPermissions(params as any);
+    // API returns: { success, status_code, timestamp, error, data: { result, total, page, page_size, total_pages } }
     return res.data as ListRolesResponse;
   } catch {
     return rejectWithValue({ message: 'Failed to load roles' });
+  }
+});
+
+export const getRoleWithPermissions = createAsyncThunk<
+  ListRolesResponse,
+  { page?: number; page_size?: number; active_only?: boolean } | void,
+  { rejectValue: { message: string } }
+>('role/getRoleWithPermissions', async (params, { rejectWithValue }) => {
+  try {
+    const res = await roleAPI.getAllRoleWithPermissions(params as any);
+    return res.data as ListRolesResponse;
+  } catch {
+    return rejectWithValue({ message: 'Failed to load roles with permissions' });
   }
 });
 

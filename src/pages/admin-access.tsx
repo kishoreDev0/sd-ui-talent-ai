@@ -7,10 +7,13 @@ import { Search, Plus, MoreHorizontal } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { getAllRole, createRole } from '@/store/role/actions/roleActions';
+import { getAllRole, createRole, updateRole } from '@/store/role/actions/roleActions';
+import { syncPermissions } from '@/store/permission/actions/permissionActions';
+import { setPermissionPage } from '@/store/permission/slices/permissionSlice';
 
 const AdminAccessPage: React.FC = () => {
   const role = useUserRole();
+  const [activeTab, setActiveTab] = useState<'roles' | 'permissions'>('roles');
 
   // For Roles CRUD UI
   // Removed secondary tabs
@@ -65,18 +68,18 @@ const AdminAccessPage: React.FC = () => {
   const [isPermOpen, setIsPermOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState<{ id: number; name: string; description?: string; active?: boolean } | null>(null);
 
-  type Access = { read: boolean; write: boolean; update: boolean; edit: boolean; delete: boolean };
-  type PermissionMatrix = Record<string, Access>;
-  const defaultMatrix: PermissionMatrix = {
-    Jobs: { read: false, write: false, update: false, edit: false, delete: false },
-    Candidates: { read: false, write: false, update: false, edit: false, delete: false },
-    Interviews: { read: false, write: false, update: false, edit: false, delete: false },
-    Analytics: { read: false, write: false, update: false, edit: false, delete: false },
-    Users: { read: false, write: false, update: false, edit: false, delete: false },
-    Settings: { read: false, write: false, update: false, edit: false, delete: false },
-  };
-  const [permMatrix, setPermMatrix] = useState<PermissionMatrix>(defaultMatrix);
+  // Dynamic permission matrix based on API response
+  type PermissionMatrix = Record<string, Record<string, { permission_id: number; role_permission_id: number | null; has_permission: boolean }>>;
+  const [permMatrix, setPermMatrix] = useState<PermissionMatrix>({});
   const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
+
+  // Permissions from Redux
+  const { permissions, loading: scanning, total: permTotal, page: permPage, pageSize: permPageSize, totalPages: permTotalPages } = useAppSelector((state) => state.permission);
+
+  // Client-side pagination for permissions
+  const startIndex = (permPage - 1) * permPageSize;
+  const endIndex = startIndex + permPageSize;
+  const paginatedPermissions = permissions.slice(startIndex, endIndex);
 
   const openEdit = (r: { id: number; name: string; description?: string; active?: boolean }) => {
     setActionMenuOpenId(null);
@@ -89,22 +92,49 @@ const AdminAccessPage: React.FC = () => {
     setActionMenuOpenId(null);
     setIsEditOpen(false);
     setCurrentRole(r);
-    const seeded: PermissionMatrix = JSON.parse(JSON.stringify(defaultMatrix));
-    if (r.name === 'TA_Executive') {
-      seeded.Jobs = { read: true, write: true, update: true, edit: true, delete: true };
+    
+    // Find the role with permissions from Redux state
+    const roleWithPerms = roles.find((role) => role.id === r.id);
+    const seeded: PermissionMatrix = {};
+    
+    // Populate matrix from API response
+    if (roleWithPerms?.resources && Array.isArray(roleWithPerms.resources)) {
+      roleWithPerms.resources.forEach((resourceData) => {
+        const resourceName = resourceData.resource;
+        seeded[resourceName] = {};
+        
+        // Populate actions for this resource
+        if (resourceData.actions) {
+          Object.keys(resourceData.actions).forEach((actionName) => {
+            seeded[resourceName][actionName] = {
+              permission_id: resourceData.actions[actionName].permission_id,
+              role_permission_id: resourceData.actions[actionName].role_permission_id,
+              has_permission: resourceData.actions[actionName].has_permission,
+            };
+          });
+        }
+      });
     }
-    if (r.name === 'Interview_Panel') {
-      seeded.Jobs = { read: true, write: false, update: false, edit: false, delete: false };
-    }
+    
     setPermMatrix(seeded);
     setIsPermOpen(true);
   };
 
-  const togglePerm = (module: string, key: keyof Access) => {
+  const togglePerm = (resource: string, action: string) => {
     setPermMatrix((prev) => ({
       ...prev,
-      [module]: { ...prev[module], [key]: !prev[module][key] },
+      [resource]: {
+        ...prev[resource],
+        [action]: {
+          ...prev[resource][action],
+          has_permission: !prev[resource][action].has_permission,
+        },
+      },
     }));
+  };
+
+  const handleScanPermissions = () => {
+    dispatch(syncPermissions());
   };
 
   return (
@@ -121,10 +151,26 @@ const AdminAccessPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Top toggle removed (always show Roles) */}
+        {/* Tabs */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeTab === 'roles' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('roles')}
+            className="h-8 px-4 text-sm"
+          >
+            Roles
+          </Button>
+          <Button
+            variant={activeTab === 'permissions' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('permissions')}
+            className="h-8 px-4 text-sm"
+          >
+            Permissions
+          </Button>
+        </div>
 
         {/* Content */}
-        {true ? (
+        {activeTab === 'roles' ? (
           <div className="space-y-3">
             {/* Secondary tabs removed */}
             {/* Search and Add Button */}
@@ -286,7 +332,76 @@ const AdminAccessPage: React.FC = () => {
               </div>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Permissions
+              </h2>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 px-3 text-sm"
+                disabled={scanning}
+                onClick={handleScanPermissions}
+              >
+                <Search className="h-3.5 w-3.5 mr-1.5" /> {scanning ? 'Scanning...' : 'Scan Permissions'}
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-600 dark:text-gray-300 border-b">
+                    <th className="py-2 pr-4 text-xs font-medium">Module</th>
+                    <th className="py-2 pr-4 text-xs font-medium">Action</th>
+                    <th className="py-2 pr-4 text-xs font-medium">Key</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-900 dark:text-gray-100">
+                  {permissions.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-gray-500 text-sm">
+                        No permissions loaded. Click &quot;Scan Permissions&quot; to fetch from API.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPermissions.map((perm) => (
+                      <tr key={perm.key} className="border-b border-gray-200 dark:border-white/10">
+                        <td className="py-2 pr-4 text-xs font-medium capitalize">{perm.module}</td>
+                        <td className="py-2 pr-4 text-xs capitalize">{perm.action}</td>
+                        <td className="py-2 pr-4 text-xs font-mono text-gray-600 dark:text-gray-400">{perm.key}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            {permissions.length > 0 && (
+              <div className="flex items-center justify-between py-1 border-t border-gray-200 dark:border-white/10 mt-4">
+                <div className="text-sm text-gray-700 dark:text-gray-200">
+                  Page {permPage} • {paginatedPermissions.length} of {permTotal} permissions
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    disabled={permPage <= 1}
+                    className="text-gray-700 h-8 px-3"
+                    onClick={() => dispatch(setPermissionPage(Math.max(1, permPage - 1)))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={permPage >= permTotalPages}
+                    className="text-gray-700 h-8 px-3"
+                    onClick={() => dispatch(setPermissionPage(permPage + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {/* Edit Role Dialog */}
       <Dialog
@@ -323,10 +438,10 @@ const AdminAccessPage: React.FC = () => {
               <Button
                 disabled={isSaving || !currentRole?.name}
                 onClick={async () => {
-                  if (!currentRole?.name) return;
-                  if (isCreating) {
-                    try {
-                      setIsSaving(true);
+                  if (!currentRole?.name || !currentRole?.id) return;
+                  try {
+                    setIsSaving(true);
+                    if (isCreating) {
                       await dispatch(
                         createRole({
                           payload: {
@@ -335,13 +450,25 @@ const AdminAccessPage: React.FC = () => {
                           },
                         }),
                       ).unwrap();
-                      await dispatch(getAllRole());
-                      setIsEditOpen(false);
-                    } finally {
-                      setIsSaving(false);
+                    } else {
+                      await dispatch(
+                        updateRole({
+                          id: currentRole.id,
+                          payload: {
+                            name: currentRole.name,
+                            active: currentRole?.active ?? true,
+                          },
+                        }),
+                      ).unwrap();
                     }
-                  } else {
+                    await dispatch(getAllRole({ page, page_size: pageSize, active_only: activeOnly }));
                     setIsEditOpen(false);
+                    setCurrentRole(null);
+                    setIsCreating(false);
+                  } catch (error) {
+                    console.error('Error saving role:', error);
+                  } finally {
+                    setIsSaving(false);
                   }
                 }}
               >
@@ -365,35 +492,72 @@ const AdminAccessPage: React.FC = () => {
             <DialogTitle>Manage Permissions — {currentRole?.name || ''}</DialogTitle>
           </DialogHeader>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th className="py-2 pr-4">Module</th>
-                  <th className="py-2 pr-4">Read</th>
-                  <th className="py-2 pr-4">Write</th>
-                  <th className="py-2 pr-4">Update</th>
-                  <th className="py-2 pr-4">Edit</th>
-                  <th className="py-2 pr-4">Delete</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-900 dark:text-gray-100">
-                {Object.keys(permMatrix).map((mod) => (
-                  <tr key={mod} className="border-t">
-                    <td className="py-2 pr-4 font-medium">{mod}</td>
-                    {(['read','write','update','edit','delete'] as Array<'read'|'write'|'update'|'edit'|'delete'>).map((k) => (
-                      <td key={k} className="py-2 pr-4">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={permMatrix[mod][k]}
-                          onChange={() => togglePerm(mod, k)}
-                        />
-                      </td>
+            {Object.keys(permMatrix).length === 0 ? (
+              <p className="text-sm text-gray-500 py-4 text-center">No permissions available for this role</p>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-600 dark:text-gray-300 border-b">
+                    <th className="py-2 pr-4">Resource</th>
+                    {(() => {
+                      // Get all unique actions across all resources
+                      const allActions = new Set<string>();
+                      Object.values(permMatrix).forEach((resource) => {
+                        Object.keys(resource).forEach((action) => allActions.add(action));
+                      });
+                      return Array.from(allActions).sort();
+                    })().map((action) => (
+                      <th key={action} className="py-2 pr-4 capitalize">{action}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-gray-900 dark:text-gray-100">
+                  {Object.keys(permMatrix).map((resource) => {
+                    const resourceActions = permMatrix[resource];
+                    const allActions = (() => {
+                      const actions = new Set<string>();
+                      Object.values(permMatrix).forEach((r) => {
+                        Object.keys(r).forEach((a) => actions.add(a));
+                      });
+                      return Array.from(actions).sort();
+                    })();
+                    
+                    return (
+                      <tr key={resource} className="border-t">
+                        <td className="py-2 pr-4 font-medium capitalize">
+                          {resource.replace(/_/g, ' ')}
+                        </td>
+                        {allActions.map((action) => {
+                          const permission = resourceActions[action];
+                          if (!permission) {
+                            return (
+                              <td key={action} className="py-2 pr-4">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  disabled
+                                  checked={false}
+                                />
+                              </td>
+                            );
+                          }
+                          return (
+                            <td key={action} className="py-2 pr-4">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={permission.has_permission}
+                                onChange={() => togglePerm(resource, action)}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-3">
             <Button variant="outline" onClick={() => setIsPermOpen(false)}>Cancel</Button>

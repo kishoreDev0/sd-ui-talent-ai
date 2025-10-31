@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { useAppSelector } from '@/store';
 import axiosInstance from '@/axios-setup/axios-instance';
+import { USERS } from '@/store/endpoints';
 
 const UsersPage: React.FC = () => {
   const role = useUserRole();
@@ -40,7 +41,7 @@ const UsersPage: React.FC = () => {
         setLoading(true);
         setError(null);
         // Expecting backend endpoint to support pagination. Adjust if needed.
-        const res = await axiosInstance.get('/api/v1/users', {
+        const res = await axiosInstance.get(USERS.LIST, {
           params: { page: 1, page_size: 20 },
         });
         const data = res.data?.data || res.data;

@@ -34,17 +34,14 @@ const roleReducer = createSlice({
       .addCase(
         getAllRole.fulfilled,
         (state, action: PayloadAction<ListRolesResponse>) => {
-        const payloadData: any = action.payload?.data as any;
-          const list: Role[] | undefined = Array.isArray(payloadData)
-            ? (payloadData as Role[])
-            : (payloadData?.results as Role[] | undefined);
-          state.roles = Array.isArray(list) ? list : [];
-        if (payloadData && !Array.isArray(payloadData)) {
-          state.total = payloadData.total ?? 0;
-          state.page = payloadData.page ?? 1;
-          state.pageSize = payloadData.page_size ?? state.pageSize;
-          state.totalPages = payloadData.total_pages ?? 0;
-        }
+          const response = action.payload;
+          if (response?.data) {
+            state.roles = Array.isArray(response.data.result) ? response.data.result : [];
+            state.total = response.data.total ?? 0;
+            state.page = response.data.page ?? 1;
+            state.pageSize = response.data.page_size ?? state.pageSize;
+            state.totalPages = response.data.total_pages ?? 0;
+          }
           state.loading = false;
           state.error = null;
         },
