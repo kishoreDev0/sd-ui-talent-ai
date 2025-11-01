@@ -15,7 +15,9 @@ export const getAllRole = createAsyncThunk<
   { rejectValue: { message: string } }
 >('role/getAllRole', async (params, { rejectWithValue }) => {
   try {
-    const res = await roleAPI.getAllRoleWithPermissions(params as any);
+    const res = await roleAPI.getAllRoleWithPermissions(
+      params as { page?: number; page_size?: number; active_only?: boolean },
+    );
     // API returns: { success, status_code, timestamp, error, data: { result, total, page, page_size, total_pages } }
     return res.data as ListRolesResponse;
   } catch {
@@ -29,7 +31,9 @@ export const getRoleWithPermissions = createAsyncThunk<
   { rejectValue: { message: string } }
 >('role/getRoleWithPermissions', async (params, { rejectWithValue }) => {
   try {
-    const res = await roleAPI.getAllRoleWithPermissions(params as any);
+    const res = await roleAPI.getAllRoleWithPermissions(
+      params as { page?: number; page_size?: number; active_only?: boolean },
+    );
     return res.data as ListRolesResponse;
   } catch {
     return rejectWithValue({
@@ -89,3 +93,19 @@ export const deleteRole = createAsyncThunk<
     return rejectWithValue({ message: 'Failed to delete role' });
   }
 });
+
+export const updateRolePermissions = createAsyncThunk<
+  { id: number; permissionIds: number[] },
+  { id: number; permissionIds: number[] },
+  { rejectValue: { message: string } }
+>(
+  'role/updateRolePermissions',
+  async ({ id, permissionIds }, { rejectWithValue }) => {
+    try {
+      await roleAPI.updateRolePermissions(id, permissionIds);
+      return { id, permissionIds };
+    } catch {
+      return rejectWithValue({ message: 'Failed to update role permissions' });
+    }
+  },
+);

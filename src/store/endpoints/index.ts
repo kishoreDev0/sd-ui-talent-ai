@@ -31,6 +31,7 @@ export const ROLES = {
   CREATE: '/api/v1/roles',
   UPDATE: (id: number) => `/api/v1/roles/${id}`,
   DELETE: (id: number) => `/api/v1/roles/${id}`,
+  UPDATE_PERMISSIONS: (id: number) => `/api/v1/roles/${id}/permissions`,
 } as const;
 
 // Permissions endpoints

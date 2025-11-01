@@ -99,11 +99,14 @@ const authSlice = createSlice({
           );
           // store user id for quick access
           try {
-            const uid = (action.payload.user as any)?.id;
+            const uid = action.payload.user?.id;
             if (uid !== undefined && uid !== null) {
               localStorage.setItem('user_id', String(uid));
             }
-          } catch {}
+          } catch (error) {
+            // Silently fail if user id cannot be stored
+            console.warn('Failed to store user_id:', error);
+          }
           localStorage.setItem(
             AUTH_STORAGE_KEYS.ACCESS_TOKEN,
             action.payload.tokens.access_token,

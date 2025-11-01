@@ -30,8 +30,6 @@ import Organizations from './pages/organizations';
 import MajorSkills from './pages/major-skills';
 import { AuthProvider } from './components/login/authState';
 import PrivateRoute from './axios-setup/private-route';
-import GoogleAuthSuccess from './components/login/googleSignIn';
-import GitHubAuthSuccess from './components/login/githubSignIn';
 import Loader from './components/loader/loader';
 
 const App = () => {
@@ -122,14 +120,6 @@ const App = () => {
             <Route
               path="/register-job"
               element={<PrivateRoute element={<RegisterJob />} />}
-            />
-            <Route
-              path="/google-auth-success"
-              element={<GoogleAuthSuccess />}
-            />
-            <Route
-              path="/github-auth-success"
-              element={<GitHubAuthSuccess />}
             />
             <Route path="/" element={<Navigate to="/dashboard" />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />

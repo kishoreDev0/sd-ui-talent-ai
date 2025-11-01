@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Bell,
   Search,
   Settings,
   User,
   Mail,
-  Phone,
-  Calendar,
-  Clock,
   TrendingUp,
   TrendingDown,
   Star,
@@ -17,14 +13,12 @@ import {
   AlertCircle,
   Info,
   Download,
-  Upload,
   Filter,
   MoreVertical,
   Plus,
   Edit,
   Trash2,
   Eye,
-  EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

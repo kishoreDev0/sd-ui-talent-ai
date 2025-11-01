@@ -7,32 +7,22 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Search,
-  TrendingUp,
-  Edit,
-  Trash2,
   UserPlus,
+  Eye,
   Phone,
   MapPin,
   Building2,
   Briefcase,
   Calendar,
-  MoreVertical,
+  Mail,
   Star,
-  CheckCircle2,
   User,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import CustomSelect from '@/components/ui/custom-select';
 import { useUserRole } from '@/utils/getUserRole';
 
@@ -61,7 +51,7 @@ interface Candidate {
 const CandidatesPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [candidates, setCandidates] = useState<Candidate[]>([
+  const [candidates] = useState<Candidate[]>([
     {
       id: 1,
       firstName: 'Sarah',
@@ -129,7 +119,10 @@ const CandidatesPage: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null,
+  );
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const getStatusColor = (status: Candidate['status']) => {
     const colors: Record<Candidate['status'], string> = {
@@ -165,9 +158,9 @@ const CandidatesPage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDelete = (id: number) => {
-    setCandidates(candidates.filter((c) => c.id !== id));
-    setShowDeleteModal(null);
+  const handleViewDetails = (candidate: Candidate) => {
+    setSelectedCandidate(candidate);
+    setIsDetailsOpen(true);
   };
 
   const statusOptions = [
@@ -183,13 +176,13 @@ const CandidatesPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Candidates</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Manage and track all candidate profiles
               </p>
             </div>
@@ -203,16 +196,16 @@ const CandidatesPage: React.FC = () => {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
                 <Input
                   type="text"
                   placeholder="Search by name, email, or skills..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-9"
+                  className="pl-10 h-9 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600"
                 />
               </div>
               <div className="w-full md:w-48">
@@ -234,13 +227,13 @@ const CandidatesPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center"
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center"
               >
-                <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <User className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No candidates found
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {searchTerm
                     ? 'Try adjusting your search terms'
                     : 'Get started by registering a new candidate'}
@@ -259,7 +252,7 @@ const CandidatesPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
               >
                 {filteredCandidates.map((candidate, index) => (
                   <motion.div
@@ -268,167 +261,47 @@ const CandidatesPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4 }}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-lg transition-all duration-300 group"
+                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all duration-300 group"
                   >
-                    {/* Card Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="relative">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                    {/* Card Header - Minimal Info */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                             {candidate.firstName.charAt(0)}
                             {candidate.lastName.charAt(0)}
-                          </div>
-                          {candidate.rating && (
-                            <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1">
-                              <Star className="h-3 w-3 text-yellow-800 fill-current" />
-                            </div>
-                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold text-gray-900 truncate">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                             {candidate.firstName} {candidate.lastName}
                           </h3>
-                          <p className="text-xs text-gray-600 truncate">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">
                             {candidate.email}
                           </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {candidate.mobile}
-                            </span>
-                          </div>
                         </div>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              navigate(`/candidates/edit/${candidate.id}`)
-                            }
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setShowDeleteModal(candidate.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <button
+                        onClick={() => handleViewDetails(candidate)}
+                        className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex-shrink-0"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
                     </div>
 
-                    {/* Candidate Info */}
-                    <div className="space-y-2 mb-4">
-                      {candidate.currentCompany && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <Building2 className="h-3 w-3" />
-                          <span className="truncate">
-                            {candidate.currentCompany}
-                          </span>
-                        </div>
-                      )}
-                      {candidate.city && candidate.country && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <MapPin className="h-3 w-3" />
-                          <span>
-                            {candidate.city}, {candidate.country}
-                          </span>
-                        </div>
-                      )}
-                      {candidate.experience && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <Briefcase className="h-3 w-3" />
-                          <span>{candidate.experience}</span>
-                        </div>
-                      )}
-                      {candidate.organization && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span className="truncate">
-                            {candidate.organization}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <Calendar className="h-3 w-3" />
-                        <span>{candidate.appliedDate}</span>
-                      </div>
-                    </div>
-
-                    {/* Skills */}
-                    {candidate.skills.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {candidate.skills.slice(0, 3).map((skill, idx) => (
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between">
                             <span
-                              key={idx}
-                              className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-xs font-medium"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {candidate.skills.length > 3 && (
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">
-                              +{candidate.skills.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)}`}
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)} dark:bg-opacity-20`}
                         >
                           {candidate.status}
                         </span>
                         {candidate.matchScore && (
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3 text-blue-600" />
                             <span
                               className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}
                             >
                               {candidate.matchScore}%
                             </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            navigate(`/candidates/view/${candidate.id}`)
-                          }
-                        >
-                          <User className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            navigate(`/candidates/edit/${candidate.id}`)
-                          }
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -437,34 +310,227 @@ const CandidatesPage: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog
-          open={!!showDeleteModal}
-          onOpenChange={(open) => !open && setShowDeleteModal(null)}
-        >
-          <DialogContent className="sm:max-w-md">
+        {/* Candidate Details Dialog */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Delete Candidate</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this candidate? This action
-                cannot be undone.
-              </DialogDescription>
+              <DialogTitle>Candidate Details</DialogTitle>
             </DialogHeader>
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteModal(null)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => showDeleteModal && handleDelete(showDeleteModal)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-              >
-                Delete
-              </Button>
+            {selectedCandidate && (
+              <div className="space-y-6 mt-4">
+                {/* Header Section */}
+                <div className="flex items-start gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                    {selectedCandidate.firstName.charAt(0)}
+                    {selectedCandidate.lastName.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {selectedCandidate.firstName} {selectedCandidate.lastName}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {selectedCandidate.email}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedCandidate.status)}`}
+                      >
+                        {selectedCandidate.status}
+                      </span>
+                      {selectedCandidate.matchScore && (
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getMatchColor(selectedCandidate.matchScore)}`}
+                        >
+                          Match: {selectedCandidate.matchScore}%
+                        </span>
+                      )}
+                      {selectedCandidate.rating && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {selectedCandidate.rating}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Personal Information */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Personal Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Email
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedCandidate.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Mobile
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedCandidate.mobile}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedCandidate.city && selectedCandidate.country && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Location
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {selectedCandidate.city}
+                            {selectedCandidate.state &&
+                              `, ${selectedCandidate.state}`}
+                            , {selectedCandidate.country}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedCandidate.experience && (
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Experience
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {selectedCandidate.experience}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Professional Information */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Professional Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedCandidate.currentCompany && (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Current Company
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {selectedCandidate.currentCompany}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedCandidate.organization && (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Organization
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {selectedCandidate.organization}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedCandidate.currentCTC && (
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Current CTC
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedCandidate.currentCTC}
+                        </p>
+                      </div>
+                    )}
+                    {selectedCandidate.expectedCTC && (
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Expected CTC
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedCandidate.expectedCTC}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Skills */}
+                {selectedCandidate.skills.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                      Skills
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCandidate.skills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md text-xs font-medium"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Major Skills */}
+                {selectedCandidate.majorSkills &&
+                  selectedCandidate.majorSkills.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                        Major Skills
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCandidate.majorSkills.map((skill, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-xs font-medium"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Additional Information */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    Additional Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Applied Date
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedCandidate.appliedDate}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

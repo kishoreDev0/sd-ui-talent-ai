@@ -18,4 +18,8 @@ export class RoleAPI {
   updateRole = async (id: number, payload: Omit<UpdateRoleRequest, 'id'>) =>
     axiosInstance.put(ROLES.UPDATE(id), payload);
   deleteRole = async (id: number) => axiosInstance.delete(ROLES.DELETE(id));
+  updateRolePermissions = async (id: number, permissionIds: number[]) =>
+    axiosInstance.patch(ROLES.UPDATE_PERMISSIONS(id), {
+      permission_ids: permissionIds,
+    });
 }

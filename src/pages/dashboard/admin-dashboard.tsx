@@ -172,7 +172,7 @@ const AdminDashboard: React.FC = () => {
                         className={`${metric.color} p-2 rounded-lg shadow-md`}
                       >
                         <Icon className="h-4 w-4 text-white" />
-          </div>
+                      </div>
                       <span
                         className={`text-xs font-semibold ${
                           metric.trend === 'up'
@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
                       >
                         {metric.change}
                       </span>
-          </div>
+                    </div>
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
                       {metric.value}
                     </h3>
@@ -205,7 +205,9 @@ const AdminDashboard: React.FC = () => {
         >
           <Card>
             <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">Quick Actions</CardTitle>
+              <CardTitle className="text-sm sm:text-base">
+                Quick Actions
+              </CardTitle>
               <CardDescription className="text-[10px] sm:text-xs">
                 Access admin features
               </CardDescription>
@@ -220,7 +222,9 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-white font-semibold text-[10px] sm:text-xs">
                     Manage Users
                   </p>
-                  <p className="text-blue-100 text-[9px] sm:text-[10px]">View all users</p>
+                  <p className="text-blue-100 text-[9px] sm:text-[10px]">
+                    View all users
+                  </p>
                 </button>
                 <button
                   onClick={() => navigate('/admin/access')}
@@ -239,7 +243,9 @@ const AdminDashboard: React.FC = () => {
                   className="group p-2 sm:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
                 >
                   <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">Analytics</p>
+                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                    Analytics
+                  </p>
                   <p className="text-green-100 text-[9px] sm:text-[10px]">
                     View system analytics
                   </p>
@@ -249,10 +255,14 @@ const AdminDashboard: React.FC = () => {
                   className="group p-2 sm:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
                 >
                   <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">Settings</p>
-                  <p className="text-orange-100 text-[9px] sm:text-[10px]">System settings</p>
+                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                    Settings
+                  </p>
+                  <p className="text-orange-100 text-[9px] sm:text-[10px]">
+                    System settings
+                  </p>
                 </button>
-      </div>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -267,15 +277,24 @@ const AdminDashboard: React.FC = () => {
             className="lg:col-span-2"
           >
             <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">User Growth Trend</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
-                Users and roles over time
-              </CardDescription>
-            </CardHeader>
+              <CardHeader className="p-2 sm:p-3 pb-2">
+                <CardTitle className="text-sm sm:text-base">
+                  User Growth Trend
+                </CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">
+                  Users and roles over time
+                </CardDescription>
+              </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer config={chartConfig} className="h-[180px] sm:h-[200px] w-full overflow-x-auto">
-                  <LineChart data={userGrowthData} width={undefined} height={undefined}>
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-[180px] sm:h-[200px] w-full overflow-x-auto"
+                >
+                  <LineChart
+                    data={userGrowthData}
+                    width={undefined}
+                    height={undefined}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -308,21 +327,26 @@ const AdminDashboard: React.FC = () => {
             transition={{ delay: 0.6 }}
           >
             <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">Role Distribution</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
-                Users by role
-              </CardDescription>
-            </CardHeader>
+              <CardHeader className="p-2 sm:p-3 pb-2">
+                <CardTitle className="text-sm sm:text-base">
+                  Role Distribution
+                </CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">
+                  Users by role
+                </CardDescription>
+              </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer config={chartConfig} className="h-[180px] sm:h-[200px] w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-[180px] sm:h-[200px] w-full"
+                >
                   <PieChart>
                     <Pie
                       data={roleDistributionData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: any) =>
+                      label={(entry: { percent?: number }) =>
                         entry.percent
                           ? `${(entry.percent * 100).toFixed(0)}%`
                           : ''
@@ -358,15 +382,24 @@ const AdminDashboard: React.FC = () => {
             transition={{ delay: 0.7 }}
           >
             <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">Access Activity</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
-                Daily logins and permission requests
-              </CardDescription>
-            </CardHeader>
+              <CardHeader className="p-2 sm:p-3 pb-2">
+                <CardTitle className="text-sm sm:text-base">
+                  Access Activity
+                </CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">
+                  Daily logins and permission requests
+                </CardDescription>
+              </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer config={chartConfig} className="h-[180px] sm:h-[200px] w-full overflow-x-auto">
-                  <BarChart data={accessActivityData} width={undefined} height={undefined}>
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-[180px] sm:h-[200px] w-full overflow-x-auto"
+                >
+                  <BarChart
+                    data={accessActivityData}
+                    width={undefined}
+                    height={undefined}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
@@ -395,9 +428,11 @@ const AdminDashboard: React.FC = () => {
             transition={{ delay: 0.8 }}
           >
             <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
+              <CardHeader className="p-2 sm:p-3 pb-2">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <CardTitle className="text-sm sm:text-base">User Management</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">
+                    User Management
+                  </CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
@@ -406,7 +441,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     View All
                   </Button>
-              </div>
+                </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
                 <div className="space-y-2">
@@ -422,9 +457,9 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           View and edit user accounts
                         </p>
-              </div>
+                      </div>
                       <UserCog className="h-3 w-3 text-gray-400" />
-            </div>
+                    </div>
                   </button>
                   <button
                     onClick={() => navigate('/admin/access')}
@@ -438,11 +473,11 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           Manage roles and permissions
                         </p>
-              </div>
+                      </div>
                       <Shield className="h-3 w-3 text-gray-400" />
-            </div>
+                    </div>
                   </button>
-            </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -456,28 +491,30 @@ const AdminDashboard: React.FC = () => {
         >
           <Card>
             <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">Recent Activity</CardTitle>
+              <CardTitle className="text-sm sm:text-base">
+                Recent Activity
+              </CardTitle>
               <CardDescription className="text-[10px] sm:text-xs">
                 Latest admin actions and updates
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2 sm:p-3 pt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
+                {recentActivity.map((activity) => (
+                  <div
+                    key={activity.id}
                     className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
                   >
                     <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {activity.action}
-                  </p>
+                      {activity.action}
+                    </p>
                     <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
                       {activity.resource}
                     </p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                       {activity.time}
-                  </p>
-                </div>
+                    </p>
+                  </div>
                 ))}
               </div>
             </CardContent>

@@ -3,6 +3,7 @@ import Sidebar from './sidebar';
 import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import TalentEdgeLogo from '@/components/logo/talentedge-logo';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -68,7 +69,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-900">TalentEdge AI</h1>
+          <TalentEdgeLogo showText={true} iconSize="sm" />
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 

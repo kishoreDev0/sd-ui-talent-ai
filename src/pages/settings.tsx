@@ -14,6 +14,20 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ArrowLeft, Search, Camera } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  CountrySelect,
+  StateSelect,
+  CitySelect,
+} from 'react-country-state-city';
+import type { Country, State, City } from 'react-country-state-city';
+import 'react-country-state-city/dist/react-country-state-city.css';
 
 type SettingsTab = 'my-details' | 'password' | 'notifications' | 'integrations';
 
@@ -33,6 +47,18 @@ const SettingsPage: React.FC = () => {
     lastName: '',
     email: '',
     phone: '',
+    mobileCountryCode: '+1',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    countryId: '',
+    stateId: '',
+    cityId: '',
+    preferredTimeZone: '',
+    isActive: true,
+    lastLogin: '',
+    role: '',
   });
 
   useEffect(() => {
@@ -44,10 +70,26 @@ const SettingsPage: React.FC = () => {
         lastName: userData.last_name || userData.lastName || '',
         email: userData.email || '',
         phone: userData.phone || userData.phone_number || '',
+        mobileCountryCode:
+          userData.mobile_country_code || userData.mobileCountryCode || '+1',
+        city: userData.city || '',
+        state: userData.state || '',
+        zipCode: userData.zip_code || userData.zipCode || '',
+        country: userData.country || '',
+        countryId: userData.country_id || userData.countryId || '',
+        stateId: userData.state_id || userData.stateId || '',
+        cityId: userData.city_id || userData.cityId || '',
+        preferredTimeZone:
+          userData.preferred_time_zone || userData.preferredTimeZone || '',
+        isActive: userData.is_active ?? userData.isActive ?? true,
+        lastLogin: userData.last_login || userData.lastLogin || '',
+        role: userData.role?.name || userData.role_name || '',
       });
       // Set profile image if available
-      if (userData.profile_image || userData.avatar) {
-        setProfileImage(userData.profile_image || userData.avatar);
+      if (userData.image_url || userData.profile_image || userData.avatar) {
+        setProfileImage(
+          userData.image_url || userData.profile_image || userData.avatar,
+        );
       }
     }
   }, [user]);
@@ -323,11 +365,29 @@ const SettingsPage: React.FC = () => {
                     <label className="absolute bottom-0 right-0 bg-indigo-600 text-white rounded-full p-1 cursor-pointer hover:bg-indigo-700 shadow-md">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png"
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            // Check file size (2MB = 2 * 1024 * 1024 bytes)
+                            if (file.size > 2 * 1024 * 1024) {
+                              alert('Image size must be less than 2MB');
+                              return;
+                            }
+                            // Check file type
+                            if (
+                              ![
+                                'image/jpeg',
+                                'image/jpg',
+                                'image/png',
+                              ].includes(file.type)
+                            ) {
+                              alert(
+                                'Only JPG, JPEG, and PNG files are allowed',
+                              );
+                              return;
+                            }
                             const reader = new FileReader();
                             reader.onloadend = () => {
                               setProfileImage(reader.result as string);
@@ -349,11 +409,29 @@ const SettingsPage: React.FC = () => {
                       <label className="cursor-pointer">
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/jpg,image/png"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
+                              // Check file size (2MB = 2 * 1024 * 1024 bytes)
+                              if (file.size > 2 * 1024 * 1024) {
+                                alert('Image size must be less than 2MB');
+                                return;
+                              }
+                              // Check file type
+                              if (
+                                ![
+                                  'image/jpeg',
+                                  'image/jpg',
+                                  'image/png',
+                                ].includes(file.type)
+                              ) {
+                                alert(
+                                  'Only JPG, JPEG, and PNG files are allowed',
+                                );
+                                return;
+                              }
                               const reader = new FileReader();
                               reader.onloadend = () => {
                                 setProfileImage(reader.result as string);
@@ -366,20 +444,20 @@ const SettingsPage: React.FC = () => {
                       </label>
                     </Button>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                      JPG, PNG or GIF. Max size of 2MB
+                      JPG, JPEG, or PNG. Max size of 2MB
                     </p>
                   </div>
                 </div>
 
                 {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       First Name
                     </label>
                     <Input
                       placeholder="Enter your first name"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                       value={userDetails.firstName}
                       onChange={(e) =>
                         setUserDetails({
@@ -395,7 +473,7 @@ const SettingsPage: React.FC = () => {
                     </label>
                     <Input
                       placeholder="Enter your last name"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                       value={userDetails.lastName}
                       onChange={(e) =>
                         setUserDetails({
@@ -412,7 +490,7 @@ const SettingsPage: React.FC = () => {
                     <Input
                       type="email"
                       placeholder="Enter your email"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                       value={userDetails.email}
                       onChange={(e) =>
                         setUserDetails({
@@ -422,22 +500,215 @@ const SettingsPage: React.FC = () => {
                       }
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 md:col-span-3">
                     <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Phone
+                      Mobile Number
                     </label>
-                    <Input
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      className="h-8 text-xs"
-                      value={userDetails.phone}
-                      onChange={(e) =>
-                        setUserDetails({
-                          ...userDetails,
-                          phone: e.target.value,
-                        })
-                      }
-                    />
+                    <div className="flex gap-2">
+                      <Select
+                        value={userDetails.mobileCountryCode}
+                        onValueChange={(value) =>
+                          setUserDetails({
+                            ...userDetails,
+                            mobileCountryCode: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-10 w-24 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+1">+1 (US)</SelectItem>
+                          <SelectItem value="+91">+91 (IN)</SelectItem>
+                          <SelectItem value="+44">+44 (UK)</SelectItem>
+                          <SelectItem value="+86">+86 (CN)</SelectItem>
+                          <SelectItem value="+81">+81 (JP)</SelectItem>
+                          <SelectItem value="+49">+49 (DE)</SelectItem>
+                          <SelectItem value="+33">+33 (FR)</SelectItem>
+                          <SelectItem value="+61">+61 (AU)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="tel"
+                        placeholder="Enter your phone number"
+                        className="h-10 text-sm flex-1 w-full"
+                        value={userDetails.phone}
+                        onChange={(e) =>
+                          setUserDetails({
+                            ...userDetails,
+                            phone: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location Information */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Location Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        Country
+                      </label>
+                      <CountrySelect
+                        defaultValue={
+                          userDetails.countryId
+                            ? ({
+                                id: parseInt(userDetails.countryId) || 0,
+                                name: userDetails.country,
+                              } as Country)
+                            : undefined
+                        }
+                        onChange={(country: Country) => {
+                          if (!country) return;
+                          console.log('Country selected:', country);
+                          setUserDetails({
+                            ...userDetails,
+                            countryId: String(country.id || ''),
+                            country: country.name || '',
+                            stateId: '',
+                            state: '',
+                            cityId: '',
+                            city: '',
+                          });
+                        }}
+                        containerClassName="!border !border-gray-300 dark:!border-gray-600 !rounded-md"
+                        inputClassName="h-10 w-full text-sm bg-transparent border-0 outline-none shadow-none focus:ring-0 focus:outline-none dark:bg-slate-800 dark:text-gray-100 px-2 py-1"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        State
+                      </label>
+                      <StateSelect
+                        countryid={parseInt(userDetails.countryId) || 0}
+                        defaultValue={
+                          userDetails.stateId
+                            ? ({
+                                id: parseInt(userDetails.stateId) || 0,
+                                name: userDetails.state,
+                              } as State)
+                            : undefined
+                        }
+                        onChange={(state: State) => {
+                          if (!state) return;
+                          console.log(
+                            'State selected:',
+                            state,
+                            'Country ID:',
+                            userDetails.countryId,
+                          );
+                          setUserDetails({
+                            ...userDetails,
+                            stateId: String(state.id || ''),
+                            state: state.name || '',
+                            cityId: '',
+                            city: '',
+                          });
+                        }}
+                        containerClassName="!border !border-gray-300 dark:!border-gray-600 !rounded-md"
+                        inputClassName="h-10 w-full text-sm bg-transparent border-0 outline-none shadow-none focus:ring-0 focus:outline-none dark:bg-slate-800 dark:text-gray-100 px-2 py-1"
+                        disabled={
+                          !userDetails.countryId ||
+                          userDetails.countryId === '' ||
+                          parseInt(userDetails.countryId) === 0
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        City
+                      </label>
+                      <CitySelect
+                        countryid={parseInt(userDetails.countryId) || 0}
+                        stateid={parseInt(userDetails.stateId) || 0}
+                        defaultValue={
+                          userDetails.cityId
+                            ? ({
+                                id: parseInt(userDetails.cityId) || 0,
+                                name: userDetails.city,
+                              } as City)
+                            : undefined
+                        }
+                        onChange={(city: City) => {
+                          if (!city) return;
+                          console.log('City selected:', city);
+                          setUserDetails({
+                            ...userDetails,
+                            cityId: String(city.id || ''),
+                            city: city.name || '',
+                          });
+                        }}
+                        containerClassName="!border !border-gray-300 dark:!border-gray-600 !rounded-md"
+                        inputClassName="h-10 w-full text-sm bg-transparent border-0 outline-none shadow-none focus:ring-0 focus:outline-none dark:bg-slate-800 dark:text-gray-100 px-2 py-1"
+                        disabled={
+                          !userDetails.countryId ||
+                          !userDetails.stateId ||
+                          userDetails.countryId === '' ||
+                          userDetails.stateId === '' ||
+                          parseInt(userDetails.countryId) === 0 ||
+                          parseInt(userDetails.stateId) === 0
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1 md:col-span-1">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        Zip Code
+                      </label>
+                      <Input
+                        placeholder="Enter your zip code"
+                        className="h-10 text-sm w-full"
+                        value={userDetails.zipCode}
+                        onChange={(e) =>
+                          setUserDetails({
+                            ...userDetails,
+                            zipCode: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Additional Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        User Type (Role)
+                      </label>
+                      <Input
+                        placeholder="Role"
+                        className="h-10 text-sm w-full"
+                        value={userDetails.role}
+                        readOnly
+                        disabled
+                      />
+                    </div>
+                    {userDetails.lastLogin && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Last Login
+                        </label>
+                        <Input
+                          className="h-10 text-sm w-full"
+                          value={
+                            userDetails.lastLogin
+                              ? new Date(userDetails.lastLogin).toLocaleString()
+                              : 'Never'
+                          }
+                          readOnly
+                          disabled
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex justify-end pt-1">
@@ -501,7 +772,7 @@ const SettingsPage: React.FC = () => {
                     <Input
                       type="password"
                       placeholder="Enter current password"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                     />
                   </div>
                   <div className="space-y-1">
@@ -511,7 +782,7 @@ const SettingsPage: React.FC = () => {
                     <Input
                       type="password"
                       placeholder="Enter new password"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                     />
                   </div>
                   <div className="space-y-1">
@@ -521,7 +792,7 @@ const SettingsPage: React.FC = () => {
                     <Input
                       type="password"
                       placeholder="Confirm new password"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                     />
                   </div>
                   <div className="flex justify-end pt-1">
@@ -550,7 +821,7 @@ const SettingsPage: React.FC = () => {
                     <Input
                       type="email"
                       placeholder="Enter your email address"
-                      className="h-8 text-xs"
+                      className="h-10 text-sm w-full"
                       value={userDetails.email}
                       readOnly
                     />

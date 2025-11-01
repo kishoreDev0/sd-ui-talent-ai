@@ -22,6 +22,7 @@ import {
   getAllRole,
   createRole,
   updateRole,
+  updateRolePermissions,
 } from '@/store/role/actions/roleActions';
 import { syncPermissions } from '@/store/permission/actions/permissionActions';
 import { setPermissionPage } from '@/store/permission/slices/permissionSlice';
@@ -43,7 +44,7 @@ const AdminAccessPage: React.FC = () => {
   const { roles, loading, total } = useAppSelector((state) => state.role);
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [activeOnly] = useState(false);
   const rolesLoadedRef = useRef(false);
   const initialPageRef = useRef(1);
@@ -57,6 +58,7 @@ const AdminAccessPage: React.FC = () => {
         getAllRole({ page: 1, page_size: pageSize, active_only: activeOnly }),
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, activeTab, activeOnly, pageSize, loading]);
 
   // Re-fetch roles when page changes (only if roles tab is active, already loaded, and page actually changed)
@@ -104,6 +106,7 @@ const AdminAccessPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
   const [isPermOpen, setIsPermOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState<{
     id: number;
@@ -229,21 +232,21 @@ const AdminAccessPage: React.FC = () => {
 
   return (
     <>
-    <MainLayout role={role}>
-      <div className="p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Access Control
-            </h1>
-            <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
-              Manage roles and permissions
-            </p>
+      <MainLayout role={role}>
+        <div className="p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Access Control
+              </h1>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
+                Manage roles and permissions
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto">
             <Button
               variant={activeTab === 'roles' ? 'default' : 'outline'}
               onClick={() => {
@@ -274,47 +277,48 @@ const AdminAccessPage: React.FC = () => {
           {activeTab === 'roles' ? (
             <div className="space-y-3">
               {/* Secondary tabs removed */}
-            {/* Search and Add Button */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 py-1">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-3 w-full sm:w-auto">
-                <div className="flex items-center space-x-1.5">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label className="text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-200">
-                    Select All
-                  </label>
+              {/* Search and Add Button */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 py-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+                  <div className="flex items-center space-x-1.5">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label className="text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-200">
+                      Select All
+                    </label>
+                  </div>
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <Input
+                      type="text"
+                      placeholder="Search roles..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-7 sm:pl-8 w-full sm:w-48 md:w-64 h-7 sm:h-8 text-xs sm:text-sm"
+                    />
+                  </div>
                 </div>
-                <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <Input
-                    type="text"
-                    placeholder="Search roles..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-7 sm:pl-8 w-full sm:w-48 md:w-64 h-7 sm:h-8 text-xs sm:text-sm"
-                  />
-                </div>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm w-full sm:w-auto"
+                  disabled={loading}
+                  onClick={() => {
+                    setIsCreating(true);
+                    setCurrentRole({ id: 0, name: '', active: true });
+                    setIsEditOpen(true);
+                  }}
+                >
+                  <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />{' '}
+                  Add Role
+                </Button>
               </div>
-              <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm w-full sm:w-auto"
-                disabled={loading}
-                onClick={() => {
-                  setIsCreating(true);
-                  setCurrentRole({ id: 0, name: '', active: true });
-                  setIsEditOpen(true);
-                }}
-              >
-                <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" /> Add Role
-              </Button>
-            </div>
-            {/* Roles Table */}
-            <div className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto -mx-2 sm:mx-0">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+              {/* Roles Table */}
+              <div className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
                     <thead className="bg-gray-50 dark:bg-slate-900">
                       <tr>
                         <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
@@ -376,12 +380,12 @@ const AdminAccessPage: React.FC = () => {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             <div className="text-xs text-gray-900 dark:text-gray-100">
-                              {(role as any).created_at || ''}
+                              {role.createdAt || role.created_at || ''}
                             </div>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             <div className="text-xs text-gray-900 dark:text-gray-100">
-                              {(role as any).updated_at || ''}
+                              {role.updatedAt || role.updated_at || ''}
                             </div>
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-right">
@@ -420,31 +424,31 @@ const AdminAccessPage: React.FC = () => {
                   </table>
                 </div>
               </div>
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10">
-              <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
-                Page {page} • {rolesToRender.length} of{' '}
-                {total || rolesToRender.length} roles
+              {/* Pagination */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10">
+                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
+                  Page {page} • {rolesToRender.length} of{' '}
+                  {total || rolesToRender.length} roles
+                </div>
+                <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    disabled={page <= 1}
+                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={rolesToRender.length < pageSize}
+                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
-                <Button
-                  variant="outline"
-                  disabled={page <= 1}
-                  className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={rolesToRender.length < pageSize}
-                  className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
             </div>
           ) : (
             <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-4 shadow-sm">
@@ -502,9 +506,9 @@ const AdminAccessPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-            {/* Pagination */}
-            {permissions.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10 mt-3 sm:mt-4">
+              {/* Pagination */}
+              {permissions.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10 mt-3 sm:mt-4">
                   <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
                     Page {permPage} • {paginatedPermissions.length} of{' '}
                     {permTotal} permissions
@@ -551,14 +555,20 @@ const AdminAccessPage: React.FC = () => {
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Role Name</label>
+                <label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                  Role Name
+                </label>
                 <Input
                   value={currentRole?.name || ''}
                   onChange={(e) =>
-                    setCurrentRole((prev) => ({
-                      ...(prev as any),
-                      name: e.target.value,
-                    }))
+                    setCurrentRole((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            name: e.target.value,
+                          }
+                        : { id: 0, name: e.target.value, active: true },
+                    )
                   }
                   className="h-8 sm:h-9 text-sm"
                 />
@@ -568,17 +578,27 @@ const AdminAccessPage: React.FC = () => {
                   type="checkbox"
                   checked={!!currentRole?.active}
                   onChange={(e) =>
-                    setCurrentRole((prev) => ({
-                      ...(prev as any),
-                      active: e.target.checked,
-                    }))
+                    setCurrentRole((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            active: e.target.checked,
+                          }
+                        : { id: 0, name: '', active: e.target.checked },
+                    )
                   }
                   className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                 />
-                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Active</span>
+                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                  Active
+                </span>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setIsEditOpen(false)} className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditOpen(false)}
+                  className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+                >
                   Cancel
                 </Button>
                 <Button
@@ -631,11 +651,15 @@ const AdminAccessPage: React.FC = () => {
                       setIsEditOpen(false);
                       setCurrentRole(null);
                       setIsCreating(false);
-                    } catch (error: any) {
+                    } catch (error) {
                       console.error('Error saving role:', error);
+                      const errorMessage =
+                        error instanceof Error
+                          ? error.message
+                          : 'Unknown error';
                       setToast({
                         message:
-                          error?.message ||
+                          errorMessage ||
                           `Failed to ${isCreating ? 'create' : 'update'} role`,
                         type: 'error',
                       });
@@ -653,14 +677,14 @@ const AdminAccessPage: React.FC = () => {
         </Dialog>
 
         {/* Manage Permissions Dialog */}
-      <Dialog
-        open={isPermOpen}
-        onOpenChange={(open) => {
-          setIsPermOpen(open);
-          if (!open) setCurrentRole(null);
-        }}
-      >
-        <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <Dialog
+          open={isPermOpen}
+          onOpenChange={(open) => {
+            setIsPermOpen(open);
+            if (!open) setCurrentRole(null);
+          }}
+        >
+          <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 Manage Permissions — {currentRole?.name || ''}
@@ -668,13 +692,13 @@ const AdminAccessPage: React.FC = () => {
             </DialogHeader>
             <div className="overflow-x-auto">
               {Object.keys(permMatrix).length === 0 ? (
-                <p className="text-sm text-gray-500 py-4 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
                   No permissions available for this role
                 </p>
               ) : (
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-300 border-b">
+                    <tr className="text-left text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
                       <th className="py-2 pr-4">Resource</th>
                       {(() => {
                         // Get all unique actions across all resources
@@ -704,8 +728,11 @@ const AdminAccessPage: React.FC = () => {
                       })();
 
                       return (
-                        <tr key={resource} className="border-t">
-                          <td className="py-2 pr-4 font-medium capitalize">
+                        <tr
+                          key={resource}
+                          className="border-t border-gray-200 dark:border-gray-700"
+                        >
+                          <td className="py-2 pr-4 font-medium capitalize text-gray-900 dark:text-gray-100">
                             {resource.replace(/_/g, ' ')}
                           </td>
                           {allActions.map((action) => {
@@ -741,10 +768,70 @@ const AdminAccessPage: React.FC = () => {
               )}
             </div>
             <div className="flex justify-end gap-2 pt-3">
-              <Button variant="outline" onClick={() => setIsPermOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsPermOpen(false)}
+                disabled={isSavingPermissions}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => setIsPermOpen(false)}>Save</Button>
+              <Button
+                onClick={async () => {
+                  if (!currentRole?.id) return;
+
+                  // Collect all permission_ids where has_permission is true
+                  const permissionIds: number[] = [];
+                  Object.values(permMatrix).forEach((resource) => {
+                    Object.values(resource).forEach((permission) => {
+                      if (
+                        permission.has_permission &&
+                        permission.permission_id
+                      ) {
+                        permissionIds.push(permission.permission_id);
+                      }
+                    });
+                  });
+
+                  try {
+                    setIsSavingPermissions(true);
+                    await dispatch(
+                      updateRolePermissions({
+                        id: currentRole.id,
+                        permissionIds,
+                      }),
+                    ).unwrap();
+
+                    setToast({
+                      message: 'Permissions updated successfully',
+                      type: 'success',
+                    });
+
+                    // Refresh roles list to get updated permissions
+                    await dispatch(
+                      getAllRole({
+                        page,
+                        page_size: pageSize,
+                        active_only: activeOnly,
+                      }),
+                    );
+
+                    setIsPermOpen(false);
+                  } catch (error) {
+                    console.error('Error updating permissions:', error);
+                    const errorMessage =
+                      error instanceof Error ? error.message : 'Unknown error';
+                    setToast({
+                      message: errorMessage || 'Failed to update permissions',
+                      type: 'error',
+                    });
+                  } finally {
+                    setIsSavingPermissions(false);
+                  }
+                }}
+                disabled={isSavingPermissions}
+              >
+                {isSavingPermissions ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
