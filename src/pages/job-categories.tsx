@@ -62,7 +62,7 @@ const JobCategories: React.FC = () => {
                 onClick={() => handleTabChange(tab)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   selectedTab === tab
-                    ? 'border-purple-500 text-purple-600'
+                    ? 'border-[#4F39F6] text-[#4F39F6]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -80,7 +80,7 @@ const JobCategories: React.FC = () => {
                 type="checkbox"
                 checked={selectAll}
                 onChange={handleSelectAll}
-                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
               />
               <label className="text-sm font-medium text-gray-700">
                 Select All
@@ -97,7 +97,7 @@ const JobCategories: React.FC = () => {
               />
             </div>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+          <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
@@ -112,7 +112,7 @@ const JobCategories: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                     />
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -143,7 +143,7 @@ const JobCategories: React.FC = () => {
                         type="checkbox"
                         checked={selectedItems.includes(category.id)}
                         onChange={() => handleSelectItem(category.id)}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -166,7 +166,7 @@ const JobCategories: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={category.active}
-                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-900">
                           {category.active ? 'Active' : 'Inactive'}
@@ -199,7 +199,7 @@ const JobCategories: React.FC = () => {
             <Button variant="outline" disabled className="text-gray-400">
               Previous
             </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
               1
             </Button>
             <Button variant="outline" disabled className="text-gray-400">

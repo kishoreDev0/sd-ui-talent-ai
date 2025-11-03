@@ -1,5 +1,5 @@
 import { AxiosInstance, AxiosResponse } from 'axios';
-import { INVITE_USER } from '../../endpoints/authentication';
+import { AUTH } from '../../endpoints';
 
 export interface InviteUserResponse {
   message: string;
@@ -15,15 +15,15 @@ export class InviteUserAPI {
   inviteUser = async (
     name: string,
     email: string,
+    organization: string,
     role: string,
   ): Promise<AxiosResponse<InviteUserResponse>> => {
     try {
-      const response = await this.api.get(INVITE_USER, {
-        params: {
-          name,
-          email,
-          role,
-        },
+      const response = await this.api.post(AUTH.INVITE_USER, {
+        name,
+        email,
+        organization,
+        role,
       });
 
       return response;

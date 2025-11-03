@@ -171,7 +171,7 @@ const JobBoard: React.FC = () => {
             type="text"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
-            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
             placeholder="Enter job title"
           />
         </div>
@@ -183,7 +183,7 @@ const JobBoard: React.FC = () => {
             type="text"
             value={majorSkills}
             onChange={(e) => setMajorSkills(e.target.value)}
-            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
             placeholder="Enter skills"
           />
         </div>
@@ -209,7 +209,7 @@ const JobBoard: React.FC = () => {
               type="text"
               value={minCompensation}
               onChange={(e) => setMinCompensation(e.target.value)}
-              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
               placeholder="$0"
             />
           </div>
@@ -221,7 +221,7 @@ const JobBoard: React.FC = () => {
               type="text"
               value={maxCompensation}
               onChange={(e) => setMaxCompensation(e.target.value)}
-              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
               placeholder="$100k+"
             />
           </div>
@@ -287,7 +287,7 @@ const JobBoard: React.FC = () => {
                   onChange={() =>
                     handlePriorityChange(item.key as 'high' | 'medium' | 'low')
                   }
-                  className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded cursor-pointer"
+                  className="h-3.5 w-3.5 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded cursor-pointer"
                 />
                 <span className="text-xs font-medium">{item.label}</span>
               </label>
@@ -467,7 +467,7 @@ const JobBoard: React.FC = () => {
     <MainLayout role={role}>
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 py-8 md:py-12">
+        <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-indigo-50 py-8 md:py-12">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-6 md:mb-8">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -644,7 +644,7 @@ const JobBoard: React.FC = () => {
                         <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
                           {job.paymentVerified && (
                             <div className="flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4 text-purple-600" />
+                              <CheckCircle className="h-4 w-4 text-[#4F39F6]" />
                               <span>Payment verified</span>
                             </div>
                           )}
@@ -652,7 +652,7 @@ const JobBoard: React.FC = () => {
                             <MapPin className="h-4 w-4" />
                             <span>{job.location}</span>
                           </div>
-                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
                             {job.applicants} applicants
                           </span>
                         </div>
@@ -757,7 +757,7 @@ const JobBoard: React.FC = () => {
               id="file-upload"
             />
             <label htmlFor="file-upload" className="block cursor-pointer">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#4F39F6] transition-colors">
                 <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">
                   Drop file here or click to browse

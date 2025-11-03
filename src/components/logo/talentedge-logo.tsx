@@ -19,7 +19,7 @@ const TalentEdgeLogo: React.FC<TalentEdgeLogoProps> = ({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Icon - Bookmark/Flag shape with gradient */}
+      {/* Icon - Bookmark/Flag shape */}
       <div
         className={`${iconSizes[iconSize]} relative flex-shrink-0`}
         style={{
@@ -30,38 +30,16 @@ const TalentEdgeLogo: React.FC<TalentEdgeLogoProps> = ({
         <div
           className="w-full h-full rounded-sm"
           style={{
-            background: 'linear-gradient(90deg, #2563eb 0%, #a21caf 100%)',
+            background: '#4F39F6',
           }}
         />
       </div>
 
-      {/* Text with gradient */}
+      {/* Text */}
       {showText && (
-        <span className="font-semibold text-lg">
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, #2563eb 0%, #a21caf 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            TalentEdge
-          </span>{' '}
-          <span
-            className="bg-clip-text text-transparent uppercase"
-            style={{
-              backgroundImage:
-                'linear-gradient(90deg, #7c3aed 0%, #a21caf 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            AI
-          </span>
+        <span className="font-semibold text-lg" style={{ color: '#4F39F6' }}>
+          TalentEdge{' '}
+          <span className="uppercase">AI</span>
         </span>
       )}
     </div>

@@ -7,5 +7,6 @@ export interface InviteUserState {
 export interface InviteUserRequest {
   name: string;
   email: string;
+  organization: string;
   role: string;
 }

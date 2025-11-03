@@ -377,7 +377,7 @@ const RegisterCandidate: React.FC = () => {
                             type="checkbox"
                             checked={formData.organization.includes(org.value)}
                             onChange={() => handleOrganizationToggle(org.value)}
-                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                           />
                           <span className="text-sm text-gray-700">
                             {org.label}
@@ -545,7 +545,7 @@ const RegisterCandidate: React.FC = () => {
                               onChange={() =>
                                 handleMajorSkillToggle(skill.value)
                               }
-                              className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                              className="h-3.5 w-3.5 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                             />
                             <span className="text-xs text-gray-700">
                               {skill.label}
@@ -716,7 +716,7 @@ const RegisterCandidate: React.FC = () => {
                             formData.skills.length === skillsOptions.length
                           }
                           onChange={handleSelectAll}
-                          className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          className="h-3.5 w-3.5 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                         />
                         <span className="text-xs font-semibold text-gray-700">
                           Select All
@@ -732,7 +732,7 @@ const RegisterCandidate: React.FC = () => {
                               type="checkbox"
                               checked={formData.skills.includes(skill.value)}
                               onChange={() => handleSkillToggle(skill.value)}
-                              className="h-3.5 w-3.5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                              className="h-3.5 w-3.5 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
                             />
                             <span className="text-xs text-gray-700">
                               {skill.label}
@@ -758,7 +758,7 @@ const RegisterCandidate: React.FC = () => {
                         }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           formData.directInterview
-                            ? 'bg-purple-600'
+                            ? 'bg-[#4F39F6]'
                             : 'bg-gray-300'
                         }`}
                       >
@@ -786,7 +786,7 @@ const RegisterCandidate: React.FC = () => {
                       onChange={(e) =>
                         handleInputChange('rating', parseInt(e.target.value))
                       }
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4F39F6]"
                     />
                   </div>
 
@@ -846,7 +846,7 @@ const RegisterCandidate: React.FC = () => {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
                 >
                   Register Candidate
                   <ArrowRight className="h-4 w-4" />

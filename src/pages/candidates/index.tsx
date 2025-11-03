@@ -128,7 +128,7 @@ const CandidatesPage: React.FC = () => {
     const colors: Record<Candidate['status'], string> = {
       Active: 'bg-blue-100 text-blue-700 border-blue-200',
       Shortlisted: 'bg-green-100 text-green-700 border-green-200',
-      Interview: 'bg-purple-100 text-purple-700 border-purple-200',
+      Interview: 'bg-primary-100 text-[#4F39F6] border-primary-200',
       Rejected: 'bg-red-100 text-red-700 border-red-200',
       'On Hold': 'bg-yellow-100 text-yellow-700 border-yellow-200',
     };
@@ -181,14 +181,16 @@ const CandidatesPage: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Candidates</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Candidates
+              </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Manage and track all candidate profiles
               </p>
             </div>
             <Button
               onClick={() => navigate('/candidates/register')}
-              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+              className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
             >
               <UserPlus className="h-4 w-4" />
               Register Candidate
@@ -241,7 +243,7 @@ const CandidatesPage: React.FC = () => {
                 {!searchTerm && (
                   <Button
                     onClick={() => navigate('/candidates/register')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
                   >
                     Register Candidate
                   </Button>
@@ -266,7 +268,7 @@ const CandidatesPage: React.FC = () => {
                     {/* Card Header - Minimal Info */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        <div className="w-10 h-10 bg-[#4F39F6] rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                             {candidate.firstName.charAt(0)}
                             {candidate.lastName.charAt(0)}
                         </div>
@@ -320,7 +322,7 @@ const CandidatesPage: React.FC = () => {
               <div className="space-y-6 mt-4">
                 {/* Header Section */}
                 <div className="flex items-start gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                  <div className="w-16 h-16 bg-[#4F39F6] rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                     {selectedCandidate.firstName.charAt(0)}
                     {selectedCandidate.lastName.charAt(0)}
                   </div>
@@ -481,7 +483,7 @@ const CandidatesPage: React.FC = () => {
                       {selectedCandidate.skills.map((skill, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md text-xs font-medium"
+                          className="px-2.5 py-1 bg-primary-50 dark:bg-primary-900/30 text-[#4F39F6] dark:text-primary-300 rounded-md text-xs font-medium"
                         >
                           {skill}
                         </span>

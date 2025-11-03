@@ -27,7 +27,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   const colorClasses = {
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
-    purple: 'from-purple-500 to-purple-600',
+    purple: 'from-[#4F39F6] to-[#4F39F6]',
     orange: 'from-orange-500 to-orange-600',
   };
 
@@ -138,7 +138,7 @@ export const AnalyticsDashboard: React.FC = () => {
                 stage: 'Offer',
                 count: 12,
                 percentage: 8,
-                color: 'bg-purple-500',
+                color: 'bg-[#4F39F6]',
               },
               {
                 stage: 'Hired',

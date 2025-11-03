@@ -81,11 +81,11 @@ const JobDetail: React.FC = () => {
                       </div>
                       {job.paymentVerified && (
                         <div className="flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4 text-purple-600" />
+                          <CheckCircle className="h-4 w-4 text-[#4F39F6]" />
                           Payment verified
                         </div>
                       )}
-                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                      <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
                         {job.applicants} applicants
                       </span>
                     </div>

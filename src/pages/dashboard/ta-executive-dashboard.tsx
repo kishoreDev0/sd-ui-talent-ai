@@ -61,7 +61,7 @@ const TAExecutiveDashboard: React.FC = () => {
       change: '+3',
       trend: 'up',
       icon: Calendar,
-      color: 'bg-purple-500',
+      color: 'bg-[#4F39F6]',
     },
     {
       label: 'Offers Made',
@@ -221,11 +221,11 @@ const TAExecutiveDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                 <button
                   onClick={() => navigate('/register-job')}
-                  className="group p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                  className="group p-3 bg-[#4F39F6] rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   <Briefcase className="h-4 w-4 text-white mb-1" />
                   <p className="text-white font-semibold text-xs">Create Job</p>
-                  <p className="text-purple-100 text-[10px]">
+                  <p className="text-white text-[10px]">
                     Post new position
                   </p>
                 </button>
@@ -558,12 +558,12 @@ const TAExecutiveDashboard: React.FC = () => {
                   {
                     label: 'Interview Scheduled',
                     count: 18,
-                    gradient: 'from-purple-500 to-pink-500',
+                    gradient: 'from-[#4F39F6] to-[#4F39F6]',
                   },
                   {
                     label: 'Feedback Pending',
                     count: 12,
-                    gradient: 'from-indigo-500 to-purple-600',
+                    gradient: 'from-[#4F39F6] to-[#4F39F6]',
                   },
                   {
                     label: 'Offer Sent',

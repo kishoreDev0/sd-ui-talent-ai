@@ -37,7 +37,7 @@ const TAManagerDashboard: React.FC = () => {
       change: '+24',
       trend: 'up',
       icon: TrendingUp,
-      color: 'bg-purple-500',
+      color: 'bg-[#4F39F6]',
     },
     {
       label: 'Target Achievement',
@@ -197,7 +197,7 @@ const TAManagerDashboard: React.FC = () => {
               {
                 label: 'Interviewing',
                 count: 42,
-                color: 'bg-purple-500',
+                color: 'bg-[#4F39F6]',
                 team: 'Scheduled',
               },
               {
@@ -262,7 +262,7 @@ const TAManagerDashboard: React.FC = () => {
                 key={idx}
                 className="flex items-center gap-4 p-4 bg-white/50 rounded-xl border border-white/30"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                <div className="w-10 h-10 bg-[#4F39F6] rounded-full flex items-center justify-center text-white font-semibold">
                   {activity.member.charAt(0)}
                 </div>
                 <div className="flex-1">

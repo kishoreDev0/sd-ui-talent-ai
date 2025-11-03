@@ -35,7 +35,7 @@ const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({
         {showAutoTag && (
           <button
             onClick={handleAutoTag}
-            className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg transition-all"
+            className="flex items-center space-x-2 bg-[#4F39F6] text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg transition-all"
           >
             <Sparkles className="w-4 h-4" />
             <span>Auto-tag Skills with AI</span>

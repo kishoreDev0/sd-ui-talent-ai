@@ -207,7 +207,7 @@ const UsersPage: React.FC = () => {
                 onClick={() => handleTabChange(tab)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   selectedTab === tab
-                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                                ? 'border-[#4F39F6] text-[#4F39F6] dark:text-[#4F39F6]'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
@@ -225,7 +225,7 @@ const UsersPage: React.FC = () => {
                 type="checkbox"
                 checked={selectAll}
                 onChange={handleSelectAll}
-                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 dark:border-gray-600 rounded"
               />
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Select All
@@ -242,7 +242,7 @@ const UsersPage: React.FC = () => {
               />
             </div>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+          <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
             <Plus className="h-4 w-4 mr-2" />
             Add User
           </Button>
@@ -259,7 +259,7 @@ const UsersPage: React.FC = () => {
                       type="checkbox"
                       checked={selectAll}
                       onChange={handleSelectAll}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                      className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 dark:border-gray-600 rounded"
                     />
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -300,7 +300,7 @@ const UsersPage: React.FC = () => {
                           type="checkbox"
                           checked={selectedItems.includes(u.id)}
                           onChange={() => handleSelectItem(u.id)}
-                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                          className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 dark:border-gray-600 rounded"
                         />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -326,7 +326,7 @@ const UsersPage: React.FC = () => {
                             type="checkbox"
                             checked={u.is_active || false}
                             disabled
-                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded"
+                            className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 dark:border-gray-600 rounded"
                           />
                           <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">
                             {u.is_active ? 'Active' : 'Inactive'}
@@ -359,7 +359,7 @@ const UsersPage: React.FC = () => {
             <Button variant="outline" disabled className="text-gray-400">
               Previous
             </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
               1
             </Button>
             <Button variant="outline" disabled className="text-gray-400">

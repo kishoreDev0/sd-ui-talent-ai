@@ -23,6 +23,7 @@ import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
 import AdminAccessPage from './pages/admin-access';
 import InterviewDetailPage from './pages/interview-detail';
+import CandidateTrackingPage from './pages/candidate-tracking';
 
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
@@ -66,6 +67,10 @@ const App = () => {
             <Route
               path="/candidates/view/:id"
               element={<PrivateRoute element={<RegisterCandidate />} />}
+            />
+            <Route
+              path="/candidate-tracking"
+              element={<PrivateRoute element={<CandidateTrackingPage />} />}
             />
             <Route
               path="/interviews"

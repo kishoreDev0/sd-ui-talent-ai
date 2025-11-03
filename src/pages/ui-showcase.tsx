@@ -220,7 +220,7 @@ const UIShowcase: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">12,234</div>
-                <p className="text-xs text-purple-600 flex items-center mt-1">
+                <p className="text-xs text-[#4F39F6] flex items-center mt-1">
                   <Star className="h-3 w-3 mr-1" />
                   +201 since last hour
                 </p>

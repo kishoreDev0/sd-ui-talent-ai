@@ -355,7 +355,7 @@ const SettingsPage: React.FC = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="h-full w-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-lg">
+                        <div className="h-full w-full bg-[#4F39F6] flex items-center justify-center text-white font-semibold text-lg">
                           {userDetails.firstName?.[0] ||
                             userDetails.email?.[0] ||
                             'U'}

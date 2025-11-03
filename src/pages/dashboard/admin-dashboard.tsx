@@ -58,7 +58,7 @@ const AdminDashboard: React.FC = () => {
       change: '+2',
       trend: 'up',
       icon: Shield,
-      color: 'bg-purple-500',
+      color: 'bg-[#4F39F6]',
       path: '/admin/access',
     },
     {
@@ -172,7 +172,7 @@ const AdminDashboard: React.FC = () => {
                         className={`${metric.color} p-2 rounded-lg shadow-md`}
                       >
                         <Icon className="h-4 w-4 text-white" />
-                      </div>
+          </div>
                       <span
                         className={`text-xs font-semibold ${
                           metric.trend === 'up'
@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
                       >
                         {metric.change}
                       </span>
-                    </div>
+          </div>
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
                       {metric.value}
                     </h3>
@@ -204,65 +204,65 @@ const AdminDashboard: React.FC = () => {
           className="mb-3"
         >
           <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">
+            <CardHeader className="p-2 pb-1">
+              <CardTitle className="text-xs sm:text-sm">
                 Quick Actions
               </CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
+              <CardDescription className="text-[9px] sm:text-[10px]">
                 Access admin features
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-3 pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <CardContent className="p-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
                 <button
                   onClick={() => navigate('/users')}
-                  className="group p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
+                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
                 >
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                  <Users className="h-3 w-3 text-white mb-0.5" />
+                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
                     Manage Users
                   </p>
-                  <p className="text-blue-100 text-[9px] sm:text-[10px]">
+                  <p className="text-blue-100 text-[8px] sm:text-[9px]">
                     View all users
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/admin/access')}
-                  className="group p-2 sm:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
+                  className="group p-1.5 sm:p-2 bg-[#4F39F6] rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
                 >
-                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                  <Shield className="h-3 w-3 text-white mb-0.5" />
+                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
                     Access Control
                   </p>
-                  <p className="text-purple-100 text-[9px] sm:text-[10px]">
+                  <p className="text-white text-[8px] sm:text-[9px]">
                     Manage roles & permissions
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/analytics')}
-                  className="group p-2 sm:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
+                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
                 >
-                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                  <TrendingUp className="h-3 w-3 text-white mb-0.5" />
+                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
                     Analytics
                   </p>
-                  <p className="text-green-100 text-[9px] sm:text-[10px]">
+                  <p className="text-green-100 text-[8px] sm:text-[9px]">
                     View system analytics
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/settings')}
-                  className="group p-2 sm:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1 w-full"
+                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
                 >
-                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 text-white mb-1" />
-                  <p className="text-white font-semibold text-[10px] sm:text-xs">
+                  <Settings className="h-3 w-3 text-white mb-0.5" />
+                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
                     Settings
                   </p>
-                  <p className="text-orange-100 text-[9px] sm:text-[10px]">
+                  <p className="text-orange-100 text-[8px] sm:text-[9px]">
                     System settings
                   </p>
                 </button>
-              </div>
+      </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -346,10 +346,8 @@ const AdminDashboard: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: { percent?: number }) =>
-                        entry.percent
-                          ? `${(entry.percent * 100).toFixed(0)}%`
-                          : ''
+                      label={({ percent }: { percent?: number }) =>
+                        percent ? `${(percent * 100).toFixed(0)}%` : ''
                       }
                       outerRadius={70}
                       fill="#8884d8"
@@ -441,7 +439,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     View All
                   </Button>
-                </div>
+              </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
                 <div className="space-y-2">
@@ -457,9 +455,9 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           View and edit user accounts
                         </p>
-                      </div>
+              </div>
                       <UserCog className="h-3 w-3 text-gray-400" />
-                    </div>
+            </div>
                   </button>
                   <button
                     onClick={() => navigate('/admin/access')}
@@ -473,11 +471,11 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           Manage roles and permissions
                         </p>
-                      </div>
+              </div>
                       <Shield className="h-3 w-3 text-gray-400" />
-                    </div>
+            </div>
                   </button>
-                </div>
+            </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -500,21 +498,21 @@ const AdminDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="p-2 sm:p-3 pt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {recentActivity.map((activity) => (
-                  <div
-                    key={activity.id}
+            {recentActivity.map((activity) => (
+              <div
+                key={activity.id}
                     className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
                   >
                     <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                      {activity.action}
-                    </p>
+                    {activity.action}
+                  </p>
                     <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
                       {activity.resource}
                     </p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                       {activity.time}
-                    </p>
-                  </div>
+                  </p>
+                </div>
                 ))}
               </div>
             </CardContent>

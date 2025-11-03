@@ -47,7 +47,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white hover:border-gray-300 transition-all duration-200 flex items-center justify-between"
+        className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F39F6] bg-white hover:border-gray-300 transition-all duration-200 flex items-center justify-between"
       >
         <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -72,13 +72,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 }}
                 className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors duration-150 flex items-center justify-between ${
                   value === option.value
-                    ? 'bg-purple-50 text-purple-700'
+                    ? 'bg-primary-50 text-[#4F39F6]'
                     : 'text-gray-900'
                 }`}
               >
                 <span>{option.label}</span>
                 {value === option.value && (
-                  <Check className="h-4 w-4 text-purple-600 animate-in fade-in duration-150" />
+                  <Check className="h-4 w-4 text-[#4F39F6] animate-in fade-in duration-150" />
                 )}
               </button>
             ))}

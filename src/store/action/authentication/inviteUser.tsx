@@ -6,12 +6,12 @@ import { AxiosInstance } from 'axios';
 export const inviteUser = createAsyncThunk(
   'auth/inviteUser',
   async (
-    { name, email, role, api }: InviteUserRequest & { api: AxiosInstance },
+    { name, email, organization, role, api }: InviteUserRequest & { api: AxiosInstance },
     { rejectWithValue },
   ) => {
     try {
       const inviteUserAPI = new InviteUserAPI(api);
-      const response = await inviteUserAPI.inviteUser(name, email, role);
+      const response = await inviteUserAPI.inviteUser(name, email, organization, role);
 
       return response.data;
     } catch (error) {

@@ -11,7 +11,7 @@ const stages = [
   { id: 'applied', name: 'Applied', color: 'bg-blue-500' },
   { id: 'screening', name: 'Screening', color: 'bg-yellow-500' },
   { id: 'interview', name: 'Interview', color: 'bg-orange-500' },
-  { id: 'offer', name: 'Offer', color: 'bg-purple-500' },
+  { id: 'offer', name: 'Offer', color: 'bg-[#4F39F6]' },
   { id: 'hired', name: 'Hired', color: 'bg-green-500' },
 ];
 

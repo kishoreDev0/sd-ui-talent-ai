@@ -124,6 +124,12 @@ const navItems: NavItem[] = [
     roles: ['ta_executive', 'ta_manager', 'hiring_manager', 'interviewer'],
   },
   {
+    path: '/candidate-tracking',
+    icon: <TrendingUp className="h-4 w-4" />,
+    label: 'Candidate Tracking',
+    roles: ['ta_manager'],
+  },
+  {
     path: '/interviews',
     icon: <Calendar className="h-4 w-4" />,
     label: 'Interviews',
@@ -461,14 +467,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
       </div>
 
       {/* Send Invite Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Send Invite</DialogTitle>
-          </DialogHeader>
-          <InviteUserForm onClose={() => setIsInviteOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <InviteUserForm open={isInviteOpen} onOpenChange={setIsInviteOpen} />
 
       {/* Logout Confirm Dialog */}
       <Dialog
