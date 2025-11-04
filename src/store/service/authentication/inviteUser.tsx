@@ -12,19 +12,15 @@ export class InviteUserAPI {
     this.api = api;
   }
 
-  inviteUser = async (
-    name: string,
-    email: string,
-    organization: string,
-    role: string,
-  ): Promise<AxiosResponse<InviteUserResponse>> => {
+  inviteUser = async (payload: {
+    email: string;
+    first_name: string;
+    last_name: string;
+    role_id: number;
+    organization_ids: number[];
+  }): Promise<AxiosResponse<InviteUserResponse>> => {
     try {
-      const response = await this.api.post(AUTH.INVITE_USER, {
-        name,
-        email,
-        organization,
-        role,
-      });
+      const response = await this.api.post(AUTH.INVITE_USER, payload);
 
       return response;
     } catch (error) {

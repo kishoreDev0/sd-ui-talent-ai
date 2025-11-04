@@ -33,13 +33,15 @@ import { AuthProvider } from './components/login/authState';
 import PrivateRoute from './axios-setup/private-route';
 import Loader from './components/loader/loader';
 import { ToastProvider } from './components/ui/toast';
+import { LanguageProvider } from './contexts/language-context';
 
 const App = () => {
   return (
     <Provider store={store}>
-      <ToastProvider>
-        <AuthProvider>
-          <Router>
+      <LanguageProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/registerform" element={<RegistrationForm />} />
@@ -131,9 +133,10 @@ const App = () => {
               <Route path="/" element={<Navigate to="/dashboard" />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
-          </Router>
-        </AuthProvider>
-      </ToastProvider>
+            </Router>
+          </AuthProvider>
+        </ToastProvider>
+      </LanguageProvider>
     </Provider>
   );
 };

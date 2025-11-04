@@ -63,8 +63,8 @@ const organizationSlice = createSlice({
       })
       .addCase(
         getOrganizationById.fulfilled,
-        (state, action: PayloadAction<any>) => {
-          const organization = action.payload?.data as Organization | undefined;
+        (state, action: PayloadAction<{ data?: Organization }>) => {
+          const organization = action.payload?.data;
           if (organization) {
             const index = state.organizations.findIndex(
               (org) => org.id === organization.id,

@@ -131,14 +131,27 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
 
   const onSubmit = async (data: InviteUserFormData) => {
     try {
-      // Combine firstName and lastName into name for API compatibility
-      const fullName = `${data.firstName} ${data.lastName}`.trim();
+      // Convert organization and role IDs to numbers
+      const organizationId = parseInt(data.organization, 10);
+      const roleId = parseInt(data.role, 10);
+
+      if (isNaN(organizationId) || isNaN(roleId)) {
+        setToast({
+          message: 'Please select valid organization and role',
+          type: 'error',
+        });
+        return;
+      }
+
       await dispatch(
         inviteUser({
-          name: fullName,
-          email: data.email,
-          organization: data.organization,
-          role: data.role,
+          payload: {
+            email: data.email,
+            first_name: data.firstName,
+            last_name: data.lastName,
+            role_id: roleId,
+            organization_ids: [organizationId], // Array of organization IDs
+          },
           api: httpClient,
         }),
       ).unwrap();
@@ -270,15 +283,17 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                         No organizations found
                       </div>
                     ) : (
-                      organizations.map((org) => (
-                        <SelectItem
-                          key={org.id}
-                          value={org.id.toString()}
-                          className="dark:text-gray-100 dark:focus:bg-slate-600"
-                        >
-                          {org.name}
-                        </SelectItem>
-                      ))
+                      organizations
+                        .filter((org) => org.id != null)
+                        .map((org) => (
+                          <SelectItem
+                            key={org.id}
+                            value={org.id?.toString() || ''}
+                            className="dark:text-gray-100 dark:focus:bg-slate-600"
+                          >
+                            {org.name}
+                          </SelectItem>
+                        ))
                     )}
                   </SelectContent>
                 </Select>
@@ -320,11 +335,13 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                       </div>
                     ) : (
                       roles
-                        .filter((role) => role.active !== false)
+                        .filter(
+                          (role) => role.active !== false && role.id != null,
+                        )
                         .map((role) => (
                           <SelectItem
                             key={role.id}
-                            value={role.id.toString()}
+                            value={role.id?.toString() || ''}
                             className="dark:text-gray-100 dark:focus:bg-slate-600"
                           >
                             {role.name}

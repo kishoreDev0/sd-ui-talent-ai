@@ -6,7 +6,6 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import { logout } from '@/store/slices/authentication/login';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
   Card,
@@ -15,20 +14,30 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Search, Camera, User, Bell, Lock, LogOut, Calendar, Copy, Building2, Briefcase, TrendingUp } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { Country, State, City } from 'react-country-state-city';
-import {
-  GetCountries,
-  GetState,
-  GetCity,
-} from 'react-country-state-city';
+import { Plus, ChevronUp, MoreVertical } from 'lucide-react';
+import { GetCountries, GetState, GetCity } from 'react-country-state-city';
+
+// Type definitions for country/state/city (matching react-country-state-city structure)
+type Country = {
+  id: number;
+  name: string;
+  iso2: string;
+  iso3: string;
+};
+
+type State = {
+  id: number;
+  name: string;
+  country_id?: number;
+  state_code?: string;
+};
+
+type City = {
+  id: number;
+  name: string;
+  state_id?: number;
+  country_id?: number;
+};
 import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
@@ -37,21 +46,26 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type SettingsTab = 'my-details' | 'password' | 'notifications' | 'integrations';
+type SettingsTab =
+  | 'my-details'
+  | 'profile'
+  | 'password'
+  | 'team'
+  | 'billings'
+  | 'plan'
+  | 'email'
+  | 'notifications';
 
 const SettingsPage: React.FC = () => {
   const role = useUserRole();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('my-details');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('billings');
   const [passwordSubTab, setPasswordSubTab] = useState<'change' | 'reset'>(
     'change',
   );
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>(
-    'https://via.placeholder.com/80',
-  );
   const [userDetails, setUserDetails] = useState({
     firstName: '',
     lastName: '',
@@ -108,14 +122,69 @@ const SettingsPage: React.FC = () => {
         lastLogin: userData.last_login || userData.lastLogin || '',
         role: userData.role?.name || userData.role_name || '',
       });
-      // Set profile image if available
-      if (userData.image_url || userData.profile_image || userData.avatar) {
-        setProfileImage(
-          userData.image_url || userData.profile_image || userData.avatar,
-        );
-      }
     }
   }, [user]);
+
+  // Load countries on mount
+  useEffect(() => {
+    const loadCountries = async () => {
+      setLoadingCountries(true);
+      try {
+        const data = await GetCountries();
+        setCountries(data);
+      } catch (error) {
+        console.error('Failed to load countries:', error);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    loadCountries();
+  }, []);
+
+  // Load states when country changes
+  useEffect(() => {
+    const loadStates = async () => {
+      if (selectedCountry) {
+        setLoadingStates(true);
+        try {
+          const data = await GetState(selectedCountry.id);
+          setStates(data);
+        } catch (error) {
+          console.error('Failed to load states:', error);
+          setStates([]);
+        } finally {
+          setLoadingStates(false);
+        }
+      } else {
+        setStates([]);
+      }
+      setSelectedState(null);
+      setSelectedCity(null);
+    };
+    loadStates();
+  }, [selectedCountry]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    const loadCities = async () => {
+      if (selectedState && selectedCountry) {
+        setLoadingCities(true);
+        try {
+          const data = await GetCity(selectedCountry.id, selectedState.id);
+          setCities(data);
+        } catch (error) {
+          console.error('Failed to load cities:', error);
+          setCities([]);
+        } finally {
+          setLoadingCities(false);
+        }
+      } else {
+        setCities([]);
+      }
+      setSelectedCity(null);
+    };
+    loadCities();
+  }, [selectedState, selectedCountry]);
 
   // Initialize selected country/state/city when countries are loaded and user data is available
   useEffect(() => {
@@ -150,18 +219,15 @@ const SettingsPage: React.FC = () => {
     }
   }, [cities, userDetails.cityId, selectedState, selectedCity]);
 
-  // Get user role ID
-  const userData = user || JSON.parse(localStorage.getItem('user') || '{}');
-  const roleId = userData?.role?.id ?? userData?.role_id ?? 0;
-  const isAdmin = roleId === 1;
-
-  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'my-details', label: 'Profile base', icon: <User className="h-4 w-4" /> },
-    { id: 'notifications', label: 'Notification Settings', icon: <Bell className="h-4 w-4" /> },
-    { id: 'password', label: 'Password', icon: <Lock className="h-4 w-4" /> },
-    ...(isAdmin
-      ? [{ id: 'integrations' as SettingsTab, label: 'Integrations', icon: <Search className="h-4 w-4" /> }]
-      : []),
+  const tabs: { id: SettingsTab; label: string }[] = [
+    { id: 'my-details', label: 'My details' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'password', label: 'Password' },
+    { id: 'team', label: 'Team' },
+    { id: 'billings', label: 'Billings' },
+    { id: 'plan', label: 'Plan' },
+    { id: 'email', label: 'Email' },
+    { id: 'notifications', label: 'Notifications' },
   ];
 
   const handleLogout = () => {
@@ -452,7 +518,8 @@ const SettingsPage: React.FC = () => {
                       if (match) {
                         setUserDetails({
                           ...userDetails,
-                          mobileCountryCode: match[1] || userDetails.mobileCountryCode,
+                          mobileCountryCode:
+                            match[1] || userDetails.mobileCountryCode,
                           phone: match[2] || '',
                         });
                       }
@@ -501,9 +568,17 @@ const SettingsPage: React.FC = () => {
                         city: city?.name || '',
                       });
                     }}
-                    placeholder={loadingCities ? "Loading..." : !selectedState ? "Select State first" : "Select City"}
+                    placeholder={
+                      loadingCities
+                        ? 'Loading...'
+                        : !selectedState
+                          ? 'Select State first'
+                          : 'Select City'
+                    }
                     searchPlaceholder="Search cities..."
-                    emptyMessage={selectedState ? "No cities found" : "Select a state first"}
+                    emptyMessage={
+                      selectedState ? 'No cities found' : 'Select a state first'
+                    }
                     disabled={!selectedState}
                     loading={loadingCities}
                     className="w-full"
@@ -533,9 +608,19 @@ const SettingsPage: React.FC = () => {
                         city: '',
                       });
                     }}
-                    placeholder={loadingStates ? "Loading..." : !selectedCountry ? "Select Country first" : "Select State"}
+                    placeholder={
+                      loadingStates
+                        ? 'Loading...'
+                        : !selectedCountry
+                          ? 'Select Country first'
+                          : 'Select State'
+                    }
                     searchPlaceholder="Search states..."
-                    emptyMessage={selectedCountry ? "No states found" : "Select a country first"}
+                    emptyMessage={
+                      selectedCountry
+                        ? 'No states found'
+                        : 'Select a country first'
+                    }
                     disabled={!selectedCountry}
                     loading={loadingStates}
                     className="w-full"
@@ -589,7 +674,9 @@ const SettingsPage: React.FC = () => {
                         city: '',
                       });
                     }}
-                    placeholder={loadingCountries ? "Loading..." : "Select Country"}
+                    placeholder={
+                      loadingCountries ? 'Loading...' : 'Select Country'
+                    }
                     searchPlaceholder="Search countries..."
                     emptyMessage="No countries found"
                     loading={loadingCountries}
@@ -734,265 +821,411 @@ const SettingsPage: React.FC = () => {
             )}
           </div>
         );
-      case 'integrations':
-        // Only allow admin to access integrations
-        if (!isAdmin) {
-          return null;
-        }
-        return (
-          <div className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                Integrations and connected apps
-              </h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Supercharge your workflow and connect the tool you use every
-                day.
-              </p>
-            </div>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Available Integrations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Integration settings coming soon.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        );
+      case 'billings':
+        return renderBillings();
+      case 'profile':
+        return renderProfile();
+      case 'team':
+        return renderTeam();
+      case 'plan':
+        return renderPlan();
+      case 'email':
+        return renderEmail();
       default:
         return null;
     }
   };
 
-  const [coverImage, setCoverImage] = useState<string>('');
-  const [publicProfileUrl, setPublicProfileUrl] = useState<string>('https://app.ahiregro.com/profile/nathaniel-poole');
+  // Render Billings Tab
+  const renderBillings = () => {
+    const [cardName, setCardName] = useState('Mayad Ahmed');
+    const [cardExpiry, setCardExpiry] = useState('02 / 2028');
+    const [cardNumber, setCardNumber] = useState('8269 9620 9292 2538');
+    const [cvv, setCvv] = useState('****');
+    const [contactEmail, setContactEmail] = useState('existing');
+    const [newEmail, setNewEmail] = useState('');
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(publicProfileUrl);
-    // You could use toast here if available
-    alert('URL copied to clipboard!');
+    const billingHistory = [
+      {
+        id: 1,
+        invoice: 'Account Sale',
+        date: 'Apr 14, 2004',
+        amount: '$3,050',
+        status: 'Pending',
+        statusColor:
+          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        tracking: 'LM580405575CN',
+        address: '313 Main Road, Sunderland.',
+      },
+      {
+        id: 2,
+        invoice: 'Account Sale',
+        date: 'Jun 24, 2008',
+        amount: '$1,050',
+        status: 'Cancelled',
+        statusColor:
+          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        tracking: 'AZ938540353US',
+        address: '96 Grange Road, Peterborough.',
+      },
+    ];
+
+    return (
+      <div className="space-y-8">
+        {/* Payment Method Section */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Payment Method
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Update your billing details and address.
+            </p>
+          </div>
+
+          {/* Card Details */}
+          <Card className="bg-white dark:bg-slate-800">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold">
+                    Card Details
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Update your billing details and address.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-600"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add another card
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Card Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Card Number
+                </label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    className="h-11 pl-12 pr-4"
+                    placeholder="0000 0000 0000 0000"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <div className="w-8 h-5 bg-gradient-to-r from-orange-500 to-red-600 rounded flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Name and Expiry Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Name on your Card
+                  </label>
+                  <Input
+                    type="text"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                    className="h-11"
+                    placeholder="Enter name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Expiry
+                  </label>
+                  <Input
+                    type="text"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(e.target.value)}
+                    className="h-11"
+                    placeholder="MM / YY"
+                  />
+                </div>
+              </div>
+
+              {/* CVV */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  CVV
+                </label>
+                <Input
+                  type="password"
+                  value={cvv}
+                  onChange={(e) => setCvv(e.target.value)}
+                  className="h-11"
+                  placeholder="***"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact email Section */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Contact email
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Where should invoices be sent?
+            </p>
+          </div>
+
+          <Card className="bg-white dark:bg-slate-800">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  id="existing-email"
+                  name="contact-email"
+                  value="existing"
+                  checked={contactEmail === 'existing'}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="mt-1 h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6]"
+                />
+                <div className="flex-1">
+                  <label
+                    htmlFor="existing-email"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+                  >
+                    Send to the existing email
+                  </label>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {userDetails.email || 'mayadahmed@ofspace.co'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  id="new-email"
+                  name="contact-email"
+                  value="new"
+                  checked={contactEmail === 'new'}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="mt-1 h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6]"
+                />
+                <div className="flex-1">
+                  <label
+                    htmlFor="new-email"
+                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer mb-2"
+                  >
+                    Add another email address
+                  </label>
+                  {contactEmail === 'new' && (
+                    <Input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="h-10"
+                      placeholder="Enter email address"
+                    />
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Billing History Section */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Billing History
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              See the transaction you made.
+            </p>
+          </div>
+
+          <Card className="bg-white dark:bg-slate-800">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        <div className="flex items-center gap-1">
+                          Invoice
+                          <ChevronUp className="h-3 w-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        <div className="flex items-center gap-1">
+                          Date
+                          <ChevronUp className="h-3 w-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        <div className="flex items-center gap-1">
+                          Amount
+                          <ChevronUp className="h-3 w-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        <div className="flex items-center gap-1">
+                          Status
+                          <ChevronUp className="h-3 w-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Tracking & Address
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {billingHistory.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-gray-50 dark:hover:bg-slate-700"
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                          {item.invoice}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                          {item.date}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {item.amount}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${item.statusColor}`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              <div>{item.tracking}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-500">
+                                {item.address}
+                              </div>
+                            </div>
+                            <button className="p-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded">
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   };
+
+  // Render other tabs
+  const renderProfile = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Profile
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Profile settings coming soon.
+      </p>
+    </div>
+  );
+
+  const renderTeam = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Team
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Team settings coming soon.
+      </p>
+    </div>
+  );
+
+  const renderPlan = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Plan
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Plan settings coming soon.
+      </p>
+    </div>
+  );
+
+  const renderEmail = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Email
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Email settings coming soon.
+      </p>
+    </div>
+  );
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-        {/* Blue Header with Cover */}
-        <div 
-          className="relative h-48 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900"
-          style={coverImage ? { backgroundImage: `url(${coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-        >
-          {/* Geometric Pattern Overlay */}
-          <div className={`absolute inset-0 ${coverImage ? 'bg-black/30' : 'opacity-20'}`}>
-            <div className="absolute inset-0" style={{
-              backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 2px, transparent 2px),
-                                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.3) 2px, transparent 2px),
-                                linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.1) 49%, rgba(255,255,255,0.1) 51%, transparent 52%)`,
-              backgroundSize: '50px 50px, 60px 60px, 30px 30px'
-            }} />
-          </div>
-          
-          {/* Change Cover Button */}
-          <div className="absolute top-4 right-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/90 hover:bg-white text-gray-700 border-white/20"
-              onClick={() => {
-                // Handle cover image change
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setCoverImage(reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                };
-                input.click();
-              }}
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              Change Cover
-            </Button>
-          </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-4 lg:p-6">
+        {/* Header Section */}
+        <div className="max-w-7xl mx-auto mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Settings
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Manage your account settings and preferences.
+          </p>
         </div>
 
-        {/* Main Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 pb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-              {/* Left Column - Profile Card */}
-              <div className="lg:col-span-1">
-                <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
-                  {/* Profile Picture */}
-                  <div className="flex justify-center -mt-16">
-                    <div className="relative">
-                      <div className="h-32 w-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800">
-                        {profileImage &&
-                        profileImage !== 'https://via.placeholder.com/80' ? (
-                          <img
-                            src={profileImage}
-                            alt="Profile"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full bg-[#4F39F6] flex items-center justify-center text-white font-semibold text-3xl">
-                            {userDetails.firstName?.[0] ||
-                              userDetails.email?.[0] ||
-                              'U'}
-                          </div>
-                        )}
-                      </div>
-                      <label className="absolute bottom-0 right-0 bg-[#4F39F6] text-white rounded-full p-2 cursor-pointer hover:bg-[#3D2DC4] shadow-md">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              if (file.size > 2 * 1024 * 1024) {
-                                alert('Image size must be less than 2MB');
-                                return;
-                              }
-                              if (
-                                !['image/jpeg', 'image/jpg', 'image/png'].includes(
-                                  file.type,
-                                )
-                              ) {
-                                alert('Only JPG, JPEG, and PNG files are allowed');
-                                return;
-                              }
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setProfileImage(reader.result as string);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                        <Camera className="h-4 w-4" />
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Name and Company */}
-                  <div className="text-center mt-4">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                      {userDetails.firstName || userDetails.lastName
-                        ? `${userDetails.firstName} ${userDetails.lastName}`.trim()
-                        : 'User Name'}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {userDetails.role || 'Company Name'}
-                    </p>
-                  </div>
-
-                  {/* Metrics */}
-                  <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Opportunities applied
-                      </span>
-                      <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                        32
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Opportunities won
-                      </span>
-                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        26
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Current opportunities
-                      </span>
-                      <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        6
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* View Public Profile Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    View Public Profile
-                  </Button>
-
-                  {/* Public Profile URL */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Public Profile URL
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="text"
-                        value={publicProfileUrl}
-                        readOnly
-                        className="h-8 text-xs flex-1 bg-gray-50 dark:bg-slate-700"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={copyToClipboard}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column - Settings Form */}
-              <div className="lg:col-span-2">
-                {/* Tabs */}
-                <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                        activeTab === tab.id
-                          ? 'border-[#4F39F6] text-[#4F39F6] dark:text-[#4F39F6]'
-                          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                  {isAdmin && (
-                    <button
-                      onClick={() => setActiveTab('integrations' as SettingsTab)}
-                      className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                        activeTab === 'integrations'
-                          ? 'border-[#4F39F6] text-[#4F39F6] dark:text-[#4F39F6]'
-                          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                      }`}
-                    >
-                      Company Settings
-                    </button>
-                  )}
-                </div>
-
-                {/* Form Content */}
-                <div>{renderContent()}</div>
-              </div>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto">
+          {/* Tabs Navigation */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'border-[#4F39F6] text-[#4F39F6] dark:text-[#4F39F6]'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            {renderContent()}
           </div>
         </div>
       </div>
@@ -1008,10 +1241,7 @@ const SettingsPage: React.FC = () => {
               Are you sure you want to log out?
             </p>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsLogoutOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleLogout}>

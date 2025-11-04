@@ -176,7 +176,7 @@ const CandidatesPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
+      <div className="min-h-screen">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
@@ -197,8 +197,8 @@ const CandidatesPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Search and Filters */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-6">
+          {/* Search and Filters - Glassmorphism Style */}
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 mb-8">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
@@ -254,56 +254,109 @@ const CandidatesPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               >
                 {filteredCandidates.map((candidate, index) => (
                   <motion.div
                     key={candidate.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileHover={{ y: -4 }}
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all duration-300 group"
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{
+                      delay: index * 0.05,
+                      type: 'spring',
+                      stiffness: 100,
+                      damping: 15,
+                    }}
+                    whileHover={{
+                      y: -8,
+                      scale: 1.02,
+                      transition: { duration: 0.2 },
+                    }}
+                    className="group relative"
                   >
-                    {/* Card Header - Minimal Info */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-[#4F39F6] rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                          {candidate.firstName.charAt(0)}
-                          {candidate.lastName.charAt(0)}
+                    {/* Glassmorphism Card */}
+                    <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Gradient Overlay on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#4F39F6]/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0" />
+
+                      {/* Content */}
+                      <div className="relative z-10">
+                        {/* Card Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {/* Avatar with Gradient */}
+                            <div className="relative">
+                              <div className="w-12 h-12 bg-gradient-to-br from-[#4F39F6] to-[#856FFF] rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg">
+                                {candidate.firstName.charAt(0)}
+                                {candidate.lastName.charAt(0)}
+                              </div>
+                              {candidate.matchScore &&
+                                candidate.matchScore >= 85 && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm" />
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#4F39F6] transition-colors">
+                                {candidate.firstName} {candidate.lastName}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                {candidate.email}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleViewDetails(candidate)}
+                            className="inline-flex items-center justify-center p-2 rounded-xl bg-gray-50 dark:bg-slate-700/50 hover:bg-[#4F39F6]/10 dark:hover:bg-[#4F39F6]/20 text-gray-600 dark:text-gray-400 hover:text-[#4F39F6] transition-all duration-200 flex-shrink-0 backdrop-blur-sm"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                            {candidate.firstName} {candidate.lastName}
-                          </h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">
-                            {candidate.email}
-                          </p>
+
+                        {/* Skills Preview */}
+                        {candidate.skills && candidate.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {candidate.skills.slice(0, 3).map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {candidate.skills.length > 3 && (
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400">
+                                +{candidate.skills.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Status and Match Score */}
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-700/50">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm ${getStatusColor(candidate.status)} dark:bg-opacity-20 shadow-sm`}
+                          >
+                            {candidate.status}
+                          </span>
+                          {candidate.matchScore && (
+                            <div className="flex items-center gap-1.5">
+                              <div className="relative">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4F39F6]/10 to-pink-500/10 border-2 border-[#4F39F6]/20 flex items-center justify-center backdrop-blur-sm">
+                                  <span
+                                    className={`text-xs font-bold ${getMatchColor(candidate.matchScore)}`}
+                                  >
+                                    {candidate.matchScore}%
+                                  </span>
+                                </div>
+                                {candidate.matchScore >= 85 && (
+                                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleViewDetails(candidate)}
-                        className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex-shrink-0"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)} dark:bg-opacity-20`}
-                      >
-                        {candidate.status}
-                      </span>
-                      {candidate.matchScore && (
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}
-                        >
-                          {candidate.matchScore}%
-                        </span>
-                      )}
                     </div>
                   </motion.div>
                 ))}

@@ -25,7 +25,7 @@ export class OrganizationAPI {
   updateOrganization = async (
     id: number,
     payload: Omit<UpdateOrganizationRequest, 'id'>,
-  ) => axiosInstance.put(ORGANIZATIONS.UPDATE(id), payload);
+  ) => axiosInstance.patch(ORGANIZATIONS.UPDATE(id), payload);
 
   deleteOrganization = async (id: number) =>
     axiosInstance.delete(ORGANIZATIONS.DELETE(id));

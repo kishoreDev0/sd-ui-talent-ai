@@ -58,9 +58,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-background">
+      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-purple-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="lg:hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-slate-700/50 px-4 py-3 flex items-center justify-between">
           <Button
             variant="outline"
             size="icon"
@@ -73,7 +73,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 
-        <div className="p-2">{children}</div>
+        <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>
   );

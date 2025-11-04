@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
@@ -465,7 +466,7 @@ const JobBoard: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-indigo-50 py-8 md:py-12">
           <div className="max-w-6xl mx-auto px-4">
@@ -478,8 +479,8 @@ const JobBoard: React.FC = () => {
               </p>
             </div>
 
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-md p-4 max-w-3xl mx-auto">
+            {/* Search Bar - Glassmorphism */}
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 max-w-3xl mx-auto">
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -625,89 +626,105 @@ const JobBoard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Job Cards */}
-              <div className="space-y-4">
+              {/* Job Cards - Pinterest Style */}
+              <div className="space-y-5">
                 {filteredJobs.map((job) => (
-                  <div
+                  <motion.div
                     key={job.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    className="group relative"
                   >
-                    {/* Company Header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-lg">
-                        {job.companyIcon}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900">
-                          {job.company}
-                        </h3>
-                        <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
-                          {job.paymentVerified && (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4 text-[#4F39F6]" />
-                              <span>Payment verified</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            <span>{job.location}</span>
+                    <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Gradient Overlay on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#4F39F6]/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0" />
+
+                      {/* Content */}
+                      <div className="relative z-10">
+                        {/* Company Header */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#4F39F6] to-[#856FFF] rounded-xl flex items-center justify-center text-lg shadow-lg">
+                            {job.companyIcon}
                           </div>
-                          <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
-                            {job.applicants} applicants
-                          </span>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover:text-[#4F39F6] transition-colors">
+                              {job.company}
+                            </h3>
+                            <div className="flex items-center flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1.5">
+                              {job.paymentVerified && (
+                                <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                  <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                  <span className="text-green-700 dark:text-green-300 font-medium">
+                                    Verified
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                                <MapPin className="h-3 w-3" />
+                                <span>{job.location}</span>
+                              </div>
+                              <span className="px-2.5 py-0.5 bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 rounded-lg text-xs font-semibold border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm">
+                                {job.applicants} applicants
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Job Title */}
-                    <button
-                      onClick={() =>
-                        navigate(`/jobs/${job.id}`, { state: { job } })
-                      }
-                      className="text-left text-lg font-bold text-gray-900 mb-2 hover:underline"
-                    >
-                      {job.title}
-                    </button>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-700 mb-3 leading-relaxed">
-                      {job.description}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {job.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                        {/* Job Title */}
+                        <button
+                          onClick={() =>
+                            navigate(`/jobs/${job.id}`, { state: { job } })
+                          }
+                          className="text-left text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 hover:text-[#4F39F6] transition-colors group/title"
                         >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                          {job.title}
+                        </button>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4" />
-                          <span className="font-medium">{job.hourlyRate}</span>
+                        {/* Description */}
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed line-clamp-2">
+                          {job.description}
+                        </p>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {job.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm hover:scale-105 transition-transform cursor-pointer"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          <span>{job.proposals} proposal</span>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-slate-700/50">
+                          <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                              <DollarSign className="h-4 w-4 text-[#4F39F6]" />
+                              <span className="font-semibold">
+                                {job.hourlyRate}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                              <FileText className="h-4 w-4 text-[#4F39F6]" />
+                              <span>{job.proposals} proposals</span>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() =>
+                              navigate(`/jobs/${job.id}`, { state: { job } })
+                            }
+                            className="bg-gradient-to-r from-[#4F39F6] to-[#856FFF] hover:from-[#3D2DC4] hover:to-[#6B5AE8] text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            See details
+                          </Button>
                         </div>
                       </div>
-                      <Button
-                        onClick={() =>
-                          navigate(`/jobs/${job.id}`, { state: { job } })
-                        }
-                        className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      >
-                        See details
-                      </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>

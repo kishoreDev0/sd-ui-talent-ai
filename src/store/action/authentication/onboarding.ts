@@ -1,48 +1,34 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { AxiosInstance } from 'axios';
-import { AuthAPI } from '../../service/authentication/login';
-import { AuthTokens } from '../../types/authentication/login';
+import { OnboardingAPI } from '../../service/authentication/onboarding';
+import { UpdateOnboardingRequest } from '../../types/authentication/onboarding';
 
-export const loginUser = createAsyncThunk(
-  'auth/login',
+export const updateUserOnboarding = createAsyncThunk(
+  'auth/updateOnboarding',
   async (
     {
-      email,
-      password,
+      userId,
+      payload,
       api,
     }: {
-      email: string;
-      password: string;
+      userId: number;
+      payload: UpdateOnboardingRequest;
       api: AxiosInstance;
     },
     { rejectWithValue },
   ) => {
     try {
-      const authAPI = new AuthAPI(api);
-      const response = await authAPI.login(email, password);
+      const onboardingAPI = new OnboardingAPI(api);
+      const response = await onboardingAPI.updateOnboarding(userId, payload);
 
-      // Handle new response format
       if (response.data.success && response.data.data) {
-        const { result, access_token, refresh_token, token_type, is_onboarding_required } =
-          response.data.data;
-
-        const tokens: AuthTokens = {
-          access_token,
-          refresh_token,
-          token_type,
-        };
-
-        // Return the structure expected by the slice
         return {
-          user: result,
-          tokens,
-          is_onboarding_required: is_onboarding_required ?? false,
+          user: response.data.data,
         };
       } else {
-        // Handle error array or string
         const errorMessage = Array.isArray(response.data.error)
           ? response.data.error.join(', ')
-          : response.data.error || 'Login failed';
+          : response.data.error || 'Onboarding update failed';
         return rejectWithValue(errorMessage);
       }
     } catch (error: unknown) {
@@ -58,8 +44,9 @@ export const loginUser = createAsyncThunk(
           }
         )?.response?.data?.message ||
         (error as { message?: string })?.message ||
-        'An error occurred during login';
+        'An error occurred during onboarding update';
       return rejectWithValue(errorMessage);
     }
   },
 );
+

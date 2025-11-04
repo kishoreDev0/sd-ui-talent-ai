@@ -95,7 +95,7 @@ export const deleteOrganization = createAsyncThunk<
 });
 
 export const getOrganizationUsers = createAsyncThunk<
-  any,
+  unknown,
   number,
   { rejectValue: { message: string } }
 >('organization/getOrganizationUsers', async (id, { rejectWithValue }) => {

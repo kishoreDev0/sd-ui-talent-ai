@@ -11,7 +11,7 @@ export const AUTH = {
   CHANGE_PASSWORD: '/api/v1/auth/change-password',
   RESET_PASSWORD: '/api/v1/auth/reset-password',
   REFRESH: '/api/v1/auth/refresh',
-  INVITE_USER: '/api/v1/auth/invite',
+  INVITE_USER: '/api/v1/user/invite',
 } as const;
 
 // Users endpoints
@@ -21,6 +21,7 @@ export const USERS = {
   CREATE: '/api/v1/users',
   UPDATE: (id: number) => `/api/v1/users/${id}`,
   DELETE: (id: number) => `/api/v1/users/${id}`,
+  UPDATE_ONBOARDING: (id: number) => `/api/v1/users/${id}/onboarding`,
 } as const;
 
 // Roles endpoints
@@ -80,6 +81,6 @@ export const ORGANIZATIONS = {
   CREATE: '/api/v1/organization',
   UPDATE: (id: number) => `/api/v1/organization/${id}`,
   DELETE: (id: number) => `/api/v1/organization/${id}`,
-  GET_USERS: (id: number) => `/api/v1/organization/${id}/users`,
-  ASSIGN_USERS: (id: number) => `/api/v1/organization/${id}/users`,
+  GET_USERS: (id: number) => `/api/v1/organizations/${id}/users`,
+  ASSIGN_USERS: (id: number) => `/api/v1/organizations/${id}/users`,
 } as const;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { Eye, Search, Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { Eye, Search, Plus, Edit, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,13 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toast';
@@ -35,7 +28,6 @@ import {
   createOrganization,
   updateOrganization,
   deleteOrganization,
-  getOrganizationById,
 } from '@/store/organization/actions/organizationActions';
 import type { Organization } from '@/store/types/organization/organizationTypes';
 
@@ -44,7 +36,7 @@ const OrganizationsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { showToast } = useToast();
-  const { organizations, loading, total, page, pageSize, totalPages } =
+  const { organizations, loading, total, pageSize, totalPages } =
     useAppSelector((state) => state.organization);
 
   const roleId =
@@ -183,6 +175,66 @@ const OrganizationsPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchInput, searchTerm]);
 
+  // Auto-load country/state/city when editing an organization
+  useEffect(() => {
+    if (
+      isFormOpen &&
+      isEditMode &&
+      selectedOrganization &&
+      countries.length > 0 &&
+      !selectedCountry &&
+      selectedOrganization.country
+    ) {
+      const foundCountry = countries.find(
+        (c) =>
+          c.name.toLowerCase() === selectedOrganization.country?.toLowerCase(),
+      );
+      if (foundCountry) {
+        setSelectedCountry(foundCountry);
+        GetState(foundCountry.id)
+          .then((countryStates) => {
+            setStates(countryStates);
+            if (selectedOrganization.state) {
+              const foundState = countryStates.find(
+                (s) =>
+                  s.name.toLowerCase() ===
+                  selectedOrganization.state?.toLowerCase(),
+              );
+              if (foundState) {
+                setSelectedState(foundState);
+                if (selectedOrganization.city) {
+                  GetCity(foundCountry.id, foundState.id)
+                    .then((stateCities) => {
+                      setCities(stateCities);
+                      const foundCity = stateCities.find(
+                        (c) =>
+                          c.name.toLowerCase() ===
+                          selectedOrganization.city?.toLowerCase(),
+                      );
+                      if (foundCity) {
+                        setSelectedCity(foundCity);
+                      }
+                    })
+                    .catch((error) => {
+                      console.error('Failed to load cities:', error);
+                    });
+                }
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to load states:', error);
+          });
+      }
+    }
+  }, [
+    isFormOpen,
+    isEditMode,
+    selectedOrganization,
+    countries,
+    selectedCountry,
+  ]);
+
   // Refresh function to manually fetch latest data
   const handleRefresh = async () => {
     try {
@@ -210,21 +262,13 @@ const OrganizationsPage: React.FC = () => {
     return organizations;
   })();
 
-  const handleViewDetails = async (org: Organization) => {
-    try {
-      const result = await dispatch(getOrganizationById(org.id)).unwrap();
-      if (result?.data) {
-        setSelectedOrganization(result.data);
-        setIsDetailsOpen(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch organization details:', error);
-      setSelectedOrganization(org);
-      setIsDetailsOpen(true);
-    }
+  const handleViewDetails = (org: Organization) => {
+    // Use the organization data directly from the list
+    setSelectedOrganization(org);
+    setIsDetailsOpen(true);
   };
 
-  const handleEdit = (org: Organization) => {
+  const handleEdit = async (org: Organization) => {
     setFormData({
       name: org.name || '',
       is_active:
@@ -238,55 +282,17 @@ const OrganizationsPage: React.FC = () => {
       zip_code: org.zip_code || '',
     });
 
-    // Find and set the country/state/city objects by name
-    if (org.country) {
-      const foundCountry = countries.find(
-        (c) => c.name.toLowerCase() === org.country?.toLowerCase(),
-      );
-      if (foundCountry) {
-        setSelectedCountry(foundCountry);
-        // Load states for the country first
-        GetState(foundCountry.id)
-          .then((countryStates) => {
-            setStates(countryStates);
-            if (org.state) {
-              const foundState = countryStates.find(
-                (s) => s.name.toLowerCase() === org.state?.toLowerCase(),
-              );
-              if (foundState) {
-                setSelectedState(foundState);
-                // Load cities for the state
-                if (org.city) {
-                  GetCity(foundCountry.id, foundState.id)
-                    .then((stateCities) => {
-                      setCities(stateCities);
-                      const foundCity = stateCities.find(
-                        (c) => c.name.toLowerCase() === org.city?.toLowerCase(),
-                      );
-                      if (foundCity) {
-                        setSelectedCity(foundCity);
-                      }
-                    })
-                    .catch((error) => {
-                      console.error('Failed to load cities:', error);
-                    });
-                }
-              }
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to load states:', error);
-          });
-      }
-    } else {
-      setSelectedCountry(null);
-      setSelectedState(null);
-      setSelectedCity(null);
-    }
+    // Reset country/state/city selections first
+    setSelectedCountry(null);
+    setSelectedState(null);
+    setSelectedCity(null);
+    setStates([]);
+    setCities([]);
 
     setSelectedOrganization(org);
     setIsEditMode(true);
     setIsFormOpen(true);
+    // Country/state/city will be loaded by useEffect when countries are available
   };
 
   const handleAddNew = () => {
@@ -406,11 +412,8 @@ const OrganizationsPage: React.FC = () => {
         await dispatch(createOrganization({ payload: submitData })).unwrap();
         showToast('Organization created successfully', 'success');
       }
-      setIsFormOpen(false);
-      setSelectedOrganization(null);
-      setSelectedCountry(null);
-      setSelectedState(null);
-      setSelectedCity(null);
+      // Reset form and close
+      handleCloseForm();
       // Refresh the list
       await handleRefresh();
     } catch (error) {
@@ -502,16 +505,6 @@ const OrganizationsPage: React.FC = () => {
                 Select All
               </label>
             </div>
-            {selectedItems.length > 0 && (
-              <Button
-                onClick={handleBulkDelete}
-                variant="destructive"
-                className="text-sm"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected ({selectedItems.length})
-              </Button>
-            )}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
               <Input
@@ -540,9 +533,9 @@ const OrganizationsPage: React.FC = () => {
               onClick={handleAddNew}
               className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Organization
-            </Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Organization
+          </Button>
           </div>
         </div>
 
@@ -600,12 +593,12 @@ const OrganizationsPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrganizations.map((org) => (
+                  filteredOrganizations.map((org, index) => (
                     <tr
-                      key={org.id}
+                      key={org.id || `org-${index}`}
                       className="hover:bg-gray-50 dark:hover:bg-slate-700"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                         <input
                           type="checkbox"
                           checked={selectedItems.includes(org.id)}
@@ -626,14 +619,14 @@ const OrganizationsPage: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-gray-100">
                           {org.state || '—'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-gray-100">
                           {org.country || '—'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             (org.is_active ??
@@ -664,16 +657,9 @@ const OrganizationsPage: React.FC = () => {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(org.id)}
-                            className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-100 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </td>
+                  </tr>
                   ))
                 )}
               </tbody>
@@ -714,7 +700,7 @@ const OrganizationsPage: React.FC = () => {
                   variant={currentPage === pageNum ? 'default' : 'outline'}
                 >
                   {pageNum}
-                </Button>
+            </Button>
               );
             })}
             <Button
@@ -734,7 +720,7 @@ const OrganizationsPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Organization Details</DialogTitle>
             </DialogHeader>
-            {selectedOrganization && (
+            {selectedOrganization ? (
               <div className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -758,7 +744,10 @@ const OrganizationsPage: React.FC = () => {
                       City
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.city || '—'}
+                      {selectedOrganization.city &&
+                      selectedOrganization.city.trim() !== ''
+                        ? selectedOrganization.city
+                        : '—'}
                     </p>
                   </div>
                   <div>
@@ -766,7 +755,10 @@ const OrganizationsPage: React.FC = () => {
                       State
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.state || '—'}
+                      {selectedOrganization.state &&
+                      selectedOrganization.state.trim() !== ''
+                        ? selectedOrganization.state
+                        : '—'}
                     </p>
                   </div>
                   <div>
@@ -774,7 +766,10 @@ const OrganizationsPage: React.FC = () => {
                       Country
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.country || '—'}
+                      {selectedOrganization.country &&
+                      selectedOrganization.country.trim() !== ''
+                        ? selectedOrganization.country
+                        : '—'}
                     </p>
                   </div>
                   <div>
@@ -782,7 +777,10 @@ const OrganizationsPage: React.FC = () => {
                       Zip Code
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.zip_code || '—'}
+                      {selectedOrganization.zip_code &&
+                      selectedOrganization.zip_code.trim() !== ''
+                        ? selectedOrganization.zip_code
+                        : '—'}
                     </p>
                   </div>
                   <div className="md:col-span-2">
@@ -790,7 +788,10 @@ const OrganizationsPage: React.FC = () => {
                       Address Line 1
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.address_line1 || '—'}
+                      {selectedOrganization.address_line1 &&
+                      selectedOrganization.address_line1.trim() !== ''
+                        ? selectedOrganization.address_line1
+                        : '—'}
                     </p>
                   </div>
                   <div className="md:col-span-2">
@@ -798,7 +799,10 @@ const OrganizationsPage: React.FC = () => {
                       Address Line 2
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedOrganization.address_line2 || '—'}
+                      {selectedOrganization.address_line2 &&
+                      selectedOrganization.address_line2.trim() !== ''
+                        ? selectedOrganization.address_line2
+                        : '—'}
                     </p>
                   </div>
                   <div>
@@ -824,12 +828,24 @@ const OrganizationsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            ) : (
+              <div className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+                No organization data available
+              </div>
             )}
           </DialogContent>
         </Dialog>
 
         {/* Organization Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog
+          open={isFormOpen}
+          onOpenChange={(open) => {
+            setIsFormOpen(open);
+            if (!open) {
+              handleCloseForm();
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
