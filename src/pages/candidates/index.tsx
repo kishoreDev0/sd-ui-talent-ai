@@ -269,8 +269,8 @@ const CandidatesPage: React.FC = () => {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-[#4F39F6] rounded-lg flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                            {candidate.firstName.charAt(0)}
-                            {candidate.lastName.charAt(0)}
+                          {candidate.firstName.charAt(0)}
+                          {candidate.lastName.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -292,17 +292,17 @@ const CandidatesPage: React.FC = () => {
 
                     {/* Status Badge */}
                     <div className="flex items-center justify-between">
-                            <span
+                      <span
                         className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(candidate.status)} dark:bg-opacity-20`}
+                      >
+                        {candidate.status}
+                      </span>
+                      {candidate.matchScore && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}
                         >
-                          {candidate.status}
+                          {candidate.matchScore}%
                         </span>
-                        {candidate.matchScore && (
-                            <span
-                              className={`px-2 py-0.5 rounded text-xs font-semibold ${getMatchColor(candidate.matchScore)}`}
-                            >
-                              {candidate.matchScore}%
-                            </span>
                       )}
                     </div>
                   </motion.div>
@@ -531,7 +531,7 @@ const CandidatesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-            </div>
+              </div>
             )}
           </DialogContent>
         </Dialog>

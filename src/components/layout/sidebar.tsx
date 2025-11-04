@@ -148,6 +148,12 @@ const navItems: NavItem[] = [
     roles: ['admin'],
   },
   {
+    path: '/organizations',
+    icon: <Building2 className="h-4 w-4" />,
+    label: 'Organizations',
+    roles: ['admin'],
+  },
+  {
     path: '/admin/access',
     icon: <Shield className="h-4 w-4" />,
     label: 'Access Control',

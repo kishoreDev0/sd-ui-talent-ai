@@ -38,8 +38,7 @@ const TalentEdgeLogo: React.FC<TalentEdgeLogoProps> = ({
       {/* Text */}
       {showText && (
         <span className="font-semibold text-lg" style={{ color: '#4F39F6' }}>
-          TalentEdge{' '}
-          <span className="uppercase">AI</span>
+          TalentEdge <span className="uppercase">AI</span>
         </span>
       )}
     </div>

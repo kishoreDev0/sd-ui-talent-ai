@@ -225,9 +225,7 @@ const TAExecutiveDashboard: React.FC = () => {
                 >
                   <Briefcase className="h-4 w-4 text-white mb-1" />
                   <p className="text-white font-semibold text-xs">Create Job</p>
-                  <p className="text-white text-[10px]">
-                    Post new position
-                  </p>
+                  <p className="text-white text-[10px]">Post new position</p>
                 </button>
                 <button
                   onClick={() => navigate('/candidates/register')}

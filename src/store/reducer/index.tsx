@@ -8,6 +8,7 @@ import registerReducer from '../slices/authentication/registerForm';
 import jobReducer from '../job/slices/jobSlice';
 import roleReducer from '../role/slices/roleSlice';
 import permissionReducer from '../permission/slices/permissionSlice';
+import organizationReducer from '../organization/slices/organizationSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   job: jobReducer,
   role: roleReducer,
   permission: permissionReducer,
+  organization: organizationReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

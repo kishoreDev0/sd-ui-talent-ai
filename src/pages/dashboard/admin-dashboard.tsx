@@ -172,7 +172,7 @@ const AdminDashboard: React.FC = () => {
                         className={`${metric.color} p-2 rounded-lg shadow-md`}
                       >
                         <Icon className="h-4 w-4 text-white" />
-          </div>
+                      </div>
                       <span
                         className={`text-xs font-semibold ${
                           metric.trend === 'up'
@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
                       >
                         {metric.change}
                       </span>
-          </div>
+                    </div>
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
                       {metric.value}
                     </h3>
@@ -262,7 +262,7 @@ const AdminDashboard: React.FC = () => {
                     System settings
                   </p>
                 </button>
-      </div>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -439,7 +439,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     View All
                   </Button>
-              </div>
+                </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-3 pt-0">
                 <div className="space-y-2">
@@ -455,9 +455,9 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           View and edit user accounts
                         </p>
-              </div>
+                      </div>
                       <UserCog className="h-3 w-3 text-gray-400" />
-            </div>
+                    </div>
                   </button>
                   <button
                     onClick={() => navigate('/admin/access')}
@@ -471,11 +471,11 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] text-gray-600 dark:text-gray-400">
                           Manage roles and permissions
                         </p>
-              </div>
+                      </div>
                       <Shield className="h-3 w-3 text-gray-400" />
-            </div>
+                    </div>
                   </button>
-            </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -498,21 +498,21 @@ const AdminDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="p-2 sm:p-3 pt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
+                {recentActivity.map((activity) => (
+                  <div
+                    key={activity.id}
                     className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
                   >
                     <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {activity.action}
-                  </p>
+                      {activity.action}
+                    </p>
                     <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
                       {activity.resource}
                     </p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                       {activity.time}
-                  </p>
-                </div>
+                    </p>
+                  </div>
                 ))}
               </div>
             </CardContent>

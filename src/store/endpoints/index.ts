@@ -72,3 +72,14 @@ export const INTERVIEWS = {
   UPDATE: (id: number) => `/api/v1/interviews/${id}`,
   DELETE: (id: number) => `/api/v1/interviews/${id}`,
 } as const;
+
+// Organizations endpoints
+export const ORGANIZATIONS = {
+  LIST: '/api/v1/organizations',
+  GET_BY_ID: (id: number) => `/api/v1/organization/${id}`,
+  CREATE: '/api/v1/organization',
+  UPDATE: (id: number) => `/api/v1/organization/${id}`,
+  DELETE: (id: number) => `/api/v1/organization/${id}`,
+  GET_USERS: (id: number) => `/api/v1/organization/${id}/users`,
+  ASSIGN_USERS: (id: number) => `/api/v1/organization/${id}/users`,
+} as const;
