@@ -211,18 +211,18 @@
 }
 
 .PhoneInput {
-  @apply flex items-center gap-2;
+  @apply flex items-center gap-2 h-9;
 }
 
 .PhoneInputInput {
-  @apply h-10 text-sm w-full rounded-md border border-input bg-background px-3 py-2 text-foreground;
+  @apply h-9 text-xs w-full rounded-md border border-input bg-background px-3 py-2 text-foreground;
   @apply placeholder:text-muted-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   @apply disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .PhoneInputCountry {
-  @apply flex items-center gap-1;
+  @apply flex items-center gap-1 h-9;
 }
 
 .PhoneInputCountryIcon {
@@ -230,8 +230,14 @@
 }
 
 .PhoneInputCountrySelect {
-  @apply text-sm border-none bg-transparent cursor-pointer focus:outline-none;
+  @apply text-xs border-none bg-transparent cursor-pointer focus:outline-none h-9;
   @apply focus-visible:ring-2 focus-visible:ring-ring rounded;
+  @apply flex items-center;
+}
+
+.PhoneInput--disabled .PhoneInputCountrySelect,
+.PhoneInput--disabled .PhoneInputInput {
+  @apply cursor-not-allowed opacity-50;
 }
 
 .PhoneInputCountrySelectArrow {

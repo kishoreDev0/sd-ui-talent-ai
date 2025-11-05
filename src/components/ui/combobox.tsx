@@ -11,7 +11,7 @@ export interface ComboboxOption {
 
 interface ComboboxProps {
   options: ComboboxOption[];
-  value?: string;
+  value?: string | null;
   onValueChange?: (value: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
@@ -34,8 +34,34 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
+  const [internalValue, setInternalValue] = React.useState<string | undefined>(value || undefined);
+  
+  // Sync internal value with prop value
+  React.useEffect(() => {
+    if (value !== undefined && value !== null && value !== '') {
+      setInternalValue(value);
+    } else if (value === null || value === '') {
+      setInternalValue(undefined);
+    }
+  }, [value]);
 
-  const selectedOption = options.find((option) => option.value === value);
+  const selectedOption = React.useMemo(() => {
+    const currentValue = value || internalValue;
+    if (!currentValue || currentValue === '') {
+      return undefined;
+    }
+    const found = options.find(
+      (option) => String(option.value) === String(currentValue),
+    );
+    return found;
+  }, [options, value, internalValue]);
+
+  // Reset search when value changes
+  React.useEffect(() => {
+    if (!open) {
+      setSearch('');
+    }
+  }, [open, value]);
 
   const filteredOptions = React.useMemo(() => {
     if (!search) return options;
@@ -43,12 +69,6 @@ export function Combobox({
       option.label.toLowerCase().includes(search.toLowerCase()),
     );
   }, [options, search]);
-
-  React.useEffect(() => {
-    if (!open) {
-      setSearch('');
-    }
-  }, [open]);
 
   return (
     <div className={cn('relative', className)}>
@@ -66,7 +86,11 @@ export function Combobox({
         onClick={() => !disabled && setOpen(!open)}
       >
         <span className="truncate">
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption
+            ? selectedOption.label
+            : (value || internalValue) && String(value || internalValue) !== ''
+              ? String(value || internalValue)
+              : placeholder}
         </span>
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </Button>
@@ -84,11 +108,15 @@ export function Combobox({
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-8 h-8 dark:bg-slate-800 dark:text-gray-100"
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
                 {search && (
                   <button
                     type="button"
-                    onClick={() => setSearch('')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSearch('');
+                    }}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   >
                     <X className="h-4 w-4" />
@@ -110,20 +138,25 @@ export function Combobox({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => {
-                      onValueChange?.(option.value);
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setInternalValue(option.value);
+                      if (onValueChange) {
+                        onValueChange(option.value);
+                      }
                       setOpen(false);
                     }}
                     className={cn(
-                      'w-full flex items-center justify-between px-2 py-1.5 text-sm rounded-sm hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors',
-                      value === option.value &&
+                      'w-full flex items-center justify-between px-2 py-1.5 text-sm rounded-sm hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer',
+                      String(value || internalValue) === String(option.value) &&
                         'bg-[#4F39F6]/10 text-[#4F39F6] dark:bg-[#4F39F6]/20 dark:text-[#4F39F6]',
-                      value !== option.value &&
+                      String(value || internalValue) !== String(option.value) &&
                         'text-gray-900 dark:text-gray-100',
                     )}
                   >
                     <span className="truncate">{option.label}</span>
-                    {value === option.value && (
+                    {String(value || internalValue) === String(option.value) && (
                       <Check className="h-4 w-4 shrink-0" />
                     )}
                   </button>

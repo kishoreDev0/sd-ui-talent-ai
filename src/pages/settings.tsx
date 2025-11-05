@@ -10,8 +10,6 @@ import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
   CardContent,
@@ -19,23 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Plus,
-  ChevronUp,
-  MoreVertical,
-  Upload,
-  Camera,
-  Check,
-  X,
-} from 'lucide-react';
+import { Upload, Camera, X, Edit2, Save, Loader2, Info, Settings, Shield, Bell, User, Users, CreditCard, MapPin } from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
-import { z } from 'zod';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import {
-  parsePhoneNumber,
-  getCountryCallingCode,
-} from 'react-phone-number-input';
+import { parsePhoneNumber } from 'react-phone-number-input';
 
 // Type definitions for country/state/city (matching react-country-state-city structure)
 type Country = {
@@ -66,7 +52,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type SettingsTab = 'my-details' | 'password';
+type SettingsTab = 'general-information' | 'preferences' | 'security' | 'notifications' | 'account' | 'account-manager' | 'billings';
 
 // Change Password Form Component
 const ChangePasswordFormComponent: React.FC<{
@@ -140,7 +126,7 @@ const ChangePasswordFormComponent: React.FC<{
             <Input
               type="password"
               placeholder="Enter current password"
-              className="h-10 text-sm w-full"
+              className="h-8 text-sm w-full"
               value={formData.currentPassword}
               onChange={(e) =>
                 setFormData({ ...formData, currentPassword: e.target.value })
@@ -157,7 +143,7 @@ const ChangePasswordFormComponent: React.FC<{
             <Input
               type="password"
               placeholder="Enter new password"
-              className="h-10 text-sm w-full"
+              className="h-8 text-sm w-full"
               value={formData.newPassword}
               onChange={(e) =>
                 setFormData({ ...formData, newPassword: e.target.value })
@@ -174,7 +160,7 @@ const ChangePasswordFormComponent: React.FC<{
             <Input
               type="password"
               placeholder="Confirm new password"
-              className="h-10 text-sm w-full"
+              className="h-8 text-sm w-full"
               value={formData.confirmPassword}
               onChange={(e) =>
                 setFormData({ ...formData, confirmPassword: e.target.value })
@@ -206,12 +192,53 @@ const SettingsPage: React.FC = () => {
   const { isLoading: forgotPasswordLoading } = useAppSelector(
     (state) => state.forgotPassword,
   );
-  const [activeTab, setActiveTab] = useState<SettingsTab>('my-details');
-  const [passwordSubTab, setPasswordSubTab] = useState<'change' | 'reset'>(
-    'change',
-  );
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general-information');
+  const [businessName, setBusinessName] = useState('');
+  const [fax, setFax] = useState('');
+
+  // Initialize business name from user organizations
+  useEffect(() => {
+    if (user?.organizations && user.organizations.length > 0 && !businessName) {
+      setBusinessName(user.organizations[0].name || '');
+    }
+  }, [user?.organizations, businessName]);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [originalUserDetails, setOriginalUserDetails] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    mobileCountryCode: '+1',
+    birthday: '',
+    bio: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    countryId: '',
+    stateId: '',
+    cityId: '',
+    preferredTimeZone: '',
+    isActive: true,
+    lastLogin: '',
+    role: '',
+    imageUrl: '',
+  });
+  const [originalPhoneNumber, setOriginalPhoneNumber] = useState<string>('');
+  const [originalSelectedCountry, setOriginalSelectedCountry] =
+    useState<Country | null>(null);
+  const [originalSelectedState, setOriginalSelectedState] =
+    useState<State | null>(null);
+  const [originalSelectedCity, setOriginalSelectedCity] = useState<City | null>(
+    null,
+  );
+  const [originalAvatarPreview, setOriginalAvatarPreview] =
+    useState<string>('');
+  const [originalAvatarFile, setOriginalAvatarFile] = useState<File | null>(
+    null,
+  );
   const [userDetails, setUserDetails] = useState({
     firstName: '',
     lastName: '',
@@ -263,7 +290,7 @@ const SettingsPage: React.FC = () => {
         : '';
 
       setPhoneNumber(fullPhoneNumber);
-      setUserDetails({
+      const initialUserDetails = {
         firstName: userData.first_name || userData.firstName || '',
         lastName: userData.last_name || userData.lastName || '',
         email: userData.email || '',
@@ -284,8 +311,12 @@ const SettingsPage: React.FC = () => {
         lastLogin: userData.last_login || userData.lastLogin || '',
         role: userData.role?.name || userData.role_name || '',
         imageUrl: imageUrl,
-      });
+      };
+      setUserDetails(initialUserDetails);
+      setOriginalUserDetails(initialUserDetails);
+      setOriginalPhoneNumber(fullPhoneNumber);
       setAvatarPreview(imageUrl);
+      setOriginalAvatarPreview(imageUrl);
     }
   }, [user]);
 
@@ -357,6 +388,7 @@ const SettingsPage: React.FC = () => {
       const foundCountry = countries.find((c) => c.id === countryId);
       if (foundCountry && !selectedCountry) {
         setSelectedCountry(foundCountry);
+        setOriginalSelectedCountry(foundCountry);
       }
     }
   }, [countries, userDetails.countryId, selectedCountry]);
@@ -368,6 +400,7 @@ const SettingsPage: React.FC = () => {
       const foundState = states.find((s) => s.id === stateId);
       if (foundState && !selectedState) {
         setSelectedState(foundState);
+        setOriginalSelectedState(foundState);
       }
     }
   }, [states, userDetails.stateId, selectedCountry, selectedState]);
@@ -379,13 +412,19 @@ const SettingsPage: React.FC = () => {
       const foundCity = cities.find((c) => c.id === cityId);
       if (foundCity && !selectedCity) {
         setSelectedCity(foundCity);
+        setOriginalSelectedCity(foundCity);
       }
     }
   }, [cities, userDetails.cityId, selectedState, selectedCity]);
 
-  const tabs: { id: SettingsTab; label: string }[] = [
-    { id: 'my-details', label: 'My details' },
-    { id: 'password', label: 'Password' },
+  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'general-information', label: 'General Information', icon: <Info className="w-4 h-4" /> },
+    { id: 'preferences', label: 'Preferences', icon: <Settings className="w-4 h-4" /> },
+    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
+    { id: 'account-manager', label: 'Account Manager', icon: <Users className="w-4 h-4" /> },
+    { id: 'billings', label: 'Billings', icon: <CreditCard className="w-4 h-4" /> },
   ];
 
   const handleLogout = () => {
@@ -405,7 +444,7 @@ const SettingsPage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         first_name: userDetails.firstName,
         last_name: userDetails.lastName,
         email: userDetails.email,
@@ -421,11 +460,11 @@ const SettingsPage: React.FC = () => {
       // If a new avatar file was selected, include it in the payload
       if (avatarFile) {
         // Create FormData for file upload
-        const formData = new FormData();
+        const uploadFormData = new FormData();
         Object.keys(payload).forEach((key) => {
-          formData.append(key, payload[key]);
+          uploadFormData.append(key, String(payload[key]));
         });
-        formData.append('image', avatarFile);
+        uploadFormData.append('image', avatarFile);
 
         // TODO: Update this to use the actual API endpoint for file upload
         // For now, if the API supports image_url, we'll send it as base64 or URL
@@ -457,13 +496,23 @@ const SettingsPage: React.FC = () => {
         }
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setAvatarFile(null); // Clear the file after successful upload
+        // Update original values to match the saved values
+        setOriginalUserDetails({ ...userDetails });
+        setOriginalPhoneNumber(phoneNumber);
+        setOriginalSelectedCountry(selectedCountry);
+        setOriginalSelectedState(selectedState);
+        setOriginalSelectedCity(selectedCity);
+        setOriginalAvatarPreview(avatarPreview);
+        setOriginalAvatarFile(null);
+        setIsEditing(false); // Exit edit mode after successful update
       } else {
         showToast(result?.error?.[0] || 'Failed to update profile', 'error');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
-        err?.payload?.message ||
-        err?.message ||
+        (err as { payload?: { message?: string }; message?: string })?.payload
+          ?.message ||
+        (err as { message?: string })?.message ||
         'Failed to update profile. Please try again.';
       showToast(errorMessage, 'error');
     } finally {
@@ -471,7 +520,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleChangePassword = async (formData: {
+  const handleChangePassword = async (_formData: {
     currentPassword: string;
     newPassword: string;
     confirmPassword: string;
@@ -500,12 +549,16 @@ const SettingsPage: React.FC = () => {
           'success',
         );
       } else {
-        showToast(result?.error || 'Failed to send reset email', 'error');
+        showToast(
+          (result as { error?: string })?.error || 'Failed to send reset email',
+          'error',
+        );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
-        err?.payload?.message ||
-        err?.message ||
+        (err as { payload?: { message?: string }; message?: string })?.payload
+          ?.message ||
+        (err as { message?: string })?.message ||
         'Failed to send password reset email. Please try again.';
       showToast(errorMessage, 'error');
     }
@@ -542,401 +595,459 @@ const SettingsPage: React.FC = () => {
     });
   };
 
+  const handleEdit = () => {
+    // Save current values as original before editing
+    setOriginalUserDetails({ ...userDetails });
+    setOriginalPhoneNumber(phoneNumber);
+    setOriginalSelectedCountry(selectedCountry);
+    setOriginalSelectedState(selectedState);
+    setOriginalSelectedCity(selectedCity);
+    setOriginalAvatarPreview(avatarPreview);
+    setOriginalAvatarFile(avatarFile);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    // Restore original values
+    setUserDetails({ ...originalUserDetails });
+    setPhoneNumber(originalPhoneNumber);
+    setSelectedCountry(originalSelectedCountry);
+    setSelectedState(originalSelectedState);
+    setSelectedCity(originalSelectedCity);
+    setAvatarPreview(originalAvatarPreview);
+    setAvatarFile(originalAvatarFile);
+    setIsEditing(false);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'my-details':
+      case 'general-information':
         return (
-          <div className="space-y-6">
-            <form className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    {avatarPreview ? (
-                      <img
-                        src={avatarPreview}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
-                        <Camera className="w-8 h-8" />
+          <div className="space-y-8">
+            {/* Section Header */}
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                General Information
+              </h2>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                Update your profile and organization details
+              </p>
+            </div>
+
+            <form className="space-y-5">
+              {/* Profile Picture Upload Section */}
+              <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                  Profile Picture
+                </h3>
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                          <Camera className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    {avatarPreview && (
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#4F39F6] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
+                        <MapPin className="w-3 h-3 text-white" />
                       </div>
                     )}
                   </div>
-                  {avatarPreview && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveAvatar}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                    Profile Photo
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                    JPG, PNG or GIF. Max size of 5MB
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <label htmlFor="avatar-upload">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-xs cursor-pointer"
-                      >
-                        <Upload className="w-3 h-3 mr-1.5" />
-                        Upload Photo
-                      </Button>
-                    </label>
+                  <div className="flex-1 space-y-1">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                        {userDetails.firstName && userDetails.lastName
+                          ? `${userDetails.firstName} ${userDetails.lastName}`
+                          : userDetails.firstName ||
+                            userDetails.lastName ||
+                            user?.email?.split('@')[0] ||
+                            'User'}
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                        {user?.role?.name || user?.role?.display_name || userDetails.role || 'No role assigned'}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3" />
+                        {selectedCity?.name || selectedState?.name || selectedCountry?.name || userDetails.city || userDetails.state || userDetails.country || 'No location set'}
+                      </p>
+                      {user?.email && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                          {user.email}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                        disabled={!isEditing}
+                      />
+                      <label htmlFor="avatar-upload">
+                        <Button
+                          type="button"
+                          disabled={!isEditing}
+                          className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Upload New Photo
+                        </Button>
+                      </label>
+                      {isEditing && avatarPreview && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRemoveAvatar}
+                          className="border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white h-8 px-3 text-xs"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* First Row - 3 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    First Name
-                  </label>
-                  <Input
-                    placeholder="Enter your first name"
-                    className="h-10 text-sm w-full"
-                    value={userDetails.firstName}
-                    onChange={(e) =>
-                      setUserDetails({
-                        ...userDetails,
-                        firstName: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Last Name
-                  </label>
-                  <Input
-                    placeholder="Enter your last name"
-                    className="h-10 text-sm w-full"
-                    value={userDetails.lastName}
-                    onChange={(e) =>
-                      setUserDetails({
-                        ...userDetails,
-                        lastName: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email address
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="h-10 text-sm w-full"
-                    value={userDetails.email}
-                    onChange={(e) =>
-                      setUserDetails({
-                        ...userDetails,
-                        email: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Second Row - 3 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone Number
-                  </label>
-                  <PhoneInput
-                    international
-                    defaultCountry="US"
-                    value={phoneNumber}
-                    onChange={(value) => {
-                      setPhoneNumber(value || '');
-                      if (value) {
-                        try {
-                          const phoneNumberObj = parsePhoneNumber(value);
-                          if (phoneNumberObj) {
-                            setUserDetails({
-                              ...userDetails,
-                              mobileCountryCode: `+${phoneNumberObj.countryCallingCode}`,
-                              phone: phoneNumberObj.nationalNumber,
-                            });
-                          }
-                        } catch (error) {
-                          // If parsing fails, just store the value
-                          console.error('Error parsing phone number:', error);
-                        }
-                      } else {
+              {/* Organization Information Section */}
+              <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                  Organization Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Business Name
+                    </label>
+                    <Input
+                      placeholder={user?.organizations?.[0]?.name || "Enter business name"}
+                      className="h-9 text-xs w-full"
+                      value={businessName || user?.organizations?.[0]?.name || ''}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Email Address
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder="Enter email address"
+                      className="h-9 text-xs w-full"
+                      value={userDetails.email || user?.email || ''}
+                      onChange={(e) =>
                         setUserDetails({
                           ...userDetails,
-                          phone: '',
-                          mobileCountryCode: '+1',
-                        });
+                          email: e.target.value,
+                        })
                       }
-                    }}
-                    className="phone-input-container"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Country
-                  </label>
-                  <Combobox
-                    options={countries.map((country) => ({
-                      value: country.id.toString(),
-                      label: country.name,
-                    }))}
-                    value={selectedCountry?.id?.toString()}
-                    onValueChange={(value) => {
-                      const country = countries.find(
-                        (c) => c.id.toString() === value,
-                      );
-                      setSelectedCountry(country || null);
-                      setSelectedState(null);
-                      setSelectedCity(null);
-                      setUserDetails({
-                        ...userDetails,
-                        countryId: country ? String(country.id) : '',
-                        country: country?.name || '',
-                        stateId: '',
-                        state: '',
-                        cityId: '',
-                        city: '',
-                      });
-                    }}
-                    placeholder={
-                      loadingCountries ? 'Loading...' : 'Select Country'
-                    }
-                    searchPlaceholder="Search countries..."
-                    emptyMessage="No countries found"
-                    loading={loadingCountries}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    State/County
-                  </label>
-                  <Combobox
-                    options={states.map((state) => ({
-                      value: state.id.toString(),
-                      label: state.name,
-                    }))}
-                    value={selectedState?.id?.toString()}
-                    onValueChange={(value) => {
-                      const state = states.find(
-                        (s) => s.id.toString() === value,
-                      );
-                      setSelectedState(state || null);
-                      setSelectedCity(null);
-                      setUserDetails({
-                        ...userDetails,
-                        stateId: state ? String(state.id) : '',
-                        state: state?.name || '',
-                        cityId: '',
-                        city: '',
-                      });
-                    }}
-                    placeholder={
-                      loadingStates
-                        ? 'Loading...'
-                        : !selectedCountry
-                          ? 'Select Country first'
-                          : 'Select State'
-                    }
-                    searchPlaceholder="Search states..."
-                    emptyMessage={
-                      selectedCountry
-                        ? 'No states found'
-                        : 'Select a country first'
-                    }
-                    disabled={!selectedCountry}
-                    loading={loadingStates}
-                    className="w-full"
-                  />
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Phone Number
+                    </label>
+                    <PhoneInput
+                      international
+                      defaultCountry="US"
+                      value={phoneNumber || (userDetails.mobileCountryCode && userDetails.phone ? `${userDetails.mobileCountryCode}${userDetails.phone}` : '')}
+                      onChange={(value) => {
+                        setPhoneNumber(value || '');
+                        if (value) {
+                          try {
+                            const phoneNumberObj = parsePhoneNumber(value);
+                            if (phoneNumberObj) {
+                              setUserDetails({
+                                ...userDetails,
+                                mobileCountryCode: `+${phoneNumberObj.countryCallingCode}`,
+                                phone: phoneNumberObj.nationalNumber,
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Error parsing phone number:', error);
+                          }
+                        } else {
+                          setUserDetails({
+                            ...userDetails,
+                            phone: '',
+                            mobileCountryCode: '+1',
+                          });
+                        }
+                      }}
+                      className="phone-input-container"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Fax
+                    </label>
+                    <div className="relative">
+                      <Input
+                        placeholder="Enter fax number"
+                        className="h-9 text-xs w-full pr-10"
+                        value={fax}
+                        onChange={(e) => setFax(e.target.value)}
+                        disabled={!isEditing}
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Third Row - 3 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    City
-                  </label>
-                  <Combobox
-                    options={cities.map((city) => ({
-                      value: city.id.toString(),
-                      label: city.name,
-                    }))}
-                    value={selectedCity?.id?.toString()}
-                    onValueChange={(value) => {
-                      const city = cities.find(
-                        (c) => c.id.toString() === value,
-                      );
-                      setSelectedCity(city || null);
-                      setUserDetails({
-                        ...userDetails,
-                        cityId: city ? String(city.id) : '',
-                        city: city?.name || '',
-                      });
-                    }}
-                    placeholder={
-                      loadingCities
-                        ? 'Loading...'
-                        : !selectedState
-                          ? 'Select State first'
-                          : 'Select City'
-                    }
-                    searchPlaceholder="Search cities..."
-                    emptyMessage={
-                      selectedState ? 'No cities found' : 'Select a state first'
-                    }
-                    disabled={!selectedState}
-                    loading={loadingCities}
-                    className="w-full"
-                  />
+              {/* Address Section */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                  Address
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Country
+                    </label>
+                    <Combobox
+                      options={countries.map((country) => ({
+                        value: country.id.toString(),
+                        label: country.name,
+                      }))}
+                      value={selectedCountry?.id?.toString()}
+                      onValueChange={(value) => {
+                        const country = countries.find(
+                          (c) => c.id.toString() === value,
+                        );
+                        setSelectedCountry(country || null);
+                        setSelectedState(null);
+                        setSelectedCity(null);
+                        setUserDetails({
+                          ...userDetails,
+                          countryId: country ? String(country.id) : '',
+                          country: country?.name || '',
+                          stateId: '',
+                          state: '',
+                          cityId: '',
+                          city: '',
+                        });
+                      }}
+                      placeholder={
+                        loadingCountries ? 'Loading...' : 'Select Country'
+                      }
+                      searchPlaceholder="Search countries..."
+                      emptyMessage="No countries found"
+                      loading={loadingCountries}
+                      className="w-full"
+                      disabled={!isEditing || loadingCountries}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      City
+                    </label>
+                    <Combobox
+                      options={cities.map((city) => ({
+                        value: city.id.toString(),
+                        label: city.name,
+                      }))}
+                      value={selectedCity?.id?.toString()}
+                      onValueChange={(value) => {
+                        const city = cities.find(
+                          (c) => c.id.toString() === value,
+                        );
+                        setSelectedCity(city || null);
+                        setUserDetails({
+                          ...userDetails,
+                          cityId: city ? String(city.id) : '',
+                          city: city?.name || '',
+                        });
+                      }}
+                      placeholder={
+                        loadingCities
+                          ? 'Loading...'
+                          : !selectedState
+                            ? 'Select State first'
+                            : 'Select City'
+                      }
+                      searchPlaceholder="Search cities..."
+                      emptyMessage={
+                        selectedState ? 'No cities found' : 'Select a state first'
+                      }
+                      disabled={!isEditing || !selectedState || loadingCities}
+                      loading={loadingCities}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Postcode
+                    </label>
+                    <Input
+                      placeholder="Enter postcode"
+                      className="h-9 text-xs w-full"
+                      value={userDetails.zipCode}
+                      onChange={(e) =>
+                        setUserDetails({
+                          ...userDetails,
+                          zipCode: e.target.value,
+                        })
+                      }
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      State
+                    </label>
+                    <Combobox
+                      options={states.map((state) => ({
+                        value: state.id.toString(),
+                        label: state.name,
+                      }))}
+                      value={selectedState?.id?.toString()}
+                      onValueChange={(value) => {
+                        const state = states.find(
+                          (s) => s.id.toString() === value,
+                        );
+                        setSelectedState(state || null);
+                        setSelectedCity(null);
+                        setUserDetails({
+                          ...userDetails,
+                          stateId: state ? String(state.id) : '',
+                          state: state?.name || '',
+                          cityId: '',
+                          city: '',
+                        });
+                      }}
+                      placeholder={
+                        loadingStates
+                          ? 'Loading...'
+                          : !selectedCountry
+                            ? 'Select Country first'
+                            : 'Select State'
+                      }
+                      searchPlaceholder="Search states..."
+                      emptyMessage={
+                        selectedCountry
+                          ? 'No states found'
+                          : 'Select a country first'
+                      }
+                      disabled={!isEditing || !selectedCountry || loadingStates}
+                      loading={loadingStates}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Postcode
-                  </label>
-                  <Input
-                    type="text"
-                    value={userDetails.zipCode}
-                    onChange={(e) =>
-                      setUserDetails({
-                        ...userDetails,
-                        zipCode: e.target.value,
-                      })
-                    }
-                    className="h-10 text-sm w-full"
-                    placeholder="Enter postcode"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Preferred Timezone
-                  </label>
-                  <Input
-                    type="text"
-                    value={userDetails.preferredTimeZone}
-                    onChange={(e) =>
-                      setUserDetails({
-                        ...userDetails,
-                        preferredTimeZone: e.target.value,
-                      })
-                    }
-                    className="h-10 text-sm w-full"
-                    placeholder="e.g., UTC, America/New_York"
-                  />
-                </div>
-              </div>
-
-              {/* Update Button */}
-              <div className="flex justify-end pt-4">
-                <Button
-                  type="button"
-                  onClick={handleUpdateProfile}
-                  disabled={isSaving || userLoading}
-                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white px-6 py-2 h-10 text-sm font-medium disabled:opacity-50"
-                >
-                  {isSaving || userLoading ? 'Updating...' : 'Update'}
-                </Button>
               </div>
             </form>
           </div>
         );
-      case 'password':
+      case 'preferences':
         return (
-          <div className="space-y-3">
+          <div className="space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Password
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Preferences
               </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your preferences and settings.
+              </p>
             </div>
-
-            {/* Sub-tabs for Password */}
-            <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-800">
-              <button
-                onClick={() => setPasswordSubTab('change')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors border-b-2 ${
-                  passwordSubTab === 'change'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                Change Password
-              </button>
-              <button
-                onClick={() => setPasswordSubTab('reset')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors border-b-2 ${
-                  passwordSubTab === 'reset'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                Reset Password
-              </button>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Preferences section coming soon...
             </div>
-
-            {/* Change Password Tab */}
-            {passwordSubTab === 'change' && (
-              <ChangePasswordFormComponent onSubmit={handleChangePassword} />
-            )}
-
-            {/* Reset Password Tab */}
-            {passwordSubTab === 'reset' && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Reset Password</CardTitle>
-                  <CardDescription className="text-[10px]">
-                    Forgot your password? Reset it using your email address
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="Enter your email address"
-                      className="h-10 text-sm w-full"
-                      value={userDetails.email}
-                      readOnly
-                    />
-                  </div>
-                  <div className="flex justify-end pt-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-3 text-xs"
-                      onClick={handleForgotPassword}
-                      disabled={forgotPasswordLoading}
-                    >
-                      {forgotPasswordLoading ? 'Sending...' : 'Send Reset Link'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          </div>
+        );
+      case 'security':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Security
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your security settings.
+              </p>
+            </div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Security section coming soon...
+            </div>
+          </div>
+        );
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Notifications
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your notification preferences.
+              </p>
+            </div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Notifications section coming soon...
+            </div>
+          </div>
+        );
+      case 'account':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Account
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your account settings.
+              </p>
+            </div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Account section coming soon...
+            </div>
+          </div>
+        );
+      case 'account-manager':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Account Manager
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your account managers.
+              </p>
+            </div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Account Manager section coming soon...
+            </div>
+          </div>
+        );
+      case 'billings':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Billings
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Manage your billing information.
+              </p>
+            </div>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              Billings section coming soon...
+            </div>
           </div>
         );
       default:
@@ -944,385 +1055,91 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // Render Billings Tab
-  const renderBillings = () => {
-    const [cardName, setCardName] = useState('Mayad Ahmed');
-    const [cardExpiry, setCardExpiry] = useState('02 / 2028');
-    const [cardNumber, setCardNumber] = useState('8269 9620 9292 2538');
-    const [cvv, setCvv] = useState('****');
-    const [contactEmail, setContactEmail] = useState('existing');
-    const [newEmail, setNewEmail] = useState('');
-
-    const billingHistory = [
-      {
-        id: 1,
-        invoice: 'Account Sale',
-        date: 'Apr 14, 2004',
-        amount: '$3,050',
-        status: 'Pending',
-        statusColor:
-          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        tracking: 'LM580405575CN',
-        address: '313 Main Road, Sunderland.',
-      },
-      {
-        id: 2,
-        invoice: 'Account Sale',
-        date: 'Jun 24, 2008',
-        amount: '$1,050',
-        status: 'Cancelled',
-        statusColor:
-          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-        tracking: 'AZ938540353US',
-        address: '96 Grange Road, Peterborough.',
-      },
-    ];
-
-    return (
-      <div className="space-y-8">
-        {/* Payment Method Section */}
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Payment Method
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Update your billing details and address.
-            </p>
-          </div>
-
-          {/* Card Details */}
-          <Card className="bg-white dark:bg-slate-800">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base font-semibold">
-                    Card Details
-                  </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    Update your billing details and address.
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-gray-300 dark:border-gray-600"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add another card
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Card Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Card Number
-                </label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="h-11 pl-12 pr-4"
-                    placeholder="0000 0000 0000 0000"
-                  />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <div className="w-8 h-5 bg-gradient-to-r from-orange-500 to-red-600 rounded flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Name and Expiry Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Name on your Card
-                  </label>
-                  <Input
-                    type="text"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    className="h-11"
-                    placeholder="Enter name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Expiry
-                  </label>
-                  <Input
-                    type="text"
-                    value={cardExpiry}
-                    onChange={(e) => setCardExpiry(e.target.value)}
-                    className="h-11"
-                    placeholder="MM / YY"
-                  />
-                </div>
-              </div>
-
-              {/* CVV */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CVV
-                </label>
-                <Input
-                  type="password"
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value)}
-                  className="h-11"
-                  placeholder="***"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Contact email Section */}
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Contact email
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Where should invoices be sent?
-            </p>
-          </div>
-
-          <Card className="bg-white dark:bg-slate-800">
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  id="existing-email"
-                  name="contact-email"
-                  value="existing"
-                  checked={contactEmail === 'existing'}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className="mt-1 h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6]"
-                />
-                <div className="flex-1">
-                  <label
-                    htmlFor="existing-email"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
-                  >
-                    Send to the existing email
-                  </label>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {userDetails.email || 'mayadahmed@ofspace.co'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  id="new-email"
-                  name="contact-email"
-                  value="new"
-                  checked={contactEmail === 'new'}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className="mt-1 h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6]"
-                />
-                <div className="flex-1">
-                  <label
-                    htmlFor="new-email"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer mb-2"
-                  >
-                    Add another email address
-                  </label>
-                  {contactEmail === 'new' && (
-                    <Input
-                      type="email"
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      className="h-10"
-                      placeholder="Enter email address"
-                    />
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Billing History Section */}
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Billing History
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              See the transaction you made.
-            </p>
-          </div>
-
-          <Card className="bg-white dark:bg-slate-800">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-gray-600">
-                    <tr>
-                      <th className="px-4 py-3 text-left">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
-                        />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        <div className="flex items-center gap-1">
-                          Invoice
-                          <ChevronUp className="h-3 w-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        <div className="flex items-center gap-1">
-                          Date
-                          <ChevronUp className="h-3 w-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        <div className="flex items-center gap-1">
-                          Amount
-                          <ChevronUp className="h-3 w-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        <div className="flex items-center gap-1">
-                          Status
-                          <ChevronUp className="h-3 w-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Tracking & Address
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {billingHistory.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-gray-50 dark:hover:bg-slate-700"
-                      >
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                          {item.invoice}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                          {item.date}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {item.amount}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${item.statusColor}`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
-                              <div>{item.tracking}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-500">
-                                {item.address}
-                              </div>
-                            </div>
-                            <button className="p-1 hover:bg-gray-100 dark:hover:bg-slate-600 rounded">
-                              <MoreVertical className="h-4 w-4 text-gray-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  };
-
-  // Render other tabs
-  const renderTeam = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Team
-      </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Team settings coming soon.
-      </p>
-    </div>
-  );
-
-  const renderPlan = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Plan
-      </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Plan settings coming soon.
-      </p>
-    </div>
-  );
-
-  const renderEmail = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Email
-      </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Email settings coming soon.
-      </p>
-    </div>
-  );
-
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 ">
-        {/* Header Section */}
-        <div className="max-w-7xl mx-auto mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Settings
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Manage your account settings and preferences.
-          </p>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Header Section */}
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Settings
+              </h1>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                Manage your account settings and preferences
+              </p>
+            </div>
+            {/* Top Right Action Buttons - Only show when NOT editing (Edit button) or when editing (Cancel/Save) */}
+            <div className="flex items-center gap-3">
+              {!isEditing ? (
+                  <Button
+                    type="button"
+                    onClick={handleEdit}
+                    disabled={isSaving || userLoading}
+                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
+                  >
+                  <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving || userLoading}
+                    className="border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white h-8 px-3 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleUpdateProfile}
+                    disabled={isSaving || userLoading}
+                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
+                  >
+                    {isSaving || userLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto">
-          {/* Tabs Navigation */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'border-[#4F39F6] text-[#4F39F6] dark:text-[#4F39F6]'
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Main Content - Sidebar + Content Area */}
+          <div className="flex gap-4">
+            {/* Left Sidebar Navigation */}
+            <div className="w-56 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+              <nav className="space-y-0.5">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-[#4F39F6] text-white'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                    }`}
+            >
+                    <span className={activeTab === tab.id ? 'text-white' : 'text-gray-600 dark:text-gray-400'}>
+                      {tab.icon}
+                    </span>
+              {tab.label}
+            </button>
+          ))}
+              </nav>
+        </div>
 
-          {/* Tab Content */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            {renderContent()}
+            {/* Right Content Area */}
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+              {renderContent()}
+            </div>
           </div>
         </div>
       </div>
