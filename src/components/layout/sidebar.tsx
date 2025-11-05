@@ -23,6 +23,7 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
+import TalentEdgeLogo from '@/components/logo/talentedge-logo';
 import { UserRole } from '@/types';
 import {
   DropdownMenu,
@@ -40,6 +41,9 @@ import {
 } from '@/components/ui/dialog';
 import InviteUserForm from '@/components/invite-user';
 import { Button } from '@/components/ui/button';
+import { useAppDispatch } from '@/store';
+import { logout } from '@/store/slices/authentication/login';
+// duplicate import removed
 
 interface SidebarProps {
   role: UserRole;
@@ -120,6 +124,12 @@ const navItems: NavItem[] = [
     roles: ['ta_executive', 'ta_manager', 'hiring_manager', 'interviewer'],
   },
   {
+    path: '/candidate-tracking',
+    icon: <TrendingUp className="h-4 w-4" />,
+    label: 'Candidate Tracking',
+    roles: ['ta_manager'],
+  },
+  {
     path: '/interviews',
     icon: <Calendar className="h-4 w-4" />,
     label: 'Interviews',
@@ -135,6 +145,12 @@ const navItems: NavItem[] = [
     path: '/users',
     icon: <UserCog className="h-4 w-4" />,
     label: 'Users',
+    roles: ['admin'],
+  },
+  {
+    path: '/organizations',
+    icon: <Building2 className="h-4 w-4" />,
+    label: 'Organizations',
     roles: ['admin'],
   },
   {
@@ -160,6 +176,7 @@ const navItems: NavItem[] = [
 
 const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   const location = useLocation();
+  const dispatch = useAppDispatch();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isDark, setIsDark] = useState<boolean>(false);
   const effectiveRole = role as UserRole | undefined;
@@ -297,13 +314,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-    window.location.href = '/login';
+    try {
+      dispatch(logout());
+    } finally {
+      window.location.href = '/login';
+    }
   };
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   return (
     <div
@@ -317,10 +337,11 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
           className="flex items-center gap-2 cursor-pointer"
           onClick={isCollapsed ? onToggle : undefined}
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          {!isCollapsed && <span className="font-semibold">Talent AI</span>}
+          <TalentEdgeLogo
+            showText={!isCollapsed}
+            iconSize={isCollapsed ? 'sm' : 'md'}
+            className={isCollapsed ? 'justify-center' : ''}
+          />
         </div>
         {!isCollapsed && (
           <div className="ml-auto flex items-center gap-1">
@@ -360,7 +381,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
       {/* Footer with Profile Dropdown */}
       <div className="border-t p-4">
         {isCollapsed ? (
-          <DropdownMenu>
+          <DropdownMenu
+            open={profileDropdownOpen}
+            onOpenChange={setProfileDropdownOpen}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -374,33 +398,34 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-              </DropdownMenuItem>
               {role === 'admin' && (
-                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    setIsInviteOpen(true);
+                  }}
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setIsLogoutOpen(true);
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <DropdownMenu>
+          <DropdownMenu
+            open={profileDropdownOpen}
+            onOpenChange={setProfileDropdownOpen}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -421,26 +446,24 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-              </DropdownMenuItem>
               {role === 'admin' && (
-                <DropdownMenuItem onClick={() => setIsInviteOpen(true)}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    setIsInviteOpen(true);
+                  }}
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Send Invite</span>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setIsLogoutOpen(true);
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -450,12 +473,41 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
       </div>
 
       {/* Send Invite Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <InviteUserForm open={isInviteOpen} onOpenChange={setIsInviteOpen} />
+
+      {/* Logout Confirm Dialog */}
+      <Dialog
+        open={isLogoutOpen}
+        onOpenChange={(open) => {
+          setIsLogoutOpen(open);
+          if (!open) {
+            setProfileDropdownOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send Invite</DialogTitle>
+            <DialogTitle>Confirm Logout</DialogTitle>
           </DialogHeader>
-          <InviteUserForm onClose={() => setIsInviteOpen(false)} />
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsLogoutOpen(false);
+                  setProfileDropdownOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleLogout}>
+                Log out
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

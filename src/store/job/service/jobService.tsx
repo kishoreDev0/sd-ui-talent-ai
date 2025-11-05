@@ -1,5 +1,5 @@
 import axiosInstance from '@/axios-setup/axios-instance';
-import { JOB_ENDPOINTS } from '../endpoints/jobEndpoints';
+import { JOBS } from '@/store/endpoints';
 import type {
   Job,
   ListJobsResponse,
@@ -17,9 +17,7 @@ import type {
  */
 export const getAllJobs = async (): Promise<Job[]> => {
   try {
-    const response = await axiosInstance.get<ListJobsResponse>(
-      JOB_ENDPOINTS.list,
-    );
+    const response = await axiosInstance.get<ListJobsResponse>(JOBS.LIST);
     // Handle different response formats
     return (
       response.data.data ||
@@ -39,7 +37,7 @@ export const getAllJobs = async (): Promise<Job[]> => {
 export const getJobById = async (id: number): Promise<Job> => {
   try {
     const response = await axiosInstance.get<GetJobByIdResponse>(
-      JOB_ENDPOINTS.getById(id),
+      JOBS.GET_BY_ID(id),
     );
     return (
       response.data.data ||
@@ -90,7 +88,7 @@ export const createJob = async (
       }
 
       const response = await axiosInstance.post<CreateJobResponse>(
-        JOB_ENDPOINTS.create,
+        JOBS.CREATE,
         formData,
         {
           headers: {
@@ -102,7 +100,7 @@ export const createJob = async (
     } else {
       // No files, use JSON
       const response = await axiosInstance.post<CreateJobResponse>(
-        JOB_ENDPOINTS.create,
+        JOBS.CREATE,
         jobData,
       );
       return response.data;
@@ -150,7 +148,7 @@ export const updateJob = async (
       }
 
       const response = await axiosInstance.patch<UpdateJobResponse>(
-        JOB_ENDPOINTS.update(id),
+        JOBS.UPDATE(id),
         formData,
         {
           headers: {
@@ -161,7 +159,7 @@ export const updateJob = async (
       return response.data;
     } else {
       const response = await axiosInstance.patch<UpdateJobResponse>(
-        JOB_ENDPOINTS.update(id),
+        JOBS.UPDATE(id),
         updateData,
       );
       return response.data;
@@ -177,7 +175,7 @@ export const updateJob = async (
  */
 export const deleteJob = async (id: number): Promise<void> => {
   try {
-    await axiosInstance.delete<DeleteJobResponse>(JOB_ENDPOINTS.delete(id));
+    await axiosInstance.delete<DeleteJobResponse>(JOBS.DELETE(id));
   } catch (error) {
     console.error('Error deleting job:', error);
     throw error;
@@ -193,7 +191,7 @@ export const uploadJobs = async (file: File): Promise<UploadJobsResponse> => {
     formData.append('file', file);
 
     const response = await axiosInstance.post<UploadJobsResponse>(
-      JOB_ENDPOINTS.upload,
+      JOBS.UPLOAD,
       formData,
       {
         headers: {
@@ -216,7 +214,7 @@ export const searchJobs = async (
 ): Promise<Job[]> => {
   try {
     const response = await axiosInstance.post<ListJobsResponse>(
-      JOB_ENDPOINTS.search,
+      JOBS.SEARCH,
       filters,
     );
     return (

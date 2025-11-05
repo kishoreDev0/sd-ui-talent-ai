@@ -226,7 +226,7 @@ const InterviewerDashboard: React.FC = () => {
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                 Assigned to you
               </p>
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-[#4F39F6] text-white shadow-lg">
                 <Calendar className="w-5 h-5" />
                 <span className="text-xl font-semibold">{interviewsCount}</span>
               </div>
@@ -269,7 +269,7 @@ const InterviewerDashboard: React.FC = () => {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">
+                              <div className="w-10 h-10 bg-[#4F39F6] rounded-xl flex items-center justify-center text-white font-bold">
                                 {candidate.avatar}
                               </div>
                               <div>
@@ -400,7 +400,7 @@ const InterviewerDashboard: React.FC = () => {
             <>
               <DialogHeader>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                  <div className="w-16 h-16 bg-[#4F39F6] rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                     {selectedCandidate.avatar}
                   </div>
                   <div className="flex-1">

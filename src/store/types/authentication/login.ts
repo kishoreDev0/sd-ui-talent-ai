@@ -12,17 +12,19 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  is_onboarding_required: boolean;
 }
 
 export interface LoginResponse {
   success: boolean;
   status_code: number;
   timestamp: string;
-  error: string | null;
+  error: string[] | null;
   data: {
+    result: User;
     access_token: string;
     refresh_token: string;
     token_type: string;
-    user: User;
+    is_onboarding_required?: boolean;
   };
 }

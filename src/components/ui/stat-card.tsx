@@ -10,7 +10,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'orange' | 'purple';
+  color?: 'blue' | 'green' | 'orange' | 'purple' | string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -20,11 +20,17 @@ const StatCard: React.FC<StatCardProps> = ({
   trend,
   color = 'blue',
 }) => {
-  const colorClasses = {
-    blue: 'bg-gradient-to-br from-blue-500 to-blue-600',
-    green: 'bg-gradient-to-br from-green-500 to-green-600',
-    orange: 'bg-gradient-to-br from-orange-500 to-orange-600',
-    purple: 'bg-gradient-to-br from-purple-500 to-purple-600',
+  const getColorClass = () => {
+    if (color === '#4F39F6' || color === 'purple') {
+      return 'bg-[#4F39F6]';
+    }
+    const colorClasses: Record<string, string> = {
+      blue: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      green: 'bg-gradient-to-br from-green-500 to-green-600',
+      orange: 'bg-gradient-to-br from-orange-500 to-orange-600',
+      purple: 'bg-[#4F39F6]',
+    };
+    return colorClasses[color || 'blue'] || 'bg-[#4F39F6]';
   };
 
   return (
@@ -51,7 +57,7 @@ const StatCard: React.FC<StatCardProps> = ({
             </div>
           )}
         </div>
-        <div className={`${colorClasses[color]} p-3 rounded-xl shadow-lg`}>
+        <div className={`${getColorClass()} p-3 rounded-xl shadow-lg`}>
           <Icon className="w-6 h-6 text-white" />
         </div>
       </div>

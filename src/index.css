@@ -204,3 +204,40 @@
 .hover-underline:hover::after {
   width: 100%;
 }
+
+/* React Phone Number Input Styles */
+.phone-input-container {
+  @apply w-full;
+}
+
+.PhoneInput {
+  @apply flex items-center gap-2;
+}
+
+.PhoneInputInput {
+  @apply h-10 text-sm w-full rounded-md border border-input bg-background px-3 py-2 text-foreground;
+  @apply placeholder:text-muted-foreground;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.PhoneInputCountry {
+  @apply flex items-center gap-1;
+}
+
+.PhoneInputCountryIcon {
+  @apply w-5 h-4 object-cover;
+}
+
+.PhoneInputCountrySelect {
+  @apply text-sm border-none bg-transparent cursor-pointer focus:outline-none;
+  @apply focus-visible:ring-2 focus-visible:ring-ring rounded;
+}
+
+.PhoneInputCountrySelectArrow {
+  @apply opacity-50 ml-1;
+}
+
+.dark .PhoneInputInput {
+  @apply bg-slate-800 border-slate-700 text-gray-100;
+}

@@ -5,7 +5,9 @@ export interface InviteUserState {
 }
 
 export interface InviteUserRequest {
-  name: string;
   email: string;
-  role: string;
+  first_name: string;
+  last_name: string;
+  role_id: number;
+  organization_ids: number[];
 }

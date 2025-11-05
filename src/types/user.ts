@@ -19,15 +19,24 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role_id: number; // Add role_id field
+  role_id?: number; // Optional for backward compatibility
   is_active: boolean;
   last_login?: string;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  country?: string | null;
+  preferred_timezone?: string | null;
+  mobile_country_code?: string | null;
+  mobile_number?: string | null;
+  image_url?: string | null;
   created_at?: string;
   updated_at?: string;
   created_by?: number | null;
   updated_by?: number | null;
   role: Role;
-  avatar?: string;
+  organizations?: Array<{ id: number; name: string }> | []; // Organizations array
+  avatar?: string; // Alias for image_url
 }
 
 // Helper to get full name

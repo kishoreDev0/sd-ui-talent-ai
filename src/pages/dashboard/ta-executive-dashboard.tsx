@@ -13,6 +13,35 @@ import {
   Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import {
+  Line,
+  Bar,
+  Pie,
+  Cell,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
+import * as Recharts from 'recharts';
+
+const LineChart = Recharts.LineChart;
+const BarChart = Recharts.BarChart;
+const PieChart = Recharts.PieChart;
+const AreaChart = Recharts.AreaChart;
 
 const TAExecutiveDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -32,7 +61,7 @@ const TAExecutiveDashboard: React.FC = () => {
       change: '+3',
       trend: 'up',
       icon: Calendar,
-      color: 'bg-purple-500',
+      color: 'bg-[#4F39F6]',
     },
     {
       label: 'Offers Made',
@@ -51,6 +80,59 @@ const TAExecutiveDashboard: React.FC = () => {
       color: 'bg-orange-500',
     },
   ];
+
+  // Chart data
+  const hiringTrendsData = [
+    { month: 'Jan', hired: 5, offers: 8 },
+    { month: 'Feb', hired: 8, offers: 12 },
+    { month: 'Mar', hired: 12, offers: 15 },
+    { month: 'Apr', hired: 10, offers: 14 },
+    { month: 'May', hired: 15, offers: 18 },
+    { month: 'Jun', hired: 18, offers: 22 },
+  ];
+
+  const sourceEffectivenessData = [
+    { name: 'LinkedIn', value: 45, color: '#3b82f6' },
+    { name: 'Naukri', value: 25, color: '#10b981' },
+    { name: 'Referrals', value: 15, color: '#f59e0b' },
+    { name: 'Indeed', value: 10, color: '#ef4444' },
+    { name: 'Others', value: 5, color: '#8b5cf6' },
+  ];
+
+  const timeToFillData = [
+    { role: 'Frontend', days: 12 },
+    { role: 'Backend', days: 18 },
+    { role: 'Full Stack', days: 15 },
+    { role: 'QA', days: 10 },
+    { role: 'DevOps', days: 20 },
+    { role: 'UI/UX', days: 14 },
+  ];
+
+  const pipelineData = [
+    { stage: 'Applied', count: 120 },
+    { stage: 'Screening', count: 45 },
+    { stage: 'Interview', count: 18 },
+    { stage: 'Offer', count: 8 },
+    { stage: 'Hired', count: 5 },
+  ];
+
+  const teamPerformanceData = [
+    { name: 'Anita', candidates: 56, interviews: 14, feedbacks: 3 },
+    { name: 'Rahul', candidates: 42, interviews: 11, feedbacks: 5 },
+    { name: 'Meera', candidates: 37, interviews: 9, feedbacks: 2 },
+    { name: 'Vikram', candidates: 29, interviews: 7, feedbacks: 1 },
+  ];
+
+  const chartConfig = {
+    hired: {
+      label: 'Hired',
+      color: 'hsl(var(--chart-1))',
+    },
+    offers: {
+      label: 'Offers',
+      color: 'hsl(var(--chart-2))',
+    },
+  };
 
   const recentActivity = [
     {
@@ -80,44 +162,10 @@ const TAExecutiveDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-8 shadow-xl mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                TA Executive Dashboard
-              </h1>
-              <p className="text-blue-100">
-                Full create/edit permissions • Job Management
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => navigate('/register-job')}
-                className="bg-white/10 hover:bg-white/20 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Job
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/candidates/register')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Candidate
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
           {metrics.map((metric, index) => {
             const Icon = metric.icon;
             return (
@@ -126,24 +174,33 @@ const TAExecutiveDashboard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="backdrop-blur-xl bg-white/60 rounded-3xl p-6 shadow-2xl border border-white/30 hover:shadow-3xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 group"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${metric.color} p-3 rounded-2xl shadow-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${
-                      metric.trend === 'up' ? 'text-green-600' : 'text-blue-600'
-                    }`}
-                  >
-                    {metric.change}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                  {metric.value}
-                </h3>
-                <p className="text-sm text-gray-600">{metric.label}</p>
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div
+                        className={`${metric.color} p-2 rounded-lg shadow-md`}
+                      >
+                        <Icon className="h-4 w-4 text-white" />
+                      </div>
+                      <span
+                        className={`text-xs font-semibold ${
+                          metric.trend === 'up'
+                            ? 'text-green-600'
+                            : 'text-blue-600'
+                        }`}
+                      >
+                        {metric.change}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
+                      {metric.value}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {metric.label}
+                    </p>
+                  </CardContent>
+                </Card>
               </motion.div>
             );
           })}
@@ -154,128 +211,318 @@ const TAExecutiveDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="backdrop-blur-xl bg-white/60 rounded-3xl p-8 shadow-2xl border border-white/30 mb-6"
+          className="mb-3"
         >
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button
-              onClick={() => navigate('/register-job')}
-              className="group p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl hover:shadow-xl transition-all transform hover:-translate-y-1"
-            >
-              <Briefcase className="h-6 w-6 text-white mb-2" />
-              <p className="text-white font-semibold">Create Job</p>
-              <p className="text-purple-100 text-xs">Post new position</p>
-            </button>
-            <button
-              onClick={() => navigate('/candidates/register')}
-              className="group p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl hover:shadow-xl transition-all transform hover:-translate-y-1"
-            >
-              <Users className="h-6 w-6 text-white mb-2" />
-              <p className="text-white font-semibold">Add Candidate</p>
-              <p className="text-blue-100 text-xs">Register new candidate</p>
-            </button>
-            <button
-              onClick={() => navigate('/jobs')}
-              className="group p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl hover:shadow-xl transition-all transform hover:-translate-y-1"
-            >
-              <FileText className="h-6 w-6 text-white mb-2" />
-              <p className="text-white font-semibold">Job Board</p>
-              <p className="text-green-100 text-xs">View all jobs</p>
-            </button>
-            <button
-              onClick={() => navigate('/analytics')}
-              className="group p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl hover:shadow-xl transition-all transform hover:-translate-y-1"
-            >
-              <BarChart3 className="h-6 w-6 text-white mb-2" />
-              <p className="text-white font-semibold">Analytics</p>
-              <p className="text-orange-100 text-xs">View reports</p>
-            </button>
-          </div>
+          <Card>
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-base">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                <button
+                  onClick={() => navigate('/register-job')}
+                  className="group p-3 bg-[#4F39F6] rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  <Briefcase className="h-4 w-4 text-white mb-1" />
+                  <p className="text-white font-semibold text-xs">Create Job</p>
+                  <p className="text-white text-[10px]">Post new position</p>
+                </button>
+                <button
+                  onClick={() => navigate('/candidates/register')}
+                  className="group p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  <Users className="h-4 w-4 text-white mb-1" />
+                  <p className="text-white font-semibold text-xs">
+                    Add Candidate
+                  </p>
+                  <p className="text-blue-100 text-[10px]">
+                    Register new candidate
+                  </p>
+                </button>
+                <button
+                  onClick={() => navigate('/jobs')}
+                  className="group p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  <FileText className="h-4 w-4 text-white mb-1" />
+                  <p className="text-white font-semibold text-xs">Job Board</p>
+                  <p className="text-green-100 text-[10px]">View all jobs</p>
+                </button>
+                <button
+                  onClick={() => navigate('/analytics')}
+                  className="group p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  <BarChart3 className="h-4 w-4 text-white mb-1" />
+                  <p className="text-white font-semibold text-xs">Analytics</p>
+                  <p className="text-orange-100 text-[10px]">View reports</p>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* Job Management Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-3">
+          {/* Hiring Trends Line Chart */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="backdrop-blur-xl bg-white/60 rounded-3xl p-8 shadow-2xl border border-white/30"
+            className="xl:col-span-2"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Job Management
-              </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/jobs')}
-              >
-                View All
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <button
-                onClick={() => navigate('/register-job')}
-                className="w-full p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-all border border-white/30 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Create New Job
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Post a new job opening
-                    </p>
-                  </div>
-                  <Plus className="h-5 w-5 text-gray-400" />
-                </div>
-              </button>
-              <button
-                onClick={() => navigate('/organizations')}
-                className="w-full p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-all border border-white/30 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Manage Organizations
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Add or edit organizations
-                    </p>
-                  </div>
-                  <Target className="h-5 w-5 text-gray-400" />
-                </div>
-              </button>
-            </div>
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">
+                  Monthly Hiring Trends
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Hired vs Offers over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px]">
+                  <LineChart data={hiringTrendsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="hired"
+                      stroke="hsl(var(--chart-1))"
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--chart-1))' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="offers"
+                      stroke="hsl(var(--chart-2))"
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--chart-2))' }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
           </motion.div>
 
+          {/* Source Effectiveness Pie Chart */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 }}
-            className="backdrop-blur-xl bg-white/60 rounded-3xl p-8 shadow-2xl border border-white/30"
           >
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Recent Activity
-            </h2>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="p-4 bg-white/50 rounded-xl border border-white/30"
-                >
-                  <p className="text-sm font-semibold text-gray-900">
-                    {activity.action}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {activity.resource}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">{activity.time}</p>
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">
+                  Source Effectiveness
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Candidate sources breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px]">
+                  <PieChart>
+                    <Pie
+                      data={sourceEffectivenessData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {sourceEffectivenessData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend
+                      wrapperStyle={{ fontSize: '10px' }}
+                      formatter={(value) => (
+                        <span style={{ fontSize: '10px' }}>{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Time to Fill & Pipeline Charts */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-3">
+          {/* Time to Fill Bar Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">
+                  Average Time to Fill by Role
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Days from posting to hire
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px]">
+                  <BarChart data={timeToFillData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="role" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="days"
+                      fill="hsl(var(--chart-1))"
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Pipeline Area Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">
+                  Recruitment Pipeline
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Candidates at each stage
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <ChartContainer config={chartConfig} className="h-[200px]">
+                  <AreaChart data={pipelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="stage" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="hsl(var(--chart-1))"
+                      fill="hsl(var(--chart-1))"
+                      fillOpacity={0.6}
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Team Performance & Job Management */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Team Performance</CardTitle>
+                <CardDescription className="text-xs">
+                  Recruiter statistics
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <ChartContainer config={chartConfig} className="h-[180px]">
+                  <BarChart data={teamPerformanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Bar
+                      dataKey="candidates"
+                      fill="hsl(var(--chart-1))"
+                      radius={[8, 8, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="interviews"
+                      fill="hsl(var(--chart-2))"
+                      radius={[8, 8, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="feedbacks"
+                      fill="#f59e0b"
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Job Management Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.0 }}
+          >
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Job Management</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/jobs')}
+                    className="h-7 px-2 text-xs"
+                  >
+                    View All
+                  </Button>
                 </div>
-              ))}
-            </div>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate('/register-job')}
+                    className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
+                          Create New Job
+                        </p>
+                        <p className="text-[10px] text-gray-600 dark:text-gray-400">
+                          Post a new job opening
+                        </p>
+                      </div>
+                      <Plus className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/organizations')}
+                    className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
+                          Manage Organizations
+                        </p>
+                        <p className="text-[10px] text-gray-600 dark:text-gray-400">
+                          Add or edit organizations
+                        </p>
+                      </div>
+                      <Target className="h-3 w-3 text-gray-400" />
+                    </div>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
 
@@ -283,300 +530,176 @@ const TAExecutiveDashboard: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-8 shadow-2xl border border-white/30 dark:border-white/10"
+          transition={{ delay: 1.1 }}
+          className="mb-3"
         >
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-            Recruitment Pipeline
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
-            {[
-              {
-                label: 'Applied',
-                count: 120,
-                gradient: 'from-blue-500 to-cyan-500',
-              },
-              {
-                label: 'Screening',
-                count: 45,
-                gradient: 'from-yellow-500 to-orange-500',
-              },
-              {
-                label: 'Interview Scheduled',
-                count: 18,
-                gradient: 'from-purple-500 to-pink-500',
-              },
-              {
-                label: 'Feedback Pending',
-                count: 12,
-                gradient: 'from-indigo-500 to-purple-600',
-              },
-              {
-                label: 'Offer Sent',
-                count: 8,
-                gradient: 'from-green-500 to-emerald-500',
-              },
-              {
-                label: 'Hired / Rejected',
-                count: 30,
-                gradient: 'from-slate-500 to-gray-600',
-              },
-            ].map((stage, i) => (
-              <motion.div
-                key={stage.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i }}
-                className="p-4 rounded-2xl border border-white/30 dark:border-white/10 bg-white/70 dark:bg-slate-900/40"
-              >
-                <div
-                  className={`w-full h-10 rounded-xl bg-gradient-to-r ${stage.gradient} text-white flex items-center justify-center font-semibold shadow`}
-                >
-                  {stage.count}
-                </div>
-                <p className="mt-3 text-xs font-semibold text-gray-700 dark:text-gray-200 text-center">
-                  {stage.label}
-                </p>
-                <div className="mt-2 h-2 w-full bg-gray-200/70 dark:bg-white/10 rounded">
-                  <div
-                    className="h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded"
-                    style={{ width: `${Math.min(100, stage.count)}%` }}
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <Card>
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-base">Recruitment Pipeline</CardTitle>
+              <CardDescription className="text-xs">
+                Candidates by stage
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
+                {[
+                  {
+                    label: 'Applied',
+                    count: 120,
+                    gradient: 'from-blue-500 to-cyan-500',
+                  },
+                  {
+                    label: 'Screening',
+                    count: 45,
+                    gradient: 'from-yellow-500 to-orange-500',
+                  },
+                  {
+                    label: 'Interview Scheduled',
+                    count: 18,
+                    gradient: 'from-[#4F39F6] to-[#4F39F6]',
+                  },
+                  {
+                    label: 'Feedback Pending',
+                    count: 12,
+                    gradient: 'from-[#4F39F6] to-[#4F39F6]',
+                  },
+                  {
+                    label: 'Offer Sent',
+                    count: 8,
+                    gradient: 'from-green-500 to-emerald-500',
+                  },
+                  {
+                    label: 'Hired / Rejected',
+                    count: 30,
+                    gradient: 'from-slate-500 to-gray-600',
+                  },
+                ].map((stage, i) => (
+                  <motion.div
+                    key={stage.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * i }}
+                    className="p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900"
+                  >
+                    <div
+                      className={`w-full h-8 rounded-lg bg-gradient-to-r ${stage.gradient} text-white flex items-center justify-center font-semibold text-xs shadow`}
+                    >
+                      {stage.count}
+                    </div>
+                    <p className="mt-2 text-[10px] font-semibold text-gray-700 dark:text-gray-200 text-center">
+                      {stage.label}
+                    </p>
+                    <div className="mt-1 h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded">
+                      <div
+                        className="h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded"
+                        style={{ width: `${Math.min(100, stage.count)}%` }}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* Team Performance & Hiring Analytics */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-          {/* Team Performance */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="xl:col-span-2 backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-8 shadow-2xl border border-white/30 dark:border-white/10"
-          >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Team Performance
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-600 dark:text-gray-300">
-                    <th className="py-2 pr-4">Recruiter</th>
-                    <th className="py-2 pr-4">Candidates</th>
-                    <th className="py-2 pr-4">Interviews</th>
-                    <th className="py-2 pr-4">Pending Feedbacks</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-900 dark:text-gray-100">
-                  {[
-                    ['Anita', 56, 14, 3],
-                    ['Rahul', 42, 11, 5],
-                    ['Meera', 37, 9, 2],
-                    ['Vikram', 29, 7, 1],
-                  ].map((r) => (
-                    <tr
-                      key={r[0]}
-                      className="border-t border-white/30 dark:border-white/10"
-                    >
-                      <td className="py-3 pr-4 font-medium">{r[0]}</td>
-                      <td className="py-3 pr-4">{r[1]}</td>
-                      <td className="py-3 pr-4">{r[2]}</td>
-                      <td className="py-3 pr-4">{r[3]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-
-          {/* Hiring Analytics (placeholders) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-6 shadow-2xl border border-white/30 dark:border-white/10"
-          >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Hiring Analytics
-            </h2>
-            <div className="space-y-4">
-              {/* Line chart placeholder */}
-              <div className="h-24 rounded-xl bg-gradient-to-r from-indigo-500/30 to-purple-500/30 border border-white/40 dark:border-white/10" />
-              {/* Pie chart placeholder */}
-              <div className="h-24 rounded-xl bg-gradient-to-r from-emerald-500/30 to-green-500/30 border border-white/40 dark:border-white/10" />
-              {/* Bar chart placeholder */}
-              <div className="h-24 rounded-xl bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-white/40 dark:border-white/10" />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Upcoming Interviews & Feedback Panel */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-          {/* Upcoming Interviews */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-            className="xl:col-span-2 backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-8 shadow-2xl border border-white/30 dark:border-white/10"
-          >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Upcoming Interviews
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {[
-                {
-                  name: 'Emily Davis',
-                  role: 'UI/UX Designer',
-                  time: 'Jan 28 • 10:00 AM',
-                  status: 'Scheduled',
-                },
-                {
-                  name: 'David Park',
-                  role: 'Backend Engineer',
-                  time: 'Jan 29 • 2:00 PM',
-                  status: 'Scheduled',
-                },
-                {
-                  name: 'Sarah Johnson',
-                  role: 'Product Designer',
-                  time: 'Jan 30 • 11:30 AM',
-                  status: 'Pending Feedback',
-                },
-              ].map((i, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl bg-white/70 dark:bg-slate-900/40 border border-white/30 dark:border-white/10 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {i.name}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      {i.role}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-700 dark:text-gray-200">
-                      {i.time}
-                    </p>
-                    <span className="inline-block mt-1 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                      {i.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Feedback & Pending Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-6 shadow-2xl border border-white/30 dark:border-white/10"
-          >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Feedback & Pending Actions
-            </h2>
-            <ul className="space-y-3 text-sm text-gray-800 dark:text-gray-200">
-              <li className="p-3 rounded-lg bg-white/70 dark:bg-slate-900/40 border border-white/30 dark:border-white/10">
-                3 feedbacks pending for UI/UX Designer role
-              </li>
-              <li className="p-3 rounded-lg bg-white/70 dark:bg-slate-900/40 border border-white/30 dark:border-white/10">
-                Follow up with 2 candidates for take-home assignment
-              </li>
-              <li className="p-3 rounded-lg bg-white/70 dark:bg-slate-900/40 border border-white/30 dark:border-white/10">
-                Schedule panel interview for Backend Engineer
-              </li>
-            </ul>
-          </motion.div>
-        </div>
-
-        {/* Job Positions & Smart Insights */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-          {/* Job Positions */}
+        {/* Recent Activity & Upcoming Interviews */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2 }}
-            className="xl:col-span-2 backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-8 shadow-2xl border border-white/30 dark:border-white/10"
+            className="xl:col-span-2"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Job Positions
-              </h2>
-              <Button
-                onClick={() => navigate('/register-job')}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                Add New Job
-              </Button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-600 dark:text-gray-300">
-                    <th className="py-2 pr-4">Title</th>
-                    <th className="py-2 pr-4">Department</th>
-                    <th className="py-2 pr-4">Recruiter</th>
-                    <th className="py-2 pr-4">Days Open</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-900 dark:text-gray-100">
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Upcoming Interviews</CardTitle>
+                <CardDescription className="text-xs">
+                  Scheduled interviews for this week
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="grid md:grid-cols-2 gap-2">
                   {[
                     {
-                      t: 'Frontend Developer',
-                      d: 'Engineering',
-                      r: 'Anita',
-                      days: 12,
+                      name: 'Emily Davis',
+                      role: 'UI/UX Designer',
+                      time: 'Jan 28 • 10:00 AM',
+                      status: 'Scheduled',
                     },
                     {
-                      t: 'Backend Engineer',
-                      d: 'Engineering',
-                      r: 'Vikram',
-                      days: 21,
+                      name: 'David Park',
+                      role: 'Backend Engineer',
+                      time: 'Jan 29 • 2:00 PM',
+                      status: 'Scheduled',
                     },
-                    { t: 'QA Analyst', d: 'Quality', r: 'Meera', days: 7 },
-                  ].map((j) => (
-                    <tr
-                      key={j.t}
-                      className="border-t border-white/30 dark:border-white/10"
+                    {
+                      name: 'Sarah Johnson',
+                      role: 'Product Designer',
+                      time: 'Jan 30 • 11:30 AM',
+                      status: 'Pending Feedback',
+                    },
+                  ].map((i, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-between"
                     >
-                      <td className="py-3 pr-4 font-medium">{j.t}</td>
-                      <td className="py-3 pr-4">{j.d}</td>
-                      <td className="py-3 pr-4">{j.r}</td>
-                      <td className="py-3 pr-4">{j.days}</td>
-                    </tr>
+                      <div>
+                        <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
+                          {i.name}
+                        </p>
+                        <p className="text-[10px] text-gray-600 dark:text-gray-400">
+                          {i.role}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-700 dark:text-gray-200">
+                          {i.time}
+                        </p>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
+                          {i.status}
+                        </span>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
-          {/* Smart Insights */}
+          {/* Recent Activity */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.3 }}
-            className="backdrop-blur-xl bg-white/60 dark:bg-slate-800/60 rounded-3xl p-6 shadow-2xl border border-white/30 dark:border-white/10"
           >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Smart Insights
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 to-green-500/15 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                5 candidates match the new Node.js role.
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300">
-                Average feedback delay increased by 12% this week.
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-500/20 text-orange-700 dark:text-orange-300">
-                High drop-off at screening — review JD clarity.
-              </div>
-            </div>
+            <Card>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Recent Activity</CardTitle>
+                <CardDescription className="text-xs">
+                  Latest actions and updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="space-y-2">
+                  {recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                    >
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                        {activity.action}
+                      </p>
+                      <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
+                        {activity.resource}
+                      </p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                        {activity.time}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </div>

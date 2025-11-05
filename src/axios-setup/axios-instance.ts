@@ -11,13 +11,7 @@ import axios, {
 } from 'axios';
 
 // Get API URL from environment variables
-const USE_PROXY = import.meta.env.VITE_USE_PROXY === 'true';
-const WITH_CREDENTIALS = import.meta.env.VITE_WITH_CREDENTIALS === 'true';
-const API_BASE_URL = USE_PROXY
-  ? ''
-  : import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:5010';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5010';
 
 /**
  * Create axios instance with default configuration
@@ -29,7 +23,6 @@ export const axiosInstance: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  withCredentials: WITH_CREDENTIALS,
 });
 
 /**
@@ -67,56 +60,56 @@ axiosInstance.interceptors.response.use(
     };
 
     // Handle 401 Unauthorized - Token expired or invalid
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // if (error.response?.status === 401 && !originalRequest._retry) {
+    //   originalRequest._retry = true;
 
-      try {
-        // Attempt to refresh token
-        const refreshToken = localStorage.getItem('refresh_token');
+    //   try {
+    //     // Attempt to refresh token
+    //     const refreshToken = localStorage.getItem('refresh_token');
 
-        if (refreshToken) {
-          // Call refresh token endpoint
-          const response = await axios.post(
-            `${API_BASE_URL}/api/v1/auth/refresh`,
-            {
-              refresh_token: refreshToken,
-            },
-          );
+    //     if (refreshToken) {
+    //       // Call refresh token endpoint
+    //       const response = await axios.post(
+    //         `${API_BASE_URL}/api/v1/auth/refresh`,
+    //         {
+    //           refresh_token: refreshToken,
+    //         },
+    //       );
 
-          const { access_token, refresh_token: newRefreshToken } =
-            response.data.data || response.data;
+    //       const { access_token, refresh_token: newRefreshToken } =
+    //         response.data.data || response.data;
 
-          // Update tokens in localStorage
-          localStorage.setItem('access_token', access_token);
-          if (newRefreshToken) {
-            localStorage.setItem('refresh_token', newRefreshToken);
-          }
+    //       // Update tokens in localStorage
+    //       localStorage.setItem('access_token', access_token);
+    //       if (newRefreshToken) {
+    //         localStorage.setItem('refresh_token', newRefreshToken);
+    //       }
 
-          // Update authorization header and retry original request
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          }
+    //       // Update authorization header and retry original request
+    //       if (originalRequest.headers) {
+    //         originalRequest.headers.Authorization = `Bearer ${access_token}`;
+    //       }
 
-          return axiosInstance(originalRequest);
-        } else {
-          // No refresh token available, redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isAuthenticated');
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
-      } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAuthenticated');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
+    //       return axiosInstance(originalRequest);
+    //     } else {
+    //       // No refresh token available, redirect to login
+    //       localStorage.removeItem('access_token');
+    //       localStorage.removeItem('refresh_token');
+    //       localStorage.removeItem('user');
+    //       localStorage.removeItem('isAuthenticated');
+    //       window.location.href = '/login';
+    //       return Promise.reject(error);
+    //     }
+    //   } catch (refreshError) {
+    //     // Refresh failed, logout user
+    //     localStorage.removeItem('access_token');
+    //     localStorage.removeItem('refresh_token');
+    //     localStorage.removeItem('user');
+    //     localStorage.removeItem('isAuthenticated');
+    //     window.location.href = '/login';
+    //     return Promise.reject(refreshError);
+    //   }
+    // }
 
     // Handle other error status codes
     if (error.response) {

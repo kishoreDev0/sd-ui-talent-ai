@@ -655,7 +655,7 @@ const RegisterJob: React.FC = () => {
                       }}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                         isSelected
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-[#4F39F6] text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -684,13 +684,13 @@ const RegisterJob: React.FC = () => {
                 {formData.selectedSkills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-primary-100 text-[#4F39F6] rounded-full text-sm font-medium"
                   >
                     {skill}
                     <button
                       type="button"
                       onClick={() => handleRemoveSkill(skill)}
-                      className="hover:bg-purple-200 rounded-full p-0.5"
+                      className="hover:bg-primary-200 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -785,7 +785,7 @@ const RegisterJob: React.FC = () => {
                           onClick={() => handleStepClick(index)}
                           className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
                             currentStep === index
-                              ? 'bg-purple-600 border-purple-600 text-white'
+                              ? 'bg-[#4F39F6] border-[#4F39F6] text-white'
                               : index < currentStep
                                 ? 'bg-green-500 border-green-500 text-white'
                                 : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
@@ -803,7 +803,7 @@ const RegisterJob: React.FC = () => {
                         <span
                           className={`mt-2 text-xs font-medium ${
                             currentStep === index
-                              ? 'text-purple-600'
+                              ? 'text-[#4F39F6]'
                               : index < currentStep
                                 ? 'text-green-600'
                                 : 'text-gray-500'
@@ -853,7 +853,7 @@ const RegisterJob: React.FC = () => {
               {currentStep < steps.length - 1 ? (
                 <Button
                   onClick={handleNext}
-                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
@@ -861,7 +861,7 @@ const RegisterJob: React.FC = () => {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
                 >
                   Submit Job
                 </Button>

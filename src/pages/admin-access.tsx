@@ -1,42 +1,92 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, MoreHorizontal } from 'lucide-react';
+import { Snackbar, SnackbarType } from '@/components/snackbar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { getAllRole } from '@/store/role/actions/roleActions';
+import {
+  getAllRole,
+  createRole,
+  updateRole,
+  updateRolePermissions,
+} from '@/store/role/actions/roleActions';
+import { syncPermissions } from '@/store/permission/actions/permissionActions';
+import { setPermissionPage } from '@/store/permission/slices/permissionSlice';
 
 const AdminAccessPage: React.FC = () => {
   const role = useUserRole();
   const [activeTab, setActiveTab] = useState<'roles' | 'permissions'>('roles');
+  const hasClickedTab = useRef(false);
 
   // For Roles CRUD UI
-  const [roleTab, setRoleTab] = useState('All');
+  // Removed secondary tabs
   const [selectAll, setSelectAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
-  const roleTabs = ['All', 'Active', 'Inactive', 'Recent'];
+  // const roleTabs = ['All', 'Active', 'Inactive', 'Recent'];
 
   // Redux dynamic roles
   const dispatch = useAppDispatch();
-  const { roles, loading } = useAppSelector((state) => state.role);
+  const { roles, loading, total } = useAppSelector((state) => state.role);
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [activeOnly] = useState(false);
+  const rolesLoadedRef = useRef(false);
+  const initialPageRef = useRef(1);
+
+  // Fetch roles when Access Control page loads (default Roles tab) or when Roles tab is clicked
   useEffect(() => {
-    dispatch(getAllRole());
-  }, [dispatch]);
+    if (activeTab === 'roles' && !rolesLoadedRef.current && !loading) {
+      rolesLoadedRef.current = true;
+      initialPageRef.current = page;
+      dispatch(
+        getAllRole({ page: 1, page_size: pageSize, active_only: activeOnly }),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, activeTab, activeOnly, pageSize, loading]);
+
+  // Re-fetch roles when page changes (only if roles tab is active, already loaded, and page actually changed)
+  useEffect(() => {
+    if (
+      activeTab === 'roles' &&
+      rolesLoadedRef.current &&
+      page !== initialPageRef.current
+    ) {
+      dispatch(
+        getAllRole({ page, page_size: pageSize, active_only: activeOnly }),
+      );
+      initialPageRef.current = page;
+    }
+  }, [dispatch, page, activeTab, activeOnly, pageSize]);
 
   // Filtering and search (dynamic data)
   let displayRoles = Array.isArray(roles) ? [...roles] : [];
-  if (roleTab === 'Active') displayRoles = displayRoles.filter((r) => r.active);
-  if (roleTab === 'Inactive')
-    displayRoles = displayRoles.filter((r) => !r.active);
+  // Removed roleTab filtering
   if (searchTerm)
     displayRoles = displayRoles.filter((r) =>
       (r.name + (r.description || ''))
         .toLowerCase()
         .includes(searchTerm.toLowerCase()),
     );
+
+  // Use only API-provided roles
+  const rolesToRender = displayRoles;
 
   // Selection logic
   const handleSelectAll = () => {
@@ -50,263 +100,750 @@ const AdminAccessPage: React.FC = () => {
     );
   };
 
-  const handleRoleTabChange = (tab: string) => {
-    setRoleTab(tab);
-    setSelectedRoles([]);
-    setSelectAll(false);
+  // Secondary tab change removed
+
+  // Row actions: Edit & Manage Permissions
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const [isPermOpen, setIsPermOpen] = useState(false);
+  const [currentRole, setCurrentRole] = useState<{
+    id: number;
+    name: string;
+    description?: string;
+    active?: boolean;
+  } | null>(null);
+
+  // Dynamic permission matrix based on API response
+  type PermissionMatrix = Record<
+    string,
+    Record<
+      string,
+      {
+        permission_id: number;
+        role_permission_id: number | null;
+        has_permission: boolean;
+      }
+    >
+  >;
+  const [permMatrix, setPermMatrix] = useState<PermissionMatrix>({});
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<number | null>(null);
+
+  // Permissions from Redux
+  const {
+    permissions,
+    loading: scanning,
+    total: permTotal,
+    page: permPage,
+    pageSize: permPageSize,
+    totalPages: permTotalPages,
+  } = useAppSelector((state) => state.permission);
+
+  // Client-side pagination for permissions
+  const startIndex = (permPage - 1) * permPageSize;
+  const endIndex = startIndex + permPageSize;
+  const paginatedPermissions = permissions.slice(startIndex, endIndex);
+
+  const permissionsLoadedRef = useRef(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: SnackbarType;
+  } | null>(null);
+
+  // Fetch permissions automatically when permissions tab is clicked
+  useEffect(() => {
+    if (
+      activeTab === 'permissions' &&
+      hasClickedTab.current &&
+      !permissionsLoadedRef.current &&
+      !scanning
+    ) {
+      permissionsLoadedRef.current = true;
+      dispatch(syncPermissions());
+    }
+  }, [dispatch, activeTab, scanning]);
+
+  const openEdit = (r: {
+    id: number;
+    name: string;
+    description?: string;
+    active?: boolean;
+  }) => {
+    setActionMenuOpenId(null);
+    setIsPermOpen(false);
+    setCurrentRole(r);
+    setIsEditOpen(true);
+  };
+
+  const openManagePermissions = (r: { id: number; name: string }) => {
+    setActionMenuOpenId(null);
+    setIsEditOpen(false);
+    setCurrentRole(r);
+
+    // Find the role with permissions from Redux state
+    const roleWithPerms = roles.find((role) => role.id === r.id);
+    const seeded: PermissionMatrix = {};
+
+    // Populate matrix from API response
+    if (roleWithPerms?.resources && Array.isArray(roleWithPerms.resources)) {
+      roleWithPerms.resources.forEach((resourceData) => {
+        const resourceName = resourceData.resource;
+        seeded[resourceName] = {};
+
+        // Populate actions for this resource
+        if (resourceData.actions) {
+          Object.keys(resourceData.actions).forEach((actionName) => {
+            seeded[resourceName][actionName] = {
+              permission_id: resourceData.actions[actionName].permission_id,
+              role_permission_id:
+                resourceData.actions[actionName].role_permission_id,
+              has_permission: resourceData.actions[actionName].has_permission,
+            };
+          });
+        }
+      });
+    }
+
+    setPermMatrix(seeded);
+    setIsPermOpen(true);
+  };
+
+  const togglePerm = (resource: string, action: string) => {
+    setPermMatrix((prev) => ({
+      ...prev,
+      [resource]: {
+        ...prev[resource],
+        [action]: {
+          ...prev[resource][action],
+          has_permission: !prev[resource][action].has_permission,
+        },
+      },
+    }));
+  };
+
+  const handleScanPermissions = () => {
+    // Reset the ref to allow re-scanning
+    permissionsLoadedRef.current = false;
+    dispatch(syncPermissions());
   };
 
   return (
-    <MainLayout role={role}>
-      <div className="p-4 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Access Control
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Manage roles and permissions
-            </p>
+    <>
+      <MainLayout role={role}>
+        <div className="p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Access Control
+              </h1>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
+                Manage roles and permissions
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant={activeTab === 'roles' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('roles')}
-          >
-            Roles
-          </Button>
-          <Button
-            variant={activeTab === 'permissions' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('permissions')}
-          >
-            Permissions
-          </Button>
-        </div>
+          {/* Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <Button
+              variant={activeTab === 'roles' ? 'default' : 'outline'}
+              onClick={() => {
+                hasClickedTab.current = true;
+                // Reset roles loaded state when switching to roles tab to allow re-fetch
+                if (activeTab !== 'roles') {
+                  rolesLoadedRef.current = false;
+                }
+                setActiveTab('roles');
+              }}
+              className="h-8 px-4 text-sm"
+            >
+              Roles
+            </Button>
+            <Button
+              variant={activeTab === 'permissions' ? 'default' : 'outline'}
+              onClick={() => {
+                hasClickedTab.current = true;
+                setActiveTab('permissions');
+              }}
+              className="h-8 px-4 text-sm"
+            >
+              Permissions
+            </Button>
+          </div>
 
-        {/* Content */}
-        {activeTab === 'roles' ? (
-          <div className="space-y-4">
-            {/* Tabs */}
-            <div className="border-b border-gray-200 dark:border-white/10 px-0">
-              <nav className="-mb-px flex space-x-6">
-                {roleTabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => handleRoleTabChange(tab)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      roleTab === tab
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-300'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </nav>
-            </div>
-            {/* Search and Add Button */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Select All
-                  </label>
+          {/* Content */}
+          {activeTab === 'roles' ? (
+            <div className="space-y-3">
+              {/* Secondary tabs removed */}
+              {/* Search and Add Button */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 py-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+                  <div className="flex items-center space-x-1.5">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label className="text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-200">
+                      Select All
+                    </label>
+                  </div>
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <Input
+                      type="text"
+                      placeholder="Search roles..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-7 sm:pl-8 w-full sm:w-48 md:w-64 h-7 sm:h-8 text-xs sm:text-sm"
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search roles..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-72"
-                  />
-                </div>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm w-full sm:w-auto"
+                  disabled={loading}
+                  onClick={() => {
+                    setIsCreating(true);
+                    setCurrentRole({ id: 0, name: '', active: true });
+                    setIsEditOpen(true);
+                  }}
+                >
+                  <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />{' '}
+                  Add Role
+                </Button>
               </div>
-              <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                disabled={loading}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add Role
-              </Button>
-            </div>
-            {/* Roles Table */}
-            <div className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-white/10">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
-                  <thead className="bg-gray-50 dark:bg-slate-900">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Description
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created By
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Active
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created Date
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Updated
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-white/10">
-                    {displayRoles.map((role) => (
-                      <tr
-                        key={role.id}
-                        className="hover:bg-gray-50 dark:hover:bg-slate-900"
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
+              {/* Roles Table */}
+              <div className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+                    <thead className="bg-gray-50 dark:bg-slate-900">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
                           <input
                             type="checkbox"
-                            checked={selectedRoles.includes(role.id)}
-                            onChange={() => handleSelectRole(role.id)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                           />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {role.name}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
-                            {role.description}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.created_by || ''}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center">
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                          Active
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                          Created Date
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                          Updated
+                        </th>
+                        <th className="px-3 py-2 text-right text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-white/10">
+                      {rolesToRender.map((role) => (
+                        <tr
+                          key={role.id}
+                          className="hover:bg-gray-50 dark:hover:bg-slate-900"
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap">
                             <input
                               type="checkbox"
-                              checked={!!role.active}
-                              readOnly
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              checked={selectedRoles.includes(role.id)}
+                              onChange={() => handleSelectRole(role.id)}
+                              className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                             />
-                            <span className="ml-2 text-sm text-gray-900 dark:text-gray-200">
-                              {role.active ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.createdAt || ''}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {role.updatedAt || ''}
-                          </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+                              {role.name}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={!!role.active}
+                                readOnly
+                                className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <span className="ml-2 text-xs text-gray-900 dark:text-gray-200">
+                                {role.active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div className="text-xs text-gray-900 dark:text-gray-100">
+                              {role.createdAt || role.created_at || ''}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <div className="text-xs text-gray-900 dark:text-gray-100">
+                              {role.updatedAt || role.updated_at || ''}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-right">
+                            <DropdownMenu
+                              open={actionMenuOpenId === role.id}
+                              onOpenChange={(o) =>
+                                setActionMenuOpenId(o ? role.id : null)
+                              }
+                            >
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                >
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => openEdit(role)}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => openManagePermissions(role)}
+                                >
+                                  Manage Permissions
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {/* Pagination */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10">
+                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
+                  Page {page} • {rolesToRender.length} of{' '}
+                  {total || rolesToRender.length} roles
+                </div>
+                <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    disabled={page <= 1}
+                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={rolesToRender.length < pageSize}
+                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Permissions
+                </h2>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 px-3 text-sm"
+                  disabled={scanning}
+                  onClick={handleScanPermissions}
+                >
+                  <Search className="h-3.5 w-3.5 mr-1.5" />{' '}
+                  {scanning ? 'Scanning...' : 'Scan Permissions'}
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-600 dark:text-gray-300 border-b">
+                      <th className="py-2 pr-4 text-xs font-medium">Module</th>
+                      <th className="py-2 pr-4 text-xs font-medium">Action</th>
+                      <th className="py-2 pr-4 text-xs font-medium">Key</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-900 dark:text-gray-100">
+                    {permissions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="py-6 text-center text-gray-500 text-sm"
+                        >
+                          No permissions loaded. Click &quot;Scan
+                          Permissions&quot; to fetch from API.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      paginatedPermissions.map((perm) => (
+                        <tr
+                          key={perm.key}
+                          className="border-b border-gray-200 dark:border-white/10"
+                        >
+                          <td className="py-2 pr-4 text-xs font-medium capitalize">
+                            {perm.module}
+                          </td>
+                          <td className="py-2 pr-4 text-xs capitalize">
+                            {perm.action}
+                          </td>
+                          <td className="py-2 pr-4 text-xs font-mono text-gray-600 dark:text-gray-400">
+                            {perm.key}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
+              {/* Pagination */}
+              {permissions.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10 mt-3 sm:mt-4">
+                  <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
+                    Page {permPage} • {paginatedPermissions.length} of{' '}
+                    {permTotal} permissions
+                  </div>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+                    <Button
+                      variant="outline"
+                      disabled={permPage <= 1}
+                      className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                      onClick={() =>
+                        dispatch(setPermissionPage(Math.max(1, permPage - 1)))
+                      }
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={permPage >= permTotalPages}
+                      className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                      onClick={() => dispatch(setPermissionPage(permPage + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-            {/* Pagination */}
-            <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-white/10">
-              <div className="text-sm text-gray-700 dark:text-gray-200">
-                Showing 1 to {displayRoles.length} of {roles.length} roles.
+          )}
+        </div>
+        {/* Edit Role Dialog */}
+        <Dialog
+          open={isEditOpen}
+          onOpenChange={(open) => {
+            setIsEditOpen(open);
+            if (!open) setCurrentRole(null);
+            if (!open) setIsCreating(false);
+          }}
+        >
+          <DialogContent className="w-[95vw] sm:w-full max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base sm:text-lg">
+                {isCreating ? 'Create Role' : 'Edit Role'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                  Role Name
+                </label>
+                <Input
+                  value={currentRole?.name || ''}
+                  onChange={(e) =>
+                    setCurrentRole((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            name: e.target.value,
+                          }
+                        : { id: 0, name: e.target.value, active: true },
+                    )
+                  }
+                  className="h-8 sm:h-9 text-sm"
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" disabled className="text-gray-400">
-                  Previous
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!currentRole?.active}
+                  onChange={(e) =>
+                    setCurrentRole((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            active: e.target.checked,
+                          }
+                        : { id: 0, name: '', active: e.target.checked },
+                    )
+                  }
+                  className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                />
+                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                  Active
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditOpen(false)}
+                  className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+                >
+                  Cancel
                 </Button>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  1
-                </Button>
-                <Button variant="outline" disabled className="text-gray-400">
-                  Next
+                <Button
+                  disabled={isSaving || !currentRole?.name}
+                  onClick={async () => {
+                    if (!currentRole?.name) return;
+                    // For update, require id to be greater than 0
+                    if (
+                      !isCreating &&
+                      (!currentRole?.id || currentRole.id <= 0)
+                    )
+                      return;
+                    try {
+                      setIsSaving(true);
+                      if (isCreating) {
+                        await dispatch(
+                          createRole({
+                            payload: {
+                              name: currentRole.name,
+                              active: currentRole?.active ?? true,
+                            },
+                          }),
+                        ).unwrap();
+                        setToast({
+                          message: 'Role created successfully',
+                          type: 'success',
+                        });
+                      } else {
+                        await dispatch(
+                          updateRole({
+                            id: currentRole.id,
+                            payload: {
+                              name: currentRole.name,
+                              active: currentRole?.active ?? true,
+                            },
+                          }),
+                        ).unwrap();
+                        setToast({
+                          message: 'Role updated successfully',
+                          type: 'success',
+                        });
+                      }
+                      await dispatch(
+                        getAllRole({
+                          page,
+                          page_size: pageSize,
+                          active_only: activeOnly,
+                        }),
+                      );
+                      setIsEditOpen(false);
+                      setCurrentRole(null);
+                      setIsCreating(false);
+                    } catch (error) {
+                      console.error('Error saving role:', error);
+                      const errorMessage =
+                        error instanceof Error
+                          ? error.message
+                          : 'Unknown error';
+                      setToast({
+                        message:
+                          errorMessage ||
+                          `Failed to ${isCreating ? 'create' : 'update'} role`,
+                        type: 'error',
+                      });
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Permissions
-              </h2>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                Add Permission
+          </DialogContent>
+        </Dialog>
+
+        {/* Manage Permissions Dialog */}
+        <Dialog
+          open={isPermOpen}
+          onOpenChange={(open) => {
+            setIsPermOpen(open);
+            if (!open) setCurrentRole(null);
+          }}
+        >
+          <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Manage Permissions — {currentRole?.name || ''}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-x-auto">
+              {Object.keys(permMatrix).length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                  No permissions available for this role
+                </p>
+              ) : (
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-2 pr-4">Resource</th>
+                      {(() => {
+                        // Get all unique actions across all resources
+                        const allActions = new Set<string>();
+                        Object.values(permMatrix).forEach((resource) => {
+                          Object.keys(resource).forEach((action) =>
+                            allActions.add(action),
+                          );
+                        });
+                        return Array.from(allActions).sort();
+                      })().map((action) => (
+                        <th key={action} className="py-2 pr-4 capitalize">
+                          {action}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-900 dark:text-gray-100">
+                    {Object.keys(permMatrix).map((resource) => {
+                      const resourceActions = permMatrix[resource];
+                      const allActions = (() => {
+                        const actions = new Set<string>();
+                        Object.values(permMatrix).forEach((r) => {
+                          Object.keys(r).forEach((a) => actions.add(a));
+                        });
+                        return Array.from(actions).sort();
+                      })();
+
+                      return (
+                        <tr
+                          key={resource}
+                          className="border-t border-gray-200 dark:border-gray-700"
+                        >
+                          <td className="py-2 pr-4 font-medium capitalize text-gray-900 dark:text-gray-100">
+                            {resource.replace(/_/g, ' ')}
+                          </td>
+                          {allActions.map((action) => {
+                            const permission = resourceActions[action];
+                            if (!permission) {
+                              return (
+                                <td key={action} className="py-2 pr-4">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4"
+                                    disabled
+                                    checked={false}
+                                  />
+                                </td>
+                              );
+                            }
+                            return (
+                              <td key={action} className="py-2 pr-4">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={permission.has_permission}
+                                  onChange={() => togglePerm(resource, action)}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsPermOpen(false)}
+                disabled={isSavingPermissions}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!currentRole?.id) return;
+
+                  // Collect all permission_ids where has_permission is true
+                  const permissionIds: number[] = [];
+                  Object.values(permMatrix).forEach((resource) => {
+                    Object.values(resource).forEach((permission) => {
+                      if (
+                        permission.has_permission &&
+                        permission.permission_id
+                      ) {
+                        permissionIds.push(permission.permission_id);
+                      }
+                    });
+                  });
+
+                  try {
+                    setIsSavingPermissions(true);
+                    await dispatch(
+                      updateRolePermissions({
+                        id: currentRole.id,
+                        permissionIds,
+                      }),
+                    ).unwrap();
+
+                    setToast({
+                      message: 'Permissions updated successfully',
+                      type: 'success',
+                    });
+
+                    // Refresh roles list to get updated permissions
+                    await dispatch(
+                      getAllRole({
+                        page,
+                        page_size: pageSize,
+                        active_only: activeOnly,
+                      }),
+                    );
+
+                    setIsPermOpen(false);
+                  } catch (error) {
+                    console.error('Error updating permissions:', error);
+                    const errorMessage =
+                      error instanceof Error ? error.message : 'Unknown error';
+                    setToast({
+                      message: errorMessage || 'Failed to update permissions',
+                      type: 'error',
+                    });
+                  } finally {
+                    setIsSavingPermissions(false);
+                  }
+                }}
+                disabled={isSavingPermissions}
+              >
+                {isSavingPermissions ? 'Saving...' : 'Save'}
               </Button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-600 dark:text-gray-300">
-                    <th className="py-2 pr-4">Permission</th>
-                    <th className="py-2 pr-4">Key</th>
-                    <th className="py-2 pr-4">Description</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-900 dark:text-gray-100">
-                  {[
-                    {
-                      name: 'View Dashboard',
-                      key: 'view_dashboard',
-                      desc: 'Access to dashboard',
-                    },
-                    {
-                      name: 'Manage Jobs',
-                      key: 'manage_jobs',
-                      desc: 'Create and manage jobs',
-                    },
-                    {
-                      name: 'View Candidates',
-                      key: 'view_candidates',
-                      desc: 'View candidate profiles',
-                    },
-                    {
-                      name: 'Schedule Interviews',
-                      key: 'schedule_interviews',
-                      desc: 'Create interview schedules',
-                    },
-                  ].map((p) => (
-                    <tr
-                      key={p.key}
-                      className="border-t border-gray-200 dark:border-white/10"
-                    >
-                      <td className="py-3 pr-4 font-medium">{p.name}</td>
-                      <td className="py-3 pr-4">{p.key}</td>
-                      <td className="py-3 pr-4">{p.desc}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    </MainLayout>
+          </DialogContent>
+        </Dialog>
+      </MainLayout>
+      {toast && (
+        <Snackbar
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 };
 
