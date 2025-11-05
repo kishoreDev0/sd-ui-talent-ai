@@ -7,7 +7,8 @@ export const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentLanguage = languages.find((lang) => lang.code === language) || languages[0];
+  const currentLanguage =
+    languages.find((lang) => lang.code === language) || languages[0];
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
@@ -21,9 +22,14 @@ export const LanguageSelector: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
       >
-        <span className="text-xl">{currentLanguage.flag}</span>
-        <span className="text-sm">{currentLanguage.name}</span>
-        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
+        <span className="text-xl leading-none">{currentLanguage.flag}</span>
+        <span className="text-sm leading-none">{currentLanguage.name}</span>
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 transition-transform leading-none flex-shrink-0',
+            isOpen && 'rotate-180',
+          )}
+        />
       </button>
 
       {isOpen && (
@@ -40,13 +46,15 @@ export const LanguageSelector: React.FC = () => {
                 onClick={() => handleLanguageChange(lang.code)}
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-left',
-                  language === lang.code && 'bg-blue-50'
+                  language === lang.code && 'bg-blue-50',
                 )}
               >
-                <span className="text-xl">{lang.flag}</span>
-                <span className="flex-1">{lang.name}</span>
+                <span className="text-xl leading-none flex-shrink-0">
+                  {lang.flag}
+                </span>
+                <span className="flex-1 leading-none">{lang.name}</span>
                 {language === lang.code && (
-                  <Check className="w-4 h-4 text-blue-600" />
+                  <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
                 )}
               </button>
             ))}
@@ -56,4 +64,3 @@ export const LanguageSelector: React.FC = () => {
     </div>
   );
 };
-

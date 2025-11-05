@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, ChevronDown, FileText, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  FileText,
+  Upload,
+  ArrowRight,
+  ArrowLeft,
+} from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
@@ -83,8 +90,16 @@ interface OnboardingStepperProps {
 }
 
 const steps = [
-  { id: 1, label: 'Location Information', description: 'Enter your location details' },
-  { id: 2, label: 'Contact Information', description: 'Add your contact details' },
+  {
+    id: 1,
+    label: 'Location Information',
+    description: 'Enter your location details',
+  },
+  {
+    id: 2,
+    label: 'Contact Information',
+    description: 'Add your contact details',
+  },
   { id: 3, label: 'Preferences', description: 'Set your preferences' },
   { id: 4, label: 'Review', description: 'Review and confirm' },
 ];
@@ -177,7 +192,10 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       const loadCities = async () => {
         setLoadingCities(true);
         try {
-          const citiesData = await GetCity(selectedCountry.id, selectedState.id);
+          const citiesData = await GetCity(
+            selectedCountry.id,
+            selectedState.id,
+          );
           setCities(citiesData as City[]);
           setSelectedCity(null);
         } catch (error) {
@@ -213,7 +231,7 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
   const handleNext = async () => {
     // Validate current step fields
     let isValid = false;
-    
+
     if (currentStep === 1) {
       isValid = await trigger(['country', 'state', 'city', 'zip_code']);
     } else if (currentStep === 2) {
@@ -249,7 +267,8 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       onComplete();
     } catch (err: any) {
       console.error('Onboarding failed:', err);
-      const errorMessage = err?.message || err?.error || 'Failed to complete onboarding';
+      const errorMessage =
+        err?.message || err?.error || 'Failed to complete onboarding';
       showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
@@ -261,17 +280,24 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       case 1:
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">Location Information</h2>
+            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">
+              Location Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Country <span className="text-red-500">*</span>
                 </label>
                 <Combobox
-                  options={countries.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                  options={countries.map((c) => ({
+                    value: c.id.toString(),
+                    label: c.name,
+                  }))}
                   value={selectedCountry?.id.toString() || ''}
                   onValueChange={(value) => {
-                    const country = countries.find((c) => c.id.toString() === value);
+                    const country = countries.find(
+                      (c) => c.id.toString() === value,
+                    );
                     setSelectedCountry(country || null);
                   }}
                   placeholder="Select Country"
@@ -279,7 +305,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   className={errors.country ? 'border-red-300' : ''}
                 />
                 {errors.country && (
-                  <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.country.message}
+                  </p>
                 )}
               </div>
 
@@ -288,7 +316,10 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   State <span className="text-red-500">*</span>
                 </label>
                 <Combobox
-                  options={states.map((s) => ({ value: s.id.toString(), label: s.name }))}
+                  options={states.map((s) => ({
+                    value: s.id.toString(),
+                    label: s.name,
+                  }))}
                   value={selectedState?.id.toString() || ''}
                   onValueChange={(value) => {
                     const state = states.find((s) => s.id.toString() === value);
@@ -300,7 +331,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   className={errors.state ? 'border-red-300' : ''}
                 />
                 {errors.state && (
-                  <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.state.message}
+                  </p>
                 )}
               </div>
 
@@ -309,7 +342,10 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   City <span className="text-red-500">*</span>
                 </label>
                 <Combobox
-                  options={cities.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                  options={cities.map((c) => ({
+                    value: c.id.toString(),
+                    label: c.name,
+                  }))}
                   value={selectedCity?.id.toString() || ''}
                   onValueChange={(value) => {
                     const city = cities.find((c) => c.id.toString() === value);
@@ -321,7 +357,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   className={errors.city ? 'border-red-300' : ''}
                 />
                 {errors.city && (
-                  <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.city.message}
+                  </p>
                 )}
               </div>
 
@@ -335,7 +373,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   className={errors.zip_code ? 'border-red-300' : ''}
                 />
                 {errors.zip_code && (
-                  <p className="mt-1 text-sm text-red-600">{errors.zip_code.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.zip_code.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -345,7 +385,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       case 2:
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">Contact Information</h2>
+            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">
+              Contact Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -354,12 +396,18 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                 <Combobox
                   options={MOBILE_COUNTRY_CODES}
                   value={formValues.mobile_country_code}
-                  onValueChange={(value) => setValue('mobile_country_code', value, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    setValue('mobile_country_code', value, {
+                      shouldValidate: true,
+                    })
+                  }
                   placeholder="Select Country Code"
                   className={errors.mobile_country_code ? 'border-red-300' : ''}
                 />
                 {errors.mobile_country_code && (
-                  <p className="mt-1 text-sm text-red-600">{errors.mobile_country_code.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.mobile_country_code.message}
+                  </p>
                 )}
               </div>
 
@@ -373,7 +421,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                   className={errors.mobile_number ? 'border-red-300' : ''}
                 />
                 {errors.mobile_number && (
-                  <p className="mt-1 text-sm text-red-600">{errors.mobile_number.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.mobile_number.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -383,7 +433,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       case 3:
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">Preferences</h2>
+            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">
+              Preferences
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -392,12 +444,18 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                 <Combobox
                   options={TIMEZONES}
                   value={formValues.preferred_timezone}
-                  onValueChange={(value) => setValue('preferred_timezone', value, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    setValue('preferred_timezone', value, {
+                      shouldValidate: true,
+                    })
+                  }
                   placeholder="Select Timezone"
                   className={errors.preferred_timezone ? 'border-red-300' : ''}
                 />
                 {errors.preferred_timezone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.preferred_timezone.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.preferred_timezone.message}
+                  </p>
                 )}
               </div>
 
@@ -418,7 +476,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       case 4:
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">Review & Confirm</h2>
+            <h2 className="text-3xl font-bold text-[#4F39F6] mb-2">
+              Review & Confirm
+            </h2>
             <div className="bg-gray-50 rounded-lg p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -440,12 +500,15 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                 <div>
                   <p className="text-sm text-gray-600">Mobile</p>
                   <p className="font-semibold">
-                    {formValues.mobile_country_code} {formValues.mobile_number || '—'}
+                    {formValues.mobile_country_code}{' '}
+                    {formValues.mobile_number || '—'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Timezone</p>
-                  <p className="font-semibold">{formValues.preferred_timezone || '—'}</p>
+                  <p className="font-semibold">
+                    {formValues.preferred_timezone || '—'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -464,7 +527,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
           {/* Left Side - Steps UI */}
           <div className="lg:col-span-1">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Example with Steps UI</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Example with Steps UI
+              </h1>
               <p className="text-sm text-gray-600">
                 Follow the simple 4 Steps to complete your mapping.
               </p>
@@ -485,8 +550,8 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                           isCompleted
                             ? 'bg-green-500 text-white'
                             : isActive
-                            ? 'bg-[#4F39F6] text-white'
-                            : 'bg-gray-200 text-gray-600'
+                              ? 'bg-[#4F39F6] text-white'
+                              : 'bg-gray-200 text-gray-600'
                         }`}
                       >
                         {isCompleted ? (
@@ -498,7 +563,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                       {index < steps.length - 1 && (
                         <div
                           className={`w-0.5 h-16 mt-2 ${
-                            isCompleted || isPast ? 'bg-green-500' : 'bg-gray-200'
+                            isCompleted || isPast
+                              ? 'bg-green-500'
+                              : 'bg-gray-200'
                           }`}
                         />
                       )}
@@ -513,7 +580,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
                       >
                         {step.label}
                       </h3>
-                      <p className="text-sm text-gray-500">{step.description}</p>
+                      <p className="text-sm text-gray-500">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
                 );
@@ -565,4 +634,3 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
     </div>
   );
 };
-

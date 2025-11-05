@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 
 export type Language = 'en' | 'es' | 'fr' | 'de' | 'hi' | 'zh' | 'ja' | 'ar';
 
@@ -25,7 +31,9 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined,
+);
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
@@ -39,7 +47,9 @@ interface LanguageProviderProps {
   children: ReactNode;
 }
 
-export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({
+  children,
+}) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('language');
     return (saved as Language) || 'en';
@@ -85,8 +95,11 @@ const translations: Record<Language, Record<string, string>> = {
     'login.success': 'Login successful!',
     'login.failed': 'Login failed. Please check your credentials.',
     'marketing.title': 'Fast, Efficient and Productive',
-    'marketing.description': 'Where AI meets recruitment — shaping the future of talent acquisition.',
-    'marketing.subtitle': 'Because every great hire begins with great insight.',
+    'marketing.description':
+      'Where AI meets recruitment — shaping the future of talent acquisition.',
+    'marketing.subtitle':
+      'Empowering organizations to hire smarter, faster, and with precision.',
+    'marketing.tagline': 'Because every great hire begins with great insight.',
   },
   es: {
     'login.title': 'Iniciar Sesión',
@@ -105,10 +118,15 @@ const translations: Record<Language, Record<string, string>> = {
     'login.passwordRequired': 'La contraseña es requerida',
     'login.passwordMinLength': 'La contraseña debe tener al menos 6 caracteres',
     'login.success': '¡Inicio de sesión exitoso!',
-    'login.failed': 'Error al iniciar sesión. Por favor verifica tus credenciales.',
+    'login.failed':
+      'Error al iniciar sesión. Por favor verifica tus credenciales.',
     'marketing.title': 'Rápido, Eficiente y Productivo',
-    'marketing.description': 'Donde la IA se encuentra con la contratación: moldeando el futuro de la adquisición de talento.',
-    'marketing.subtitle': 'Porque cada gran contratación comienza con una gran visión.',
+    'marketing.description':
+      'Donde la IA se encuentra con la contratación: moldeando el futuro de la adquisición de talento.',
+    'marketing.subtitle':
+      'Empoderando a las organizaciones para contratar de manera más inteligente, rápida y precisa.',
+    'marketing.tagline':
+      'Porque cada gran contratación comienza con una gran visión.',
   },
   fr: {
     'login.title': 'Se Connecter',
@@ -125,12 +143,18 @@ const translations: Record<Language, Record<string, string>> = {
     'login.emailRequired': "L'adresse e-mail est requise",
     'login.emailInvalid': 'Veuillez entrer une adresse e-mail valide',
     'login.passwordRequired': 'Le mot de passe est requis',
-    'login.passwordMinLength': 'Le mot de passe doit contenir au moins 6 caractères',
+    'login.passwordMinLength':
+      'Le mot de passe doit contenir au moins 6 caractères',
     'login.success': 'Connexion réussie!',
-    'login.failed': 'Échec de la connexion. Veuillez vérifier vos identifiants.',
+    'login.failed':
+      'Échec de la connexion. Veuillez vérifier vos identifiants.',
     'marketing.title': 'Rapide, Efficace et Productif',
-    'marketing.description': 'Où l\'IA rencontre le recrutement — façonnant l\'avenir de l\'acquisition de talents.',
-    'marketing.subtitle': 'Parce que chaque grand recrutement commence par une grande perspicacité.',
+    'marketing.description':
+      "Où l'IA rencontre le recrutement — façonnant l'avenir de l'acquisition de talents.",
+    'marketing.subtitle':
+      "Permettre aux organisations d'embaucher plus intelligemment, plus rapidement et avec précision.",
+    'marketing.tagline':
+      'Parce que chaque grand recrutement commence par une grande perspicacité.',
   },
   de: {
     'login.title': 'Anmelden',
@@ -147,12 +171,18 @@ const translations: Record<Language, Record<string, string>> = {
     'login.emailRequired': 'E-Mail-Adresse ist erforderlich',
     'login.emailInvalid': 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
     'login.passwordRequired': 'Passwort ist erforderlich',
-    'login.passwordMinLength': 'Das Passwort muss mindestens 6 Zeichen lang sein',
+    'login.passwordMinLength':
+      'Das Passwort muss mindestens 6 Zeichen lang sein',
     'login.success': 'Anmeldung erfolgreich!',
-    'login.failed': 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.',
+    'login.failed':
+      'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.',
     'marketing.title': 'Schnell, Effizient und Produktiv',
-    'marketing.description': 'Wo KI auf Rekrutierung trifft — die Zukunft der Talentakquise gestalten.',
-    'marketing.subtitle': 'Denn jede große Einstellung beginnt mit großartiger Einsicht.',
+    'marketing.description':
+      'Wo KI auf Rekrutierung trifft — die Zukunft der Talentakquise gestalten.',
+    'marketing.subtitle':
+      'Organisationen befähigen, intelligenter, schneller und präziser einzustellen.',
+    'marketing.tagline':
+      'Denn jede große Einstellung beginnt mit großartiger Einsicht.',
   },
   hi: {
     'login.title': 'साइन इन करें',
@@ -173,8 +203,12 @@ const translations: Record<Language, Record<string, string>> = {
     'login.success': 'लॉगिन सफल!',
     'login.failed': 'लॉगिन विफल। कृपया अपनी साख जांचें।',
     'marketing.title': 'तेज, कुशल और उत्पादक',
-    'marketing.description': 'जहां AI भर्ती से मिलता है — प्रतिभा अधिग्रहण के भविष्य को आकार देना।',
-    'marketing.subtitle': 'क्योंकि हर बड़ी भर्ती एक महान अंतर्दृष्टि से शुरू होती है।',
+    'marketing.description':
+      'जहां AI भर्ती से मिलता है — प्रतिभा अधिग्रहण के भविष्य को आकार देना।',
+    'marketing.subtitle':
+      'संगठनों को स्मार्ट, तेज और सटीक रूप से भर्ती करने के लिए सशक्त बनाना।',
+    'marketing.tagline':
+      'क्योंकि हर बड़ी भर्ती एक महान अंतर्दृष्टि से शुरू होती है।',
   },
   zh: {
     'login.title': '登录',
@@ -196,7 +230,8 @@ const translations: Record<Language, Record<string, string>> = {
     'login.failed': '登录失败。请检查您的凭据。',
     'marketing.title': '快速、高效和富有成效',
     'marketing.description': 'AI与招聘相遇——塑造人才招聘的未来。',
-    'marketing.subtitle': '因为每一次伟大的招聘都始于伟大的洞察。',
+    'marketing.subtitle': '赋能组织更智能、更快速、更精准地招聘。',
+    'marketing.tagline': '因为每一次伟大的招聘都始于伟大的洞察。',
   },
   ja: {
     'login.title': 'ログイン',
@@ -213,12 +248,15 @@ const translations: Record<Language, Record<string, string>> = {
     'login.emailRequired': 'メールアドレスが必要です',
     'login.emailInvalid': '有効なメールアドレスを入力してください',
     'login.passwordRequired': 'パスワードが必要です',
-    'login.passwordMinLength': 'パスワードは少なくとも6文字である必要があります',
+    'login.passwordMinLength':
+      'パスワードは少なくとも6文字である必要があります',
     'login.success': 'ログイン成功！',
     'login.failed': 'ログインに失敗しました。資格情報を確認してください。',
     'marketing.title': '高速、効率的、生産的',
     'marketing.description': 'AIが採用と出会う場所 — 人材獲得の未来を形作る。',
-    'marketing.subtitle': 'すべての偉大な採用は、偉大な洞察から始まるから。',
+    'marketing.subtitle':
+      '組織がより賢く、より速く、より正確に採用できるようにする。',
+    'marketing.tagline': 'すべての偉大な採用は、偉大な洞察から始まるから。',
   },
   ar: {
     'login.title': 'تسجيل الدخول',
@@ -239,8 +277,9 @@ const translations: Record<Language, Record<string, string>> = {
     'login.success': 'تم تسجيل الدخول بنجاح!',
     'login.failed': 'فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد.',
     'marketing.title': 'سريع وفعال ومنتج',
-    'marketing.description': 'حيث يلتقي الذكاء الاصطناعي بالتوظيف — تشكيل مستقبل اكتساب المواهب.',
-    'marketing.subtitle': 'لأن كل توظيف عظيم يبدأ ببصيرة عظيمة.',
+    'marketing.description':
+      'حيث يلتقي الذكاء الاصطناعي بالتوظيف — تشكيل مستقبل اكتساب المواهب.',
+    'marketing.subtitle': 'تمكين المنظمات من التوظيف بذكاء وسرعة ودقة أكبر.',
+    'marketing.tagline': 'لأن كل توظيف عظيم يبدأ ببصيرة عظيمة.',
   },
 };
-

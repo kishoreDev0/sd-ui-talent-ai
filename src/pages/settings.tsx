@@ -4,9 +4,14 @@ import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { logout } from '@/store/slices/authentication/login';
+import { updateUser } from '@/store/user/actions/userActions';
+import { forgotPassword } from '@/store/action/authentication/forgotPassword';
+import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
   CardContent,
@@ -14,8 +19,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Plus, ChevronUp, MoreVertical } from 'lucide-react';
+import {
+  Plus,
+  ChevronUp,
+  MoreVertical,
+  Upload,
+  Camera,
+  Check,
+  X,
+} from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
+import { z } from 'zod';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import {
+  parsePhoneNumber,
+  getCountryCallingCode,
+} from 'react-phone-number-input';
 
 // Type definitions for country/state/city (matching react-country-state-city structure)
 type Country = {
@@ -46,26 +66,152 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type SettingsTab =
-  | 'my-details'
-  | 'profile'
-  | 'password'
-  | 'team'
-  | 'billings'
-  | 'plan'
-  | 'email'
-  | 'notifications';
+type SettingsTab = 'my-details' | 'password';
+
+// Change Password Form Component
+const ChangePasswordFormComponent: React.FC<{
+  onSubmit: (data: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => void;
+}> = ({ onSubmit }) => {
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [errors, setErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+
+    if (!formData.newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit(formData);
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setErrors({});
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Change Password</CardTitle>
+        <CardDescription className="text-[10px]">
+          Update your password to keep your account secure
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              Current Password
+            </label>
+            <Input
+              type="password"
+              placeholder="Enter current password"
+              className="h-10 text-sm w-full"
+              value={formData.currentPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, currentPassword: e.target.value })
+              }
+            />
+            {errors.currentPassword && (
+              <p className="text-xs text-red-600">{errors.currentPassword}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              New Password
+            </label>
+            <Input
+              type="password"
+              placeholder="Enter new password"
+              className="h-10 text-sm w-full"
+              value={formData.newPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, newPassword: e.target.value })
+              }
+            />
+            {errors.newPassword && (
+              <p className="text-xs text-red-600">{errors.newPassword}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              Confirm New Password
+            </label>
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              className="h-10 text-sm w-full"
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+            />
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-600">{errors.confirmPassword}</p>
+            )}
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button type="submit" size="sm" className="h-8 px-3 text-xs">
+              Update Password
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
 
 const SettingsPage: React.FC = () => {
   const role = useUserRole();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { httpClient } = initializeHttpClient();
+  const { showToast } = useToast();
   const { user } = useAppSelector((state) => state.auth);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('billings');
+  const { loading: userLoading } = useAppSelector((state) => state.user);
+  const { isLoading: forgotPasswordLoading } = useAppSelector(
+    (state) => state.forgotPassword,
+  );
+  const [activeTab, setActiveTab] = useState<SettingsTab>('my-details');
   const [passwordSubTab, setPasswordSubTab] = useState<'change' | 'reset'>(
     'change',
   );
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [userDetails, setUserDetails] = useState({
     firstName: '',
     lastName: '',
@@ -85,7 +231,11 @@ const SettingsPage: React.FC = () => {
     isActive: true,
     lastLogin: '',
     role: '',
+    imageUrl: '',
   });
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedState, setSelectedState] = useState<State | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
@@ -100,13 +250,25 @@ const SettingsPage: React.FC = () => {
     // Populate user details from Redux or localStorage
     const userData = user || JSON.parse(localStorage.getItem('user') || '{}');
     if (userData) {
+      const imageUrl = userData.image_url || userData.imageUrl || '';
+      const phone = userData.phone || userData.phone_number || '';
+      const mobileCountryCode =
+        userData.mobile_country_code || userData.mobileCountryCode || '+1';
+
+      // Construct full phone number in international format
+      const fullPhoneNumber = phone
+        ? mobileCountryCode && !phone.startsWith('+')
+          ? `${mobileCountryCode}${phone}`
+          : phone
+        : '';
+
+      setPhoneNumber(fullPhoneNumber);
       setUserDetails({
         firstName: userData.first_name || userData.firstName || '',
         lastName: userData.last_name || userData.lastName || '',
         email: userData.email || '',
-        phone: userData.phone || userData.phone_number || '',
-        mobileCountryCode:
-          userData.mobile_country_code || userData.mobileCountryCode || '+1',
+        phone: phone,
+        mobileCountryCode: mobileCountryCode,
         birthday: userData.birthday || userData.birth_date || '',
         bio: userData.bio || userData.biography || '',
         city: userData.city || '',
@@ -121,7 +283,9 @@ const SettingsPage: React.FC = () => {
         isActive: userData.is_active ?? userData.isActive ?? true,
         lastLogin: userData.last_login || userData.lastLogin || '',
         role: userData.role?.name || userData.role_name || '',
+        imageUrl: imageUrl,
       });
+      setAvatarPreview(imageUrl);
     }
   }, [user]);
 
@@ -221,13 +385,7 @@ const SettingsPage: React.FC = () => {
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'my-details', label: 'My details' },
-    { id: 'profile', label: 'Profile' },
     { id: 'password', label: 'Password' },
-    { id: 'team', label: 'Team' },
-    { id: 'billings', label: 'Billings' },
-    { id: 'plan', label: 'Plan' },
-    { id: 'email', label: 'Email' },
-    { id: 'notifications', label: 'Notifications' },
   ];
 
   const handleLogout = () => {
@@ -239,225 +397,150 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // Notification settings state
-  const [notifications, setNotifications] = useState({
-    comments: { push: true, email: true, sms: false },
-    tags: { push: true, email: false, sms: false },
-    reminders: { push: false, email: false, sms: false },
-    activity: { push: false, email: false, sms: false },
-  });
+  const handleUpdateProfile = async () => {
+    if (!user?.id) {
+      showToast('User not found. Please log in again.', 'error');
+      return;
+    }
 
-  const updateNotification = (
-    category: keyof typeof notifications,
-    type: 'push' | 'email' | 'sms',
-    value: boolean,
-  ) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [type]: value,
-      },
-    }));
+    setIsSaving(true);
+    try {
+      const payload: any = {
+        first_name: userDetails.firstName,
+        last_name: userDetails.lastName,
+        email: userDetails.email,
+        mobile_number: userDetails.phone,
+        mobile_country_code: userDetails.mobileCountryCode,
+        city: selectedCity?.name || userDetails.city,
+        state: selectedState?.name || userDetails.state,
+        country: selectedCountry?.name || userDetails.country,
+        zip_code: userDetails.zipCode,
+        preferred_timezone: userDetails.preferredTimeZone,
+      };
+
+      // If a new avatar file was selected, include it in the payload
+      if (avatarFile) {
+        // Create FormData for file upload
+        const formData = new FormData();
+        Object.keys(payload).forEach((key) => {
+          formData.append(key, payload[key]);
+        });
+        formData.append('image', avatarFile);
+
+        // TODO: Update this to use the actual API endpoint for file upload
+        // For now, if the API supports image_url, we'll send it as base64 or URL
+        // You may need to upload the file separately first and get the URL
+        if (avatarPreview && avatarPreview.startsWith('data:')) {
+          // If it's a data URL from file upload, you might need to convert it
+          // This depends on your API implementation
+          payload.image_url = avatarPreview;
+        }
+      } else if (userDetails.imageUrl) {
+        payload.image_url = userDetails.imageUrl;
+      }
+
+      const result = await dispatch(
+        updateUser({ id: user.id, payload }),
+      ).unwrap();
+
+      if (result?.success) {
+        showToast('Profile updated successfully!', 'success');
+        // Update local user data
+        const updatedUser = { ...user, ...result.data };
+        if (result.data?.image_url) {
+          updatedUser.image_url = result.data.image_url;
+          setAvatarPreview(result.data.image_url);
+          setUserDetails({
+            ...userDetails,
+            imageUrl: result.data.image_url,
+          });
+        }
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setAvatarFile(null); // Clear the file after successful upload
+      } else {
+        showToast(result?.error?.[0] || 'Failed to update profile', 'error');
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err?.payload?.message ||
+        err?.message ||
+        'Failed to update profile. Please try again.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const renderNotifications = () => (
-    <div className="space-y-3">
-      <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-          Notification settings
-        </h2>
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          We may still send you important notifications about your account
-          outside of your notification settings.
-        </p>
-      </div>
+  const handleChangePassword = async (formData: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    // TODO: Implement password change API call
+    showToast('Password change functionality will be implemented soon', 'info');
+  };
 
-      {/* Comments */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Comments</CardTitle>
-          <CardDescription className="text-[10px]">
-            These are notifications for comments on your posts and replies to
-            your comments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Push
-            </span>
-            <Switch
-              checked={notifications.comments.push}
-              onCheckedChange={(checked) =>
-                updateNotification('comments', 'push', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Email
-            </span>
-            <Switch
-              checked={notifications.comments.email}
-              onCheckedChange={(checked) =>
-                updateNotification('comments', 'email', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              SMS
-            </span>
-            <Switch
-              checked={notifications.comments.sms}
-              onCheckedChange={(checked) =>
-                updateNotification('comments', 'sms', checked)
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+  const handleForgotPassword = async () => {
+    if (!userDetails.email) {
+      showToast('Email is required', 'error');
+      return;
+    }
 
-      {/* Tags */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Tags</CardTitle>
-          <CardDescription className="text-[10px]">
-            These are notifications for when someone tags you in a comment, post
-            or story.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Push
-            </span>
-            <Switch
-              checked={notifications.tags.push}
-              onCheckedChange={(checked) =>
-                updateNotification('tags', 'push', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Email
-            </span>
-            <Switch
-              checked={notifications.tags.email}
-              onCheckedChange={(checked) =>
-                updateNotification('tags', 'email', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              SMS
-            </span>
-            <Switch
-              checked={notifications.tags.sms}
-              onCheckedChange={(checked) =>
-                updateNotification('tags', 'sms', checked)
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+    try {
+      const result = await dispatch(
+        forgotPassword({
+          forgotPayload: { email: userDetails.email },
+          api: httpClient,
+        }),
+      ).unwrap();
 
-      {/* Reminders */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Reminders</CardTitle>
-          <CardDescription className="text-[10px]">
-            These are notifications to remind you of updates you might have
-            missed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Push
-            </span>
-            <Switch
-              checked={notifications.reminders.push}
-              onCheckedChange={(checked) =>
-                updateNotification('reminders', 'push', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Email
-            </span>
-            <Switch
-              checked={notifications.reminders.email}
-              onCheckedChange={(checked) =>
-                updateNotification('reminders', 'email', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              SMS
-            </span>
-            <Switch
-              checked={notifications.reminders.sms}
-              onCheckedChange={(checked) =>
-                updateNotification('reminders', 'sms', checked)
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+      if (result?.status === 'success') {
+        showToast(
+          'Password reset email sent! Please check your inbox.',
+          'success',
+        );
+      } else {
+        showToast(result?.error || 'Failed to send reset email', 'error');
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err?.payload?.message ||
+        err?.message ||
+        'Failed to send password reset email. Please try again.';
+      showToast(errorMessage, 'error');
+    }
+  };
 
-      {/* More activity */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">More activity about you</CardTitle>
-          <CardDescription className="text-[10px]">
-            These are notifications for posts on your profile, likes and other
-            reactions to your posts, and more.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Push
-            </span>
-            <Switch
-              checked={notifications.activity.push}
-              onCheckedChange={(checked) =>
-                updateNotification('activity', 'push', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Email
-            </span>
-            <Switch
-              checked={notifications.activity.email}
-              onCheckedChange={(checked) =>
-                updateNotification('activity', 'email', checked)
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              SMS
-            </span>
-            <Switch
-              checked={notifications.activity.sms}
-              onCheckedChange={(checked) =>
-                updateNotification('activity', 'sms', checked)
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image size should be less than 5MB', 'error');
+        return;
+      }
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setUserDetails({
+      ...userDetails,
+      imageUrl: '',
+    });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -465,8 +548,64 @@ const SettingsPage: React.FC = () => {
         return (
           <div className="space-y-6">
             <form className="space-y-6">
-              {/* First Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Avatar Section */}
+              <div className="flex items-center gap-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                        <Camera className="w-8 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    Profile Photo
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    JPG, PNG or GIF. Max size of 5MB
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="avatar-upload">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs cursor-pointer"
+                      >
+                        <Upload className="w-3 h-3 mr-1.5" />
+                        Upload Photo
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* First Row - 3 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     First Name
@@ -499,33 +638,6 @@ const SettingsPage: React.FC = () => {
                     }
                   />
                 </div>
-              </div>
-
-              {/* Second Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone Number
-                  </label>
-                  <Input
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    className="h-10 text-sm w-full"
-                    value={`${userDetails.mobileCountryCode || ''} ${userDetails.phone || ''}`.trim()}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const match = value.match(/^(\+\d+)?\s*(.*)$/);
-                      if (match) {
-                        setUserDetails({
-                          ...userDetails,
-                          mobileCountryCode:
-                            match[1] || userDetails.mobileCountryCode,
-                          phone: match[2] || '',
-                        });
-                      }
-                    }}
-                  />
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email address
@@ -545,42 +657,76 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Third Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Second Row - 3 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    City
+                    Phone Number
+                  </label>
+                  <PhoneInput
+                    international
+                    defaultCountry="US"
+                    value={phoneNumber}
+                    onChange={(value) => {
+                      setPhoneNumber(value || '');
+                      if (value) {
+                        try {
+                          const phoneNumberObj = parsePhoneNumber(value);
+                          if (phoneNumberObj) {
+                            setUserDetails({
+                              ...userDetails,
+                              mobileCountryCode: `+${phoneNumberObj.countryCallingCode}`,
+                              phone: phoneNumberObj.nationalNumber,
+                            });
+                          }
+                        } catch (error) {
+                          // If parsing fails, just store the value
+                          console.error('Error parsing phone number:', error);
+                        }
+                      } else {
+                        setUserDetails({
+                          ...userDetails,
+                          phone: '',
+                          mobileCountryCode: '+1',
+                        });
+                      }
+                    }}
+                    className="phone-input-container"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Country
                   </label>
                   <Combobox
-                    options={cities.map((city) => ({
-                      value: city.id.toString(),
-                      label: city.name,
+                    options={countries.map((country) => ({
+                      value: country.id.toString(),
+                      label: country.name,
                     }))}
-                    value={selectedCity?.id?.toString()}
+                    value={selectedCountry?.id?.toString()}
                     onValueChange={(value) => {
-                      const city = cities.find(
+                      const country = countries.find(
                         (c) => c.id.toString() === value,
                       );
-                      setSelectedCity(city || null);
+                      setSelectedCountry(country || null);
+                      setSelectedState(null);
+                      setSelectedCity(null);
                       setUserDetails({
                         ...userDetails,
-                        cityId: city ? String(city.id) : '',
-                        city: city?.name || '',
+                        countryId: country ? String(country.id) : '',
+                        country: country?.name || '',
+                        stateId: '',
+                        state: '',
+                        cityId: '',
+                        city: '',
                       });
                     }}
                     placeholder={
-                      loadingCities
-                        ? 'Loading...'
-                        : !selectedState
-                          ? 'Select State first'
-                          : 'Select City'
+                      loadingCountries ? 'Loading...' : 'Select Country'
                     }
-                    searchPlaceholder="Search cities..."
-                    emptyMessage={
-                      selectedState ? 'No cities found' : 'Select a state first'
-                    }
-                    disabled={!selectedState}
-                    loading={loadingCities}
+                    searchPlaceholder="Search countries..."
+                    emptyMessage="No countries found"
+                    loading={loadingCountries}
                     className="w-full"
                   />
                 </div>
@@ -628,8 +774,45 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fourth Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Third Row - 3 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    City
+                  </label>
+                  <Combobox
+                    options={cities.map((city) => ({
+                      value: city.id.toString(),
+                      label: city.name,
+                    }))}
+                    value={selectedCity?.id?.toString()}
+                    onValueChange={(value) => {
+                      const city = cities.find(
+                        (c) => c.id.toString() === value,
+                      );
+                      setSelectedCity(city || null);
+                      setUserDetails({
+                        ...userDetails,
+                        cityId: city ? String(city.id) : '',
+                        city: city?.name || '',
+                      });
+                    }}
+                    placeholder={
+                      loadingCities
+                        ? 'Loading...'
+                        : !selectedState
+                          ? 'Select State first'
+                          : 'Select City'
+                    }
+                    searchPlaceholder="Search cities..."
+                    emptyMessage={
+                      selectedState ? 'No cities found' : 'Select a state first'
+                    }
+                    disabled={!selectedState}
+                    loading={loadingCities}
+                    className="w-full"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Postcode
@@ -649,38 +832,19 @@ const SettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Country
+                    Preferred Timezone
                   </label>
-                  <Combobox
-                    options={countries.map((country) => ({
-                      value: country.id.toString(),
-                      label: country.name,
-                    }))}
-                    value={selectedCountry?.id?.toString()}
-                    onValueChange={(value) => {
-                      const country = countries.find(
-                        (c) => c.id.toString() === value,
-                      );
-                      setSelectedCountry(country || null);
-                      setSelectedState(null);
-                      setSelectedCity(null);
+                  <Input
+                    type="text"
+                    value={userDetails.preferredTimeZone}
+                    onChange={(e) =>
                       setUserDetails({
                         ...userDetails,
-                        countryId: country ? String(country.id) : '',
-                        country: country?.name || '',
-                        stateId: '',
-                        state: '',
-                        cityId: '',
-                        city: '',
-                      });
-                    }}
-                    placeholder={
-                      loadingCountries ? 'Loading...' : 'Select Country'
+                        preferredTimeZone: e.target.value,
+                      })
                     }
-                    searchPlaceholder="Search countries..."
-                    emptyMessage="No countries found"
-                    loading={loadingCountries}
-                    className="w-full"
+                    className="h-10 text-sm w-full"
+                    placeholder="e.g., UTC, America/New_York"
                   />
                 </div>
               </div>
@@ -689,20 +853,16 @@ const SettingsPage: React.FC = () => {
               <div className="flex justify-end pt-4">
                 <Button
                   type="button"
-                  onClick={() => {
-                    // Handle save logic here
-                    console.log('Saving profile:', userDetails);
-                  }}
-                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white px-6 py-2 h-10 text-sm font-medium"
+                  onClick={handleUpdateProfile}
+                  disabled={isSaving || userLoading}
+                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white px-6 py-2 h-10 text-sm font-medium disabled:opacity-50"
                 >
-                  Update
+                  {isSaving || userLoading ? 'Updating...' : 'Update'}
                 </Button>
               </div>
             </form>
           </div>
         );
-      case 'notifications':
-        return renderNotifications();
       case 'password':
         return (
           <div className="space-y-3">
@@ -738,51 +898,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Change Password Tab */}
             {passwordSubTab === 'change' && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Change Password</CardTitle>
-                  <CardDescription className="text-[10px]">
-                    Update your password to keep your account secure
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Current Password
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Enter current password"
-                      className="h-10 text-sm w-full"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      New Password
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Enter new password"
-                      className="h-10 text-sm w-full"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Confirm New Password
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="Confirm new password"
-                      className="h-10 text-sm w-full"
-                    />
-                  </div>
-                  <div className="flex justify-end pt-1">
-                    <Button size="sm" className="h-8 px-3 text-xs">
-                      Update Password
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <ChangePasswordFormComponent onSubmit={handleChangePassword} />
             )}
 
             {/* Reset Password Tab */}
@@ -812,8 +928,10 @@ const SettingsPage: React.FC = () => {
                       size="sm"
                       variant="outline"
                       className="h-8 px-3 text-xs"
+                      onClick={handleForgotPassword}
+                      disabled={forgotPasswordLoading}
                     >
-                      Send Reset Link
+                      {forgotPasswordLoading ? 'Sending...' : 'Send Reset Link'}
                     </Button>
                   </div>
                 </CardContent>
@@ -821,16 +939,6 @@ const SettingsPage: React.FC = () => {
             )}
           </div>
         );
-      case 'billings':
-        return renderBillings();
-      case 'profile':
-        return renderProfile();
-      case 'team':
-        return renderTeam();
-      case 'plan':
-        return renderPlan();
-      case 'email':
-        return renderEmail();
       default:
         return null;
     }
@@ -1145,17 +1253,6 @@ const SettingsPage: React.FC = () => {
   };
 
   // Render other tabs
-  const renderProfile = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Profile
-      </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Profile settings coming soon.
-      </p>
-    </div>
-  );
-
   const renderTeam = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -1191,7 +1288,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-4 lg:p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 ">
         {/* Header Section */}
         <div className="max-w-7xl mx-auto mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">

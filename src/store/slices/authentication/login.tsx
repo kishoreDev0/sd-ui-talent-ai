@@ -92,7 +92,14 @@ const authSlice = createSlice({
       })
       .addCase(
         loginUser.fulfilled,
-        (state, action: PayloadAction<{ user: User; tokens: AuthTokens; is_onboarding_required?: boolean }>) => {
+        (
+          state,
+          action: PayloadAction<{
+            user: User;
+            tokens: AuthTokens;
+            is_onboarding_required?: boolean;
+          }>,
+        ) => {
           state.isLoading = false;
 
           // Map image_url to avatar for backward compatibility
@@ -105,7 +112,8 @@ const authSlice = createSlice({
           state.tokens = action.payload.tokens;
           state.isAuthenticated = true;
           state.error = null;
-          state.is_onboarding_required = action.payload.is_onboarding_required ?? false;
+          state.is_onboarding_required =
+            action.payload.is_onboarding_required ?? false;
 
           // Store in localStorage
           localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
@@ -128,7 +136,10 @@ const authSlice = createSlice({
             action.payload.tokens.refresh_token,
           );
           localStorage.setItem(AUTH_STORAGE_KEYS.IS_AUTHENTICATED, 'true');
-          localStorage.setItem('is_onboarding_required', String(state.is_onboarding_required));
+          localStorage.setItem(
+            'is_onboarding_required',
+            String(state.is_onboarding_required),
+          );
         },
       )
       .addCase(loginUser.rejected, (state, action) => {
@@ -149,7 +160,10 @@ const authSlice = createSlice({
             avatar: action.payload.user.image_url || state.user.avatar,
           };
           // Store updated user in localStorage
-          localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(state.user));
+          localStorage.setItem(
+            AUTH_STORAGE_KEYS.USER,
+            JSON.stringify(state.user),
+          );
         }
         state.is_onboarding_required = false;
         localStorage.removeItem('is_onboarding_required');
@@ -162,5 +176,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, clearOnboardingRequired } = authSlice.actions;
+export const { logout, clearError, clearOnboardingRequired } =
+  authSlice.actions;
 export default authSlice.reducer;

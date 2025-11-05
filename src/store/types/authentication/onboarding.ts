@@ -31,4 +31,3 @@ export interface UpdateOnboardingResponse {
     [key: string]: unknown;
   };
 }
-

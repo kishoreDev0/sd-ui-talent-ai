@@ -533,9 +533,9 @@ const OrganizationsPage: React.FC = () => {
               onClick={handleAddNew}
               className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
             >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Organization
-          </Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Organization
+            </Button>
           </div>
         </div>
 
@@ -598,7 +598,7 @@ const OrganizationsPage: React.FC = () => {
                       key={org.id || `org-${index}`}
                       className="hover:bg-gray-50 dark:hover:bg-slate-700"
                     >
-                    <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <input
                           type="checkbox"
                           checked={selectedItems.includes(org.id)}
@@ -619,14 +619,14 @@ const OrganizationsPage: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-gray-100">
                           {org.state || '—'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-gray-100">
                           {org.country || '—'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             (org.is_active ??
@@ -657,9 +657,9 @@ const OrganizationsPage: React.FC = () => {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                      </div>
-                    </td>
-                  </tr>
+                        </div>
+                      </td>
+                    </tr>
                   ))
                 )}
               </tbody>
@@ -700,7 +700,7 @@ const OrganizationsPage: React.FC = () => {
                   variant={currentPage === pageNum ? 'default' : 'outline'}
                 >
                   {pageNum}
-            </Button>
+                </Button>
               );
             })}
             <Button

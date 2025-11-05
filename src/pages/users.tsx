@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
-import { useAppSelector } from '@/store';
-import { Eye, Search, Plus } from 'lucide-react';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { getAllUsers } from '@/store/user/actions/userActions';
+import { Eye, Search, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,79 +26,13 @@ interface UserRow {
   name?: string;
 }
 
-// Static mock data
-const staticUsers: UserRow[] = [
-  {
-    id: 1,
-    first_name: 'John',
-    last_name: 'Doe',
-    email: 'john.doe@talentedge.com',
-    role: { id: 1, name: 'admin' },
-    role_id: 1,
-    role_name: 'admin',
-    is_active: true,
-    created_at: '2025-01-15T10:30:00',
-  },
-  {
-    id: 2,
-    first_name: 'Jane',
-    last_name: 'Smith',
-    email: 'jane.smith@talentedge.com',
-    role: { id: 2, name: 'TA_Executive' },
-    role_id: 2,
-    role_name: 'TA_Executive',
-    is_active: true,
-    created_at: '2025-01-16T11:00:00',
-  },
-  {
-    id: 3,
-    first_name: 'Mike',
-    last_name: 'Johnson',
-    email: 'mike.johnson@talentedge.com',
-    role: { id: 3, name: 'TA_Manager' },
-    role_id: 3,
-    role_name: 'TA_Manager',
-    is_active: true,
-    created_at: '2025-01-17T09:15:00',
-  },
-  {
-    id: 4,
-    first_name: 'Sarah',
-    last_name: 'Williams',
-    email: 'sarah.williams@talentedge.com',
-    role: { id: 4, name: 'Hiring_Manager' },
-    role_id: 4,
-    role_name: 'Hiring_Manager',
-    is_active: true,
-    created_at: '2025-01-18T14:20:00',
-  },
-  {
-    id: 5,
-    first_name: 'David',
-    last_name: 'Brown',
-    email: 'david.brown@talentedge.com',
-    role: { id: 5, name: 'Interview_Panel' },
-    role_id: 5,
-    role_name: 'Interview_Panel',
-    is_active: true,
-    created_at: '2025-01-19T08:45:00',
-  },
-  {
-    id: 6,
-    first_name: 'Emily',
-    last_name: 'Davis',
-    email: 'emily.davis@talentedge.com',
-    role: { id: 6, name: 'HR_Ops' },
-    role_id: 6,
-    role_name: 'HR_Ops',
-    is_active: false,
-    created_at: '2025-01-20T16:30:00',
-  },
-];
-
 const UsersPage: React.FC = () => {
+  const dispatch = useAppDispatch();
   const role = useUserRole();
   const { user } = useAppSelector((state) => state.auth);
+  const { users, loading, error, total, page, pageSize, totalPages } =
+    useAppSelector((state) => state.user);
+
   const roleId =
     user?.role?.id ??
     user?.role_id ??
@@ -110,22 +45,61 @@ const UsersPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('All');
   const [selectAll, setSelectAll] = useState(false);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const tabs = ['All', 'Active', 'Inactive', 'Recent'];
 
-  // Filter users based on role
-  const allUsers =
-    roleId === 2
-      ? staticUsers.filter((u) => (u.role?.id ?? u.role_id) !== 1)
-      : staticUsers;
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when search changes
+    }, 500);
 
-  // Filter users based on selected tab
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch users on component mount and when filters change
+  useEffect(() => {
+    const params: {
+      page?: number;
+      page_size?: number;
+      search?: string;
+      is_active?: boolean;
+      role_id?: number;
+    } = {
+      page: currentPage,
+      page_size: 10,
+    };
+
+    // Add search if provided
+    if (debouncedSearchTerm.trim()) {
+      params.search = debouncedSearchTerm.trim();
+    }
+
+    // Add filter based on selected tab
+    if (selectedTab === 'Active') {
+      params.is_active = true;
+    } else if (selectedTab === 'Inactive') {
+      params.is_active = false;
+    }
+
+    // Filter by role for TA_Executive
+    if (roleId === 2) {
+      params.role_id = 2; // Only show TA_Executive users, exclude admin
+    }
+
+    dispatch(getAllUsers(params));
+  }, [dispatch, currentPage, debouncedSearchTerm, selectedTab, roleId]);
+
+  // Filter users based on role (client-side filter as backup)
+  const allUsers =
+    roleId === 2 ? users.filter((u) => (u.role?.id ?? u.role_id) !== 1) : users;
+
+  // Filter users based on selected tab (client-side for Recent tab)
   const filteredByTab = () => {
     switch (selectedTab) {
-      case 'Active':
-        return allUsers.filter((u) => u.is_active === true);
-      case 'Inactive':
-        return allUsers.filter((u) => u.is_active === false);
       case 'Recent':
         return [...allUsers].sort(
           (a, b) =>
@@ -137,17 +111,45 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  // Filter by search term
-  const users = filteredByTab().filter(
+  // Filter by search term (client-side as backup if API doesn't handle it)
+  const filteredUsers = filteredByTab().filter(
     (u) =>
+      !searchTerm ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${u.first_name || ''} ${u.last_name || ''}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (u.role?.name || u.role_name || '')
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()),
+      (u.role?.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const handleRefresh = () => {
+    const params: {
+      page?: number;
+      page_size?: number;
+      search?: string;
+      is_active?: boolean;
+      role_id?: number;
+    } = {
+      page: currentPage,
+      page_size: 10,
+    };
+
+    if (debouncedSearchTerm.trim()) {
+      params.search = debouncedSearchTerm.trim();
+    }
+
+    if (selectedTab === 'Active') {
+      params.is_active = true;
+    } else if (selectedTab === 'Inactive') {
+      params.is_active = false;
+    }
+
+    if (roleId === 2) {
+      params.role_id = 2;
+    }
+
+    dispatch(getAllUsers(params));
+  };
 
   const handleViewDetails = (user: UserRow) => {
     setSelectedUser(user);
@@ -156,7 +158,7 @@ const UsersPage: React.FC = () => {
 
   const handleSelectAll = () => {
     setSelectAll(!selectAll);
-    setSelectedItems(selectAll ? [] : users.map((item) => item.id));
+    setSelectedItems(selectAll ? [] : filteredUsers.map((item) => item.id));
   };
 
   const handleSelectItem = (id: number) => {
@@ -169,6 +171,7 @@ const UsersPage: React.FC = () => {
     setSelectedTab(tab);
     setSelectAll(false);
     setSelectedItems([]);
+    setCurrentPage(1); // Reset to first page when tab changes
   };
 
   if (!(roleId === 1 || roleId === 2)) {
@@ -241,6 +244,17 @@ const UsersPage: React.FC = () => {
                 className="pl-10 w-80 dark:bg-slate-800 dark:text-gray-100"
               />
             </div>
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+              />
+              Refresh
+            </Button>
           </div>
           <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
             <Plus className="h-4 w-4 mr-2" />
@@ -280,7 +294,25 @@ const UsersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {users.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td
+                      className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center"
+                      colSpan={6}
+                    >
+                      Loading users...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td
+                      className="px-4 py-3 text-red-500 dark:text-red-400 text-center"
+                      colSpan={6}
+                    >
+                      {error}
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td
                       className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center"
@@ -290,7 +322,7 @@ const UsersPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  users.map((u) => (
+                  filteredUsers.map((u) => (
                     <tr
                       key={u.id}
                       className="hover:bg-gray-50 dark:hover:bg-slate-700"
@@ -307,7 +339,7 @@ const UsersPage: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {u.first_name || u.last_name
                             ? `${u.first_name || ''} ${u.last_name || ''}`.trim()
-                            : u.name || '—'}
+                            : '—'}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -317,7 +349,7 @@ const UsersPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-gray-100">
-                          {u.role?.name || u.role_name || '—'}
+                          {u.role?.name || '—'}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -335,7 +367,7 @@ const UsersPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button
-                          onClick={() => handleViewDetails(u)}
+                          onClick={() => handleViewDetails(u as UserRow)}
                           className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                           title="View Details"
                         >
@@ -353,16 +385,30 @@ const UsersPage: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-700">
           <div className="text-sm text-gray-700 dark:text-gray-300">
-            Showing 1 to {users.length} of {users.length} users.
+            Showing{' '}
+            {filteredUsers.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
+            {Math.min(currentPage * pageSize, total)} of {total} users.
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" disabled className="text-gray-400">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || loading}
+              className="text-gray-400"
+            >
               Previous
             </Button>
             <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
-              1
+              {currentPage}
             </Button>
-            <Button variant="outline" disabled className="text-gray-400">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
+              disabled={currentPage >= totalPages || loading}
+              className="text-gray-400"
+            >
               Next
             </Button>
           </div>
@@ -424,7 +470,7 @@ const UsersPage: React.FC = () => {
                       Role
                     </label>
                     <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                      {selectedUser.role?.name || selectedUser.role_name || '—'}
+                      {selectedUser.role?.name || '—'}
                     </p>
                   </div>
                   <div>

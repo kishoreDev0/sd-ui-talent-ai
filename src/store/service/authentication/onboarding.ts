@@ -1,6 +1,9 @@
 import { AxiosInstance, AxiosResponse } from 'axios';
 import { USERS } from '../../endpoints';
-import { UpdateOnboardingRequest, UpdateOnboardingResponse } from '../../types/authentication/onboarding';
+import {
+  UpdateOnboardingRequest,
+  UpdateOnboardingResponse,
+} from '../../types/authentication/onboarding';
 
 export class OnboardingAPI {
   private api: AxiosInstance;
@@ -14,7 +17,10 @@ export class OnboardingAPI {
     payload: UpdateOnboardingRequest,
   ): Promise<AxiosResponse<UpdateOnboardingResponse>> => {
     try {
-      const response = await this.api.patch(USERS.UPDATE_ONBOARDING(userId), payload);
+      const response = await this.api.patch(
+        USERS.UPDATE_ONBOARDING(userId),
+        payload,
+      );
       return response;
     } catch (error) {
       console.error('Update onboarding error:', error);
@@ -22,4 +28,3 @@ export class OnboardingAPI {
     }
   };
 }
-
