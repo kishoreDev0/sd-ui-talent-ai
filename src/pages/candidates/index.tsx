@@ -1,593 +1,763 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Calendar,
+  ClipboardCheck,
+  Clock,
+  FileText,
+  Filter,
+  MessageCircle,
+  Plus,
+  Search,
+  Star,
+  ThumbsUp,
+} from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Search,
-  UserPlus,
-  Eye,
-  Phone,
-  MapPin,
-  Building2,
-  Briefcase,
-  Calendar,
-  Mail,
-  Star,
-  User,
-} from 'lucide-react';
-import CustomSelect from '@/components/ui/custom-select';
 import { useUserRole } from '@/utils/getUserRole';
 
-interface Candidate {
+interface CandidateStage {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  mobile: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  currentCompany?: string;
-  experience?: string;
-  skills: string[];
-  majorSkills: string[];
-  matchScore?: number;
-  status: 'Active' | 'Shortlisted' | 'Interview' | 'Rejected' | 'On Hold';
-  appliedDate: string;
-  rating?: number;
-  organization?: string;
-  currentCTC?: string;
-  expectedCTC?: string;
+  step: number;
+  title: string;
+  icon: LucideIcon;
+  rating: string;
+  badge: string;
+  badgeColor: string;
+  status: string;
+  description: string;
+  gradient: string;
 }
 
-const CandidatesPage: React.FC = () => {
-  const navigate = useNavigate();
+interface CandidateActivity {
+  id: number;
+  icon: LucideIcon;
+  title: string;
+  file?: string;
+  comment?: string;
+  timestamp: string;
+}
 
-  const [candidates] = useState<Candidate[]>([
+interface CandidateBadge {
+  label: string;
+  tone: string;
+}
+
+interface CandidateListItem {
+  id: number;
+  name: string;
+  role: string;
+  statusLabel: string;
+  statusTone: string;
+  stageLabel: string;
+  stageTone: string;
+  avatarGradient: string;
+  highlight?: boolean;
+  email: string;
+  assignedTo: string;
+  timezone: string;
+  statusNote: string;
+  createdOn: string;
+  createdBy: string;
+}
+
+interface CandidateDetail extends CandidateListItem {
+  summary: string;
+  location: string;
+  rating: number;
+  badges: CandidateBadge[];
+  stages: CandidateStage[];
+  activities: CandidateActivity[];
+}
+
+const candidatesData: CandidateDetail[] = [
     {
       id: 1,
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'sarah.johnson@email.com',
-      mobile: '+1 234-567-8900',
-      city: 'San Francisco',
-      state: 'California',
-      country: 'USA',
-      currentCompany: 'Tech Corp',
-      experience: '5 Years',
-      skills: ['UI/UX Design', 'Figma', 'Prototyping', 'User Research'],
-      majorSkills: ['UI/UX Design'],
-      matchScore: 92,
-      status: 'Interview',
-      appliedDate: 'Oct 18, 2024',
-      rating: 85,
-      organization: 'Tringapps Research Labs Pvt. Ltd.',
-      currentCTC: '$120,000',
-      expectedCTC: '$140,000',
+    name: 'Courtney Henry',
+    role: 'Product Designer',
+    statusLabel: 'Needs Follow-up',
+    statusTone: 'bg-amber-100 text-amber-700',
+    stageLabel: 'Screening',
+    stageTone: 'bg-sky-100 text-sky-600',
+    avatarGradient: 'from-[#34d399] to-[#22d3ee]',
+    email: 'courtney.henry@example.com',
+    assignedTo: 'Vinodan T',
+    timezone: 'Asia/Kolkata',
+    statusNote: 'Scheduled Client Interview',
+    createdOn: 'Feb 11, 2025',
+    createdBy: 'Vinodan T',
+    summary:
+      'Initial portfolio review complete. Waiting on collaboration examples before moving to the design challenge.',
+    location: 'Austin, USA',
+    rating: 4.0,
+    badges: [
+      { label: 'UX Guild', tone: 'bg-emerald-100 text-emerald-700' },
+      { label: 'Remote ready', tone: 'bg-sky-100 text-sky-600' },
+    ],
+    stages: [
+      {
+        id: 101,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '4.0',
+        badge: 'Hire',
+        badgeColor: 'bg-emerald-500 text-white',
+        status: 'Completed',
+        description: 'Design leadership reviewing key case studies.',
+        gradient: 'from-emerald-50 to-teal-50',
+      },
+      {
+        id: 102,
+        step: 2,
+        title: 'Technical Round',
+        icon: ClipboardCheck,
+        rating: '3.6',
+        badge: 'Hire',
+        badgeColor: 'bg-amber-500 text-white',
+        status: 'In review',
+        description: 'Awaiting candidate availability for live critique.',
+        gradient: 'from-amber-50 to-orange-50',
+      },
+      {
+        id: 103,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: Clock,
+        rating: '0.00',
+        badge: 'Waiting',
+        badgeColor: 'bg-slate-400 text-white',
+        status: 'Next step',
+        description: 'Panel conversation planned post design challenge.',
+        gradient: 'from-slate-50 to-gray-100',
+      },
+    ],
+    activities: [
+      {
+        id: 201,
+        icon: Calendar,
+        title: 'Scheduling call with design lead',
+        timestamp: 'Added at 08.11.25 • 15:10',
+      },
+      {
+        id: 202,
+        icon: MessageCircle,
+        title: 'Shared new case study links',
+        timestamp: 'Added at 08.11.25 • 12:42',
+      },
+    ],
     },
     {
       id: 2,
-      firstName: 'Michael',
-      lastName: 'Chen',
-      email: 'michael.chen@email.com',
-      mobile: '+1 234-567-8901',
-      city: 'New York',
-      state: 'New York',
-      country: 'USA',
-      currentCompany: 'Digital Solutions',
-      experience: '3 Years',
-      skills: ['React', 'TypeScript', 'Next.js', 'Node.js'],
-      majorSkills: ['Web Development'],
-      matchScore: 88,
-      status: 'Shortlisted',
-      appliedDate: 'Oct 20, 2024',
-      rating: 78,
-      organization: 'Tringapps - BU2',
-      currentCTC: '$95,000',
-      expectedCTC: '$110,000',
+    name: 'Wade Warren',
+    role: 'FrontEnd Developer',
+    statusLabel: 'Awaiting',
+    statusTone: 'bg-violet-50 text-violet-600',
+    stageLabel: 'Pair-Programming',
+    stageTone: 'bg-purple-50 text-purple-600',
+    avatarGradient: 'from-[#6366f1] to-[#a855f7]',
+    highlight: true,
+    email: 'wade.warren@example.com',
+    assignedTo: 'Srikant',
+    timezone: 'Asia/Kolkata',
+    statusNote: 'Scheduled Client Interview',
+    createdOn: 'Jan 12, 2025',
+    createdBy: 'Vinodan T',
+    summary: 'Executive interview date (31.12.22) confirmed by Darrell Steward',
+    location: 'San Francisco, USA',
+    rating: 4.2,
+    badges: [],
+    stages: [
+      {
+        id: 111,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '4.2',
+        badge: 'Hire',
+        badgeColor: 'bg-emerald-500 text-white',
+        status: 'Completed',
+        description: 'Recruiter summary aligns with role expectations.',
+        gradient: 'from-emerald-50 to-teal-50',
+      },
+      {
+        id: 112,
+        step: 2,
+        title: 'Technical Round',
+        icon: Star,
+        rating: '3.89',
+        badge: 'Hire',
+        badgeColor: 'bg-amber-500 text-white',
+        status: 'Wrapped up',
+        description: 'Task showcased mastery of React and state orchestration.',
+        gradient: 'from-amber-50 to-orange-50',
+      },
+      {
+        id: 113,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: Clock,
+        rating: '0.00',
+        badge: 'Waiting',
+        badgeColor: 'bg-slate-400 text-white',
+        status: 'Next step',
+        description: 'Live coding session scheduled with FE practice lead.',
+        gradient: 'from-slate-50 to-gray-100',
+      },
+    ],
+    activities: [
+      {
+        id: 211,
+        icon: Calendar,
+        title: 'Executive interview date confirmed by Darrell Steward',
+        timestamp: 'Added at 12.01.23 • 14:28',
+      },
+      {
+        id: 212,
+        icon: FileText,
+        title: 'Bill Murrey uploaded',
+        file: 'cv.murrey.pdf',
+        timestamp: 'Added at 12.01.23 • 14:28',
+      },
+      {
+        id: 213,
+        icon: MessageCircle,
+        title: 'Joy Division wrote comment',
+        comment:
+          'Let’s provide the team with the highest quality participants tailored for their research needs. Recruit, book & pay quality research participants in a fraction of the time of agencies.',
+        timestamp: 'Added at 12.01.23 • 14:28',
+      },
+    ],
     },
     {
       id: 3,
-      firstName: 'Emily',
-      lastName: 'Davis',
-      email: 'emily.davis@email.com',
-      mobile: '+1 234-567-8902',
-      city: 'Seattle',
-      state: 'Washington',
-      country: 'USA',
-      currentCompany: 'Design Studio',
-      experience: '4 Years',
-      skills: ['Design Systems', 'Sketch', 'Adobe XD', 'Wireframing'],
-      majorSkills: ['UI/UX Design'],
-      matchScore: 85,
-      status: 'Active',
-      appliedDate: 'Oct 22, 2024',
-      rating: 82,
-      organization: 'Tringapps Research Labs Pvt. Ltd.',
-      currentCTC: '$105,000',
-      expectedCTC: '$125,000',
-    },
-  ]);
+    name: 'Albert Flores',
+    role: 'DevOps Engineer',
+    statusLabel: 'Scheduled',
+    statusTone: 'bg-sky-100 text-sky-700',
+    stageLabel: 'Technical',
+    stageTone: 'bg-blue-100 text-blue-600',
+    avatarGradient: 'from-[#14b8a6] to-[#0ea5e9]',
+    email: 'albert.flores@example.com',
+    assignedTo: 'Ashok Anbarasu',
+    timezone: 'UTC-5',
+    statusNote: 'Yet to be assigned',
+    createdOn: 'Apr 12, 2024',
+    createdBy: 'Ashok Anbarasu',
+    summary:
+      'Technical session prepared. Needs deeper discussion on observability, resiliency playbooks and incident response workflows.',
+    location: 'New York, USA',
+    rating: 3.8,
+    badges: [{ label: 'Cloud ready', tone: 'bg-sky-100 text-sky-600' }],
+    stages: [
+      {
+        id: 121,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '3.8',
+        badge: 'Shortlist',
+        badgeColor: 'bg-teal-500 text-white',
+        status: 'Completed',
+        description: 'Recruiter notes highlight cultural alignment.',
+        gradient: 'from-emerald-50 to-teal-50',
+      },
+      {
+        id: 122,
+        step: 2,
+        title: 'Technical Round',
+        icon: ClipboardCheck,
+        rating: '—',
+        badge: 'Scheduled',
+        badgeColor: 'bg-sky-500 text-white',
+        status: 'Tomorrow',
+        description: 'Panel focusing on Kubernetes and SRE posture.',
+        gradient: 'from-sky-50 to-cyan-50',
+      },
+      {
+        id: 123,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: Clock,
+        rating: '—',
+        badge: 'Pending',
+        badgeColor: 'bg-slate-400 text-white',
+        status: 'Awaiting',
+        description: 'Post technical sync with team manager and PM.',
+        gradient: 'from-slate-50 to-gray-100',
+      },
+    ],
+    activities: [
+      {
+        id: 221,
+        icon: Calendar,
+        title: 'Technical interview locked with platform team',
+        timestamp: 'Added at 05.11.25 • 10:12',
+      },
+    ],
+  },
+  {
+    id: 4,
+    name: 'Kristin Watson',
+    role: 'Product Manager',
+    statusLabel: 'Passed',
+    statusTone: 'bg-emerald-100 text-emerald-700',
+    stageLabel: 'Offer',
+    stageTone: 'bg-emerald-100 text-emerald-700',
+    avatarGradient: 'from-[#22c55e] to-[#84cc16]',
+    email: 'kristin.watson@example.com',
+    assignedTo: 'Ashok Anbarasu',
+    timezone: 'UTC-5',
+    statusNote: 'Yet to be assigned',
+    createdOn: 'Mar 02, 2025',
+    createdBy: 'Ashok Anbarasu',
+    summary:
+      'Offer draft shared. Awaiting confirmation from leadership and finance stakeholders before release.',
+    location: 'Remote • Canada',
+    rating: 4.5,
+    badges: [
+      { label: 'Strategic thinker', tone: 'bg-lime-100 text-lime-700' },
+      { label: 'Remote ready', tone: 'bg-sky-100 text-sky-600' },
+    ],
+    stages: [
+      {
+        id: 131,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '4.1',
+        badge: 'Advance',
+        badgeColor: 'bg-emerald-500 text-white',
+        status: 'Completed',
+        description: 'Kick-off call with hiring manager & design director.',
+        gradient: 'from-emerald-50 to-teal-50',
+      },
+      {
+        id: 132,
+        step: 2,
+        title: 'Technical Round',
+        icon: Star,
+        rating: '4.5',
+        badge: 'Hire',
+        badgeColor: 'bg-amber-500 text-white',
+        status: 'Completed',
+        description: 'Cross-functional panel affirmed product strategy depth.',
+        gradient: 'from-amber-50 to-orange-50',
+      },
+      {
+        id: 133,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: Clock,
+        rating: '—',
+        badge: 'Drafted',
+        badgeColor: 'bg-purple-500 text-white',
+        status: 'Awaiting',
+        description: 'Offer memo waiting on comp committee sign-off.',
+        gradient: 'from-purple-50 to-indigo-50',
+      },
+    ],
+    activities: [
+      {
+        id: 231,
+        icon: MessageCircle,
+        title: 'Offer summary circulated with finance',
+        timestamp: 'Added at 07.11.25 • 18:22',
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: 'Arlene McCoy',
+    role: 'Data Analyst',
+    statusLabel: 'Screening',
+    statusTone: 'bg-slate-200 text-slate-600',
+    stageLabel: 'Screening',
+    stageTone: 'bg-slate-200 text-slate-600',
+    avatarGradient: 'from-[#f97316] to-[#f59e0b]',
+    email: 'arlene.mccoy@example.com',
+    assignedTo: 'Unassigned',
+    timezone: 'UTC-3',
+    statusNote: 'Yet to be assigned',
+    createdOn: 'Jan 22, 2025',
+    createdBy: 'Ashok Anbarasu',
+    summary:
+      'Resume review complete. Candidate prepping assessment prior to advancing to panel review.',
+    location: 'Chicago, USA',
+    rating: 3.6,
+    badges: [{ label: 'Data storyteller', tone: 'bg-orange-100 text-orange-700' }],
+    stages: [
+      {
+        id: 141,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '3.6',
+        badge: 'Consider',
+        badgeColor: 'bg-amber-500 text-white',
+        status: 'In review',
+        description: 'Recruiter verifying quantitative case study results.',
+        gradient: 'from-amber-50 to-orange-50',
+      },
+      {
+        id: 142,
+        step: 2,
+        title: 'Technical Round',
+        icon: ClipboardCheck,
+        rating: '—',
+        badge: 'Pending',
+        badgeColor: 'bg-slate-400 text-white',
+        status: 'Awaiting',
+        description: 'Assessment link shared and due in two days.',
+        gradient: 'from-slate-50 to-gray-100',
+      },
+      {
+        id: 143,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: Clock,
+        rating: '—',
+        badge: 'Pending',
+        badgeColor: 'bg-slate-400 text-white',
+        status: 'Upcoming',
+        description: 'Panel to be scheduled post assessment scoring.',
+        gradient: 'from-slate-50 to-gray-100',
+      },
+    ],
+    activities: [
+      {
+        id: 241,
+        icon: FileText,
+        title: 'Shared analytics case study template',
+        timestamp: 'Added at 02.11.25 • 09:30',
+      },
+    ],
+  },
+  {
+    id: 6,
+    name: 'Bessie Cooper',
+    role: 'UX Researcher',
+    statusLabel: 'Passed',
+    statusTone: 'bg-emerald-100 text-emerald-700',
+    stageLabel: 'Offer',
+    stageTone: 'bg-emerald-100 text-emerald-700',
+    avatarGradient: 'from-[#f472b6] to-[#ec4899]',
+    email: 'bessie.cooper@example.com',
+    assignedTo: 'Unassigned',
+    timezone: 'UTC',
+    statusNote: 'Yet to be assigned',
+    createdOn: 'Feb 04, 2025',
+    createdBy: 'Ashok Anbarasu',
+    summary:
+      'Offer accepted verbally. Background verification in progress with HR business partner.',
+    location: 'Remote • Europe',
+    rating: 4.3,
+    badges: [
+      { label: 'Research ops', tone: 'bg-pink-100 text-pink-700' },
+      { label: 'Remote ready', tone: 'bg-sky-100 text-sky-600' },
+    ],
+    stages: [
+      {
+        id: 151,
+        step: 1,
+        title: 'Screening Round',
+        icon: ThumbsUp,
+        rating: '4.0',
+        badge: 'Advance',
+        badgeColor: 'bg-emerald-500 text-white',
+        status: 'Completed',
+        description: 'Recruiter discussion aligned with research charter.',
+        gradient: 'from-emerald-50 to-teal-50',
+      },
+      {
+        id: 152,
+        step: 2,
+        title: 'Technical Round',
+        icon: Star,
+        rating: '4.3',
+        badge: 'Hire',
+        badgeColor: 'bg-amber-500 text-white',
+        status: 'Completed',
+        description: 'Strong user empathy and synthesis showcased.',
+        gradient: 'from-amber-50 to-orange-50',
+      },
+      {
+        id: 153,
+        step: 3,
+        title: 'Pair-Programming',
+        icon: ClipboardCheck,
+        rating: '—',
+        badge: 'Accepted',
+        badgeColor: 'bg-purple-500 text-white',
+        status: 'In progress',
+        description: 'Final paperwork under review with legal.',
+        gradient: 'from-purple-50 to-pink-50',
+      },
+    ],
+    activities: [
+      {
+        id: 251,
+        icon: Calendar,
+        title: 'Background verification initiated',
+        timestamp: 'Added at 06.11.25 • 11:05',
+      },
+    ],
+  },
+];
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
-    null,
-  );
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+const stageToneMap: Record<string, { bg: string; badge: string; text: string }> = {
+  Completed: {
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    badge: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200',
+    text: 'text-emerald-600 dark:text-emerald-200',
+  },
+  'In review': {
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    badge: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-200',
+    text: 'text-amber-600 dark:text-amber-200',
+  },
+  'Next step': {
+    bg: 'bg-indigo-50 dark:bg-indigo-500/10',
+    badge: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200',
+    text: 'text-indigo-600 dark:text-indigo-200',
+  },
+  Waiting: {
+    bg: 'bg-slate-50 dark:bg-slate-700/40',
+    badge: 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200',
+    text: 'text-slate-600 dark:text-slate-200',
+  },
+};
 
-  const getStatusColor = (status: Candidate['status']) => {
-    const colors: Record<Candidate['status'], string> = {
-      Active: 'bg-blue-100 text-blue-700 border-blue-200',
-      Shortlisted: 'bg-green-100 text-green-700 border-green-200',
-      Interview: 'bg-primary-100 text-[#4F39F6] border-primary-200',
-      Rejected: 'bg-red-100 text-red-700 border-red-200',
-      'On Hold': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
-  };
-
-  const getMatchColor = (score?: number) => {
-    if (!score) return 'bg-gray-100 text-gray-700';
-    if (score >= 90) return 'bg-green-100 text-green-700';
-    if (score >= 80) return 'bg-blue-100 text-blue-700';
-    if (score >= 70) return 'bg-yellow-100 text-yellow-700';
-    return 'bg-red-100 text-red-700';
-  };
-
-  const filteredCandidates = candidates.filter((candidate) => {
-    const matchesSearch =
-      candidate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidate.skills.some((skill) =>
-        skill.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-
-    const matchesStatus =
-      statusFilter === 'All' || candidate.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleViewDetails = (candidate: Candidate) => {
-    setSelectedCandidate(candidate);
-    setIsDetailsOpen(true);
-  };
-
-  const statusOptions = [
-    { value: 'All', label: 'All Status' },
-    { value: 'Active', label: 'Active' },
-    { value: 'Shortlisted', label: 'Shortlisted' },
-    { value: 'Interview', label: 'Interview' },
-    { value: 'Rejected', label: 'Rejected' },
-    { value: 'On Hold', label: 'On Hold' },
-  ];
-
+const CandidatesPage: React.FC = () => {
   const role = useUserRole();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredCandidates = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return candidatesData;
+
+    return candidatesData.filter((candidate) =>
+      [
+        candidate.name,
+        candidate.role,
+        candidate.statusLabel,
+        candidate.stageLabel,
+        candidate.summary,
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(term),
+    );
+  }, [searchTerm]);
+
+  const renderStars = (rating: number) =>
+    Array.from({ length: 5 }).map((_, index) => {
+      const filled = rating >= index + 1 || rating >= index + 0.5;
+      return (
+        <Star
+          key={index}
+          className={`h-3 w-3 ${
+            filled ? 'text-indigo-500' : 'text-gray-200 dark:text-gray-700'
+          }`}
+          fill={filled ? 'currentColor' : 'none'}
+          strokeWidth={filled ? 0 : 1.5}
+        />
+      );
+    });
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+      <div className="min-h-screen bg-transparent">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Candidates
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage and track all candidate profiles
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate('/candidates/register')}
-              className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Register Candidate
-            </Button>
-          </div>
-
-          {/* Search and Filters - Glassmorphism Style */}
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 mb-8">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by name, email, or skills..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-9 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600"
-                />
-              </div>
-              <div className="w-full md:w-48">
-                <CustomSelect
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  options={statusOptions}
-                  placeholder="Filter by status"
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Candidates Grid */}
-          <AnimatePresence mode="wait">
-            {filteredCandidates.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center"
-              >
-                <User className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  No candidates found
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {searchTerm
-                    ? 'Try adjusting your search terms'
-                    : 'Get started by registering a new candidate'}
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Candidates</h1>
+                <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">
+                  Manage your interview pipeline, track statuses, and collaborate with your hiring team.
                 </p>
-                {!searchTerm && (
-                  <Button
-                    onClick={() => navigate('/candidates/register')}
-                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
-                  >
-                    Register Candidate
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" className="h-8 border-gray-200 px-3 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-800">
+                  Export Report
+                </Button>
+                <Button className="h-8 bg-purple-600 px-3 text-xs font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+                  Invite Candidate
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            <section className="space-y-3">
+              <div className="border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex flex-wrap gap-2">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search for role or candidate"
+                      className="h-8 border border-gray-200 bg-white pl-9 text-xs text-gray-700 focus-visible:ring-1 focus-visible:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100"
+                    />
+                  </div>
+                  <Button className="h-8 w-8 border border-gray-200 bg-white p-0 text-gray-500 hover:text-purple-600 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300" variant="outline">
+                    <Filter className="h-3 w-3" />
                   </Button>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              >
-                {filteredCandidates.map((candidate, index) => (
-                  <motion.div
+                  <Button className="h-8 w-8 bg-purple-600 p-0 text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {filteredCandidates.length === 0 ? (
+                  <div className="border border-dashed border-gray-200 bg-white p-4 text-center text-xs text-gray-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-gray-300">
+                    No candidates matched this search.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredCandidates.map((candidate) => {
+                      const initials = candidate.name
+                        .split(' ')
+                        .map((chunk) => chunk[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                      const primaryStage = candidate.stages[0];
+                      const tone = stageToneMap[primaryStage.status] ?? stageToneMap['Next step'];
+                      const recentActivity = candidate.activities[0];
+                      const StageIcon = primaryStage.icon;
+                      const ActivityIcon = recentActivity?.icon;
+
+                      return (
+                        <div
                     key={candidate.id}
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      delay: index * 0.05,
-                      type: 'spring',
-                      stiffness: 100,
-                      damping: 15,
-                    }}
-                    whileHover={{
-                      y: -8,
-                      scale: 1.02,
-                      transition: { duration: 0.2 },
-                    }}
-                    className="group relative"
-                  >
-                    {/* Glassmorphism Card */}
-                    <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                      {/* Gradient Overlay on Hover */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#4F39F6]/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0" />
-
-                      {/* Content */}
-                      <div className="relative z-10">
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {/* Avatar with Gradient */}
-                            <div className="relative">
-                              <div className="w-12 h-12 bg-gradient-to-br from-[#4F39F6] to-[#856FFF] rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg">
-                                {candidate.firstName.charAt(0)}
-                                {candidate.lastName.charAt(0)}
-                              </div>
-                              {candidate.matchScore &&
-                                candidate.matchScore >= 85 && (
-                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm" />
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#4F39F6] transition-colors">
-                                {candidate.firstName} {candidate.lastName}
-                              </h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                                {candidate.email}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleViewDetails(candidate)}
-                            className="inline-flex items-center justify-center p-2 rounded-xl bg-gray-50 dark:bg-slate-700/50 hover:bg-[#4F39F6]/10 dark:hover:bg-[#4F39F6]/20 text-gray-600 dark:text-gray-400 hover:text-[#4F39F6] transition-all duration-200 flex-shrink-0 backdrop-blur-sm"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        {/* Skills Preview */}
-                        {candidate.skills && candidate.skills.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-4">
-                            {candidate.skills.slice(0, 3).map((skill, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {candidate.skills.length > 3 && (
-                              <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400">
-                                +{candidate.skills.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Status and Match Score */}
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-700/50">
-                          <span
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm ${getStatusColor(candidate.status)} dark:bg-opacity-20 shadow-sm`}
-                          >
-                            {candidate.status}
-                          </span>
-                          {candidate.matchScore && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="relative">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4F39F6]/10 to-pink-500/10 border-2 border-[#4F39F6]/20 flex items-center justify-center backdrop-blur-sm">
-                                  <span
-                                    className={`text-xs font-bold ${getMatchColor(candidate.matchScore)}`}
-                                  >
-                                    {candidate.matchScore}%
-                                  </span>
+                          className="flex h-full flex-col gap-4 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-purple-200 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-400"
+                        >
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 text-sm font-semibold text-indigo-700 dark:from-indigo-600/50 dark:to-purple-600/40 dark:text-indigo-100">
+                                  {initials}
                                 </div>
-                                {candidate.matchScore >= 85 && (
-                                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse" />
-                                )}
+                                <div className="space-y-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                                      {candidate.name}
+                                    </p>
+                                    <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                                      {candidate.role}
+                                    </span>
+                                    <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-slate-700 dark:text-gray-300">
+                                      {candidate.location}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {candidate.email} • {candidate.timezone}
+                                  </p>
+                                  <div className="flex items-center gap-1 text-indigo-500">
+                                    {renderStars(candidate.rating)}
+                                    <span className="ml-1 text-xs font-medium text-gray-500 dark:text-gray-300">
+                                      {candidate.rating.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="rounded-3xl border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 dark:border-slate-700 dark:text-gray-200">
+                                {candidate.statusNote}
+                            </div>
+                        </div>
+
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[11px] text-gray-600 dark:text-gray-400">
+                              <span>
+                                <span className="font-semibold text-gray-500 dark:text-gray-300">Experience:</span>{' '}
+                                -
+                              </span>
+                              <span>
+                                <span className="font-semibold text-gray-500 dark:text-gray-300">Notice Period:</span>{' '}
+                                -
+                              </span>
+                              <span>
+                                <span className="font-semibold text-gray-500 dark:text-gray-300">Current CTC:</span>{' '}
+                                -
+                              </span>
+                              <span>
+                                <span className="font-semibold text-gray-500 dark:text-gray-300">Stage:</span>{' '}
+                                {candidate.stageLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-[11px] font-semibold text-indigo-600 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200">
+                                {candidate.assignedTo
+                                  .split(' ')
+                                  .map((part) => part[0])
+                                  .join('')
+                                  .slice(0, 2)
+                                  .toUpperCase() || 'UA'}
+                                </div>
+                              <div className="text-left text-gray-600 dark:text-gray-300">
+                                <p className="font-semibold text-indigo-600 dark:text-indigo-200">
+                                  {candidate.assignedTo || 'Unassigned'}
+                                </p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                  Created on {candidate.createdOn}
+                                </p>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                            <p className="text-[11px] font-semibold text-indigo-500 dark:text-indigo-200">
+                              Created by {candidate.createdBy}
+                            </p>
         </div>
 
-        {/* Candidate Details Dialog */}
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Candidate Details</DialogTitle>
-            </DialogHeader>
-            {selectedCandidate && (
-              <div className="space-y-6 mt-4">
-                {/* Header Section */}
-                <div className="flex items-start gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="w-16 h-16 bg-[#4F39F6] rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                    {selectedCandidate.firstName.charAt(0)}
-                    {selectedCandidate.lastName.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {selectedCandidate.firstName} {selectedCandidate.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {selectedCandidate.email}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedCandidate.status)}`}
-                      >
-                        {selectedCandidate.status}
+                          <div
+                            className={`rounded-2xl border px-4 py-3 text-sm ${tone.bg} border-gray-100 dark:border-slate-700`}
+                          >
+                            <div className="flex items-center justify-between text-[11px] font-semibold">
+                              <span className={tone.text}>{primaryStage.status}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] ${tone.badge}`}>
+                                {primaryStage.badge}
                       </span>
-                      {selectedCandidate.matchScore && (
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getMatchColor(selectedCandidate.matchScore)}`}
-                        >
-                          Match: {selectedCandidate.matchScore}%
+                            </div>
+                            <div className="mt-2 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
+                              <StageIcon className="h-4 w-4 text-purple-600 dark:text-indigo-300" />
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                {primaryStage.title}
                         </span>
-                      )}
-                      {selectedCandidate.rating && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {selectedCandidate.rating}
+                              <span className="font-medium text-purple-600 dark:text-indigo-300">
+                                {primaryStage.rating}
                           </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                              {primaryStage.description}
+                        </p>
+                      </div>
 
-                {/* Personal Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Personal Information
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
+                          {recentActivity && ActivityIcon && (
+                            <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-gray-300">
+                              <ActivityIcon className="h-4 w-4 text-purple-500" />
                       <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Email
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedCandidate.email}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Mobile
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedCandidate.mobile}
-                        </p>
-                      </div>
-                    </div>
-                    {selectedCandidate.city && selectedCandidate.country && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Location
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            {selectedCandidate.city}
-                            {selectedCandidate.state &&
-                              `, ${selectedCandidate.state}`}
-                            , {selectedCandidate.country}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {selectedCandidate.experience && (
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Experience
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            {selectedCandidate.experience}
+                                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {recentActivity.title}
+                                </p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                  {recentActivity.timestamp}
                           </p>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Professional Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Professional Information
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedCandidate.currentCompany && (
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Current Company
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            {selectedCandidate.currentCompany}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {selectedCandidate.organization && (
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Organization
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            {selectedCandidate.organization}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {selectedCandidate.currentCTC && (
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Current CTC
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedCandidate.currentCTC}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCandidate.expectedCTC && (
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Expected CTC
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedCandidate.expectedCTC}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Skills */}
-                {selectedCandidate.skills.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                      Skills
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCandidate.skills.map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 bg-primary-50 dark:bg-primary-900/30 text-[#4F39F6] dark:text-primary-300 rounded-md text-xs font-medium"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
-
-                {/* Major Skills */}
-                {selectedCandidate.majorSkills &&
-                  selectedCandidate.majorSkills.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                        Major Skills
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCandidate.majorSkills.map((skill, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-xs font-medium"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Additional Information */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Additional Information
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Applied Date
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedCandidate.appliedDate}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            </section>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );

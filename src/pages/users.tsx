@@ -89,26 +89,28 @@ const UsersPage: React.FC = () => {
     if (roleId === 2) {
       params.role_id = 2; // Only show TA_Executive users, exclude admin
     }
-    
+
     // Note: Admin role exclusion is handled client-side in allUsers filter
 
     dispatch(getAllUsers(params));
   }, [dispatch, currentPage, debouncedSearchTerm, selectedTab, roleId]);
 
   // Get current user ID/email to exclude from list
-  const currentUserId = user?.id ?? JSON.parse(localStorage.getItem('user') || 'null')?.id;
-  const currentUserEmail = user?.email ?? JSON.parse(localStorage.getItem('user') || 'null')?.email;
+  const currentUserId =
+    user?.id ?? JSON.parse(localStorage.getItem('user') || 'null')?.id;
+  const currentUserEmail =
+    user?.email ?? JSON.parse(localStorage.getItem('user') || 'null')?.email;
 
   // Filter users: exclude admin role users and current user
   const allUsers = users.filter((u) => {
     // Exclude admin role users (role_id === 1)
     const userRoleId = u.role?.id ?? u.role_id;
     if (userRoleId === 1) return false;
-    
+
     // Exclude current user by ID or email
     if (currentUserId && u.id === currentUserId) return false;
     if (currentUserEmail && u.email === currentUserEmail) return false;
-    
+
     return true;
   });
 

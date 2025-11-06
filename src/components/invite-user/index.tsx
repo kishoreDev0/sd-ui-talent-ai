@@ -221,8 +221,6 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  
-
   // Load countries on mount
   useEffect(() => {
     const loadCountries = async () => {
@@ -323,7 +321,8 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
 
       // Get country name or ISO code from selected country
       const selectedCountryObj = countries.find((c) => c.id === countryId);
-      const countryName = selectedCountryObj?.name || selectedCountryObj?.iso2 || data.country;
+      const countryName =
+        selectedCountryObj?.name || selectedCountryObj?.iso2 || data.country;
 
       // Parse phone number to get country code and national number
       let mobileCountryCode = '+1';
@@ -357,13 +356,13 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
           api: httpClient,
         }),
       ).unwrap();
-      
+
       // Show success toast with user email
       setToast({
         message: `Invitation sent successfully to ${data.email}!`,
         type: 'success',
       });
-      
+
       // Reset form and close dialog after a delay
       reset();
       setTimeout(() => {
@@ -375,7 +374,6 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
       console.error('Invite user failed', err);
       // Error toast is already handled by the useEffect hook
     }
-
   };
 
   return (
@@ -558,24 +556,37 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                         {...fieldProps}
                         value={value || undefined}
                         onValueChange={(selectedValue) => {
-                          console.log('Timezone selected - selectedValue:', selectedValue);
-                          console.log('Before onChange - current value:', value);
+                          console.log(
+                            'Timezone selected - selectedValue:',
+                            selectedValue,
+                          );
+                          console.log(
+                            'Before onChange - current value:',
+                            value,
+                          );
                           // Call onChange to update form state
                           onChange(selectedValue);
                           // Log after a brief delay to check if state updated
                           setTimeout(() => {
                             const currentValue = getValues('preferredTimeZone');
                             const allValues = getValues();
-                            console.log('Form state after onChange - preferredTimeZone:', currentValue);
+                            console.log(
+                              'Form state after onChange - preferredTimeZone:',
+                              currentValue,
+                            );
                             console.log('All form values:', allValues);
                           }, 100);
                         }}
-                        disabled={!selectedCountry || timezoneOptions.length === 0}
-                      >
-                        <SelectTrigger
+                        disabled={
+                          !selectedCountry || timezoneOptions.length === 0
+                        }
+                >
+                  <SelectTrigger
                           id="preferredTimeZone"
                           className={`w-full h-10 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600 ${
-                            errors.preferredTimeZone ? 'border-red-500 focus:ring-red-500' : ''
+                            errors.preferredTimeZone
+                              ? 'border-red-500 focus:ring-red-500'
+                              : ''
                           }`}
                         >
                           <SelectValue
@@ -587,31 +598,31 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                                   : 'Select Timezone'
                             }
                           />
-                        </SelectTrigger>
-                        <SelectContent 
-                          className="dark:bg-slate-700 dark:border-gray-600 max-h-[300px]" 
+                  </SelectTrigger>
+                        <SelectContent
+                          className="dark:bg-slate-700 dark:border-gray-600 max-h-[300px]"
                           position="popper"
                           sideOffset={4}
                         >
                           {timezoneOptions.length === 0 ? (
-                            <div className="px-2 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <div className="px-2 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                               {!selectedCountry
                                 ? 'Select Country first'
                                 : 'Loading timezones...'}
-                            </div>
-                          ) : (
+                      </div>
+                    ) : (
                             timezoneOptions.map((option) => (
-                              <SelectItem
+                          <SelectItem
                                 key={option.value}
                                 value={option.value}
                                 className="dark:text-gray-100 dark:focus:bg-slate-600 cursor-pointer"
                               >
                                 {option.label}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                          </SelectItem>
+                        ))
+                    )}
+                  </SelectContent>
+                </Select>
                     );
                   }}
                 />

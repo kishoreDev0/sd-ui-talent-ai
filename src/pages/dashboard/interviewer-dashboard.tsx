@@ -1,6 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, Mail, Phone, Play } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Play,
+  FileText,
+  Star,
+  MessageSquare,
+  Video,
+  UserCheck,
+  Search,
+  Bell,
+  ChevronRight,
+  ChevronLeft,
+  Plus,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,573 +23,869 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-interface Candidate {
+type Interview = {
   id: number;
-  name: string;
-  position: string;
-  experience: string;
-  skills: string[];
-  avatar: string;
-  status:
-    | 'applied'
-    | 'screening'
-    | 'interview_scheduled'
-    | 'feedback_pending'
-    | 'selected'
-    | 'rejected';
-  interviewDate?: string;
-  interviewTime?: string;
-  matchScore?: number;
-  email: string;
-  phone: string;
-}
+  candidate: string;
+  role: string;
+  stage: string;
+  datetime: string;
+  duration: string;
+  mode: 'Video' | 'Onsite' | 'Phone';
+  meetingLink: string;
+  location?: string;
+  notes?: string;
+  tags: string[];
+  score?: number;
+};
 
-// Simplified dashboard: no internal sidebar or kanban
+type FeedbackItem = {
+  id: number;
+  candidate: string;
+  role: string;
+  interviewDate: string;
+  submittedBy: string;
+  dueIn: string;
+  focus: string[];
+};
+
+type Recording = {
+  id: number;
+  candidate: string;
+  role: string;
+  recordedAt: string;
+  url: string;
+};
 
 const InterviewerDashboard: React.FC = () => {
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
-    null,
-  );
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [isDayModalOpen, setIsDayModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [candidates] = useState<Candidate[]>([
+  const upcomingInterviews = useMemo<Interview[]>(() => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const createDate = (dayOffset: number, hour: number, minute: number) => {
+      const date = new Date(base);
+      date.setDate(base.getDate() + dayOffset);
+      date.setHours(hour, minute, 0, 0);
+      return date.toISOString();
+    };
+
+    return [
     {
       id: 1,
-      name: 'Sarah Johnson',
-      position: 'Senior Product Designer',
-      experience: '5 years',
-      skills: ['Figma', 'UI/UX', 'Prototyping', 'Design Systems'],
-      avatar: 'SJ',
-      status: 'applied',
-      email: 'sarah.johnson@email.com',
-      phone: '+1 (555) 123-4567',
-      matchScore: 92,
+        candidate: 'Emily Davis',
+        role: 'Senior Product Designer',
+        stage: 'Portfolio Review',
+        datetime: createDate(0, 9, 30),
+        duration: '45m',
+        mode: 'Video',
+        meetingLink: 'https://meet.example.com/emily-davis',
+        tags: ['Design', 'Product'],
+        notes: 'Focus on mobile-first workflow and system thinking',
+        score: 4.6,
     },
     {
       id: 2,
-      name: 'Michael Chen',
-      position: 'Frontend Developer',
-      experience: '3 years',
-      skills: ['React', 'TypeScript', 'Next.js', 'Tailwind'],
-      avatar: 'MC',
-      status: 'screening',
-      email: 'michael.chen@email.com',
-      phone: '+1 (555) 234-5678',
-      matchScore: 88,
+        candidate: 'Michael Chen',
+        role: 'Frontend Engineer',
+        stage: 'Technical Deep Dive',
+        datetime: createDate(0, 11, 0),
+        duration: '60m',
+        mode: 'Video',
+        meetingLink: 'https://meet.example.com/michael-chen',
+        tags: ['React', 'System Design'],
+        notes: 'Prepare code review scenario and performance question',
+        score: 4.9,
     },
     {
       id: 3,
-      name: 'Emily Davis',
-      position: 'UI/UX Designer',
-      experience: '4 years',
-      skills: ['Sketch', 'Figma', 'Adobe XD', 'User Research'],
-      avatar: 'ED',
-      status: 'interview_scheduled',
-      interviewDate: '2024-01-28',
-      interviewTime: '10:00 AM',
-      email: 'emily.davis@email.com',
-      phone: '+1 (555) 345-6789',
-      matchScore: 85,
-    },
-    {
-      id: 4,
-      name: 'David Park',
-      position: 'Backend Engineer',
-      experience: '6 years',
-      skills: ['Node.js', 'Python', 'PostgreSQL', 'AWS'],
-      avatar: 'DP',
-      status: 'interview_scheduled',
-      interviewDate: '2024-01-29',
-      interviewTime: '2:00 PM',
-      email: 'david.park@email.com',
-      phone: '+1 (555) 456-7890',
-      matchScore: 90,
-    },
-    {
-      id: 5,
-      name: 'Jessica Martinez',
-      position: 'Full Stack Developer',
-      experience: '4 years',
-      skills: ['React', 'Node.js', 'MongoDB', 'GraphQL'],
-      avatar: 'JM',
-      status: 'feedback_pending',
-      interviewDate: '2024-01-25',
-      interviewTime: '11:00 AM',
-      email: 'jessica.martinez@email.com',
-      phone: '+1 (555) 567-8901',
-      matchScore: 87,
-    },
-    {
-      id: 6,
-      name: 'Robert Wilson',
-      position: 'DevOps Engineer',
-      experience: '5 years',
-      skills: ['Docker', 'Kubernetes', 'CI/CD', 'Terraform'],
-      avatar: 'RW',
-      status: 'selected',
-      email: 'robert.wilson@email.com',
-      phone: '+1 (555) 678-9012',
-      matchScore: 95,
-    },
-    {
-      id: 7,
-      name: 'Lisa Anderson',
-      position: 'Product Manager',
-      experience: '7 years',
-      skills: ['Agile', 'Product Strategy', 'Analytics', 'User Research'],
-      avatar: 'LA',
-      status: 'rejected',
-      email: 'lisa.anderson@email.com',
-      phone: '+1 (555) 789-0123',
-      matchScore: 75,
-    },
-  ]);
-
-  const scheduledInterviews = useMemo(() => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = today.getMonth();
-    const dayIso = (d: number) => new Date(y, m, d).toISOString().split('T')[0];
-    const timeSlots = [
-      '09:30 AM',
-      '11:00 AM',
-      '02:00 PM',
-      '03:30 PM',
-      '05:00 PM',
+        candidate: 'Sarah Johnson',
+        role: 'Product Manager',
+        stage: 'Leadership Round',
+        datetime: createDate(0, 14, 0),
+        duration: '40m',
+        mode: 'Video',
+        meetingLink: 'https://meet.example.com/sarah-johnson',
+        tags: ['Strategy', 'Stakeholder'],
+        notes: 'Evaluate cross-functional collaboration examples',
+        score: 4.4,
+      },
+      {
+        id: 4,
+        candidate: 'David Park',
+        role: 'Backend Engineer',
+        stage: 'Systems Interview',
+        datetime: createDate(1, 10, 30),
+        duration: '60m',
+        mode: 'Video',
+        meetingLink: 'https://meet.example.com/david-park',
+        tags: ['API Design', 'Scaling'],
+        notes: 'Explore resiliency and observability practices',
+        score: 4.8,
+      },
+      {
+        id: 5,
+        candidate: 'Alex Rivera',
+        role: 'Data Scientist',
+        stage: 'Panel Interview',
+        datetime: createDate(2, 9, 0),
+        duration: '90m',
+        mode: 'Onsite',
+        location: 'HQ - Boardroom 3A',
+        meetingLink: 'https://meet.example.com/alex-rivera',
+        tags: ['ML', 'Product Analytics'],
+        notes: 'Bring whiteboard markers for on-site modelling',
+        score: 4.3,
+      },
+      {
+        id: 6,
+        candidate: 'Priya Patel',
+        role: 'Customer Success Lead',
+        stage: 'Behavioural Round',
+        datetime: createDate(3, 15, 0),
+        duration: '45m',
+        mode: 'Phone',
+        meetingLink: 'tel:+15552345678',
+        tags: ['Customer Stories', 'Escalation'],
+        notes: 'Confirm timezone before the call',
+        score: 4.7,
+      },
     ];
-    const onlyScheduled = candidates.filter(
-      (c) => c.status === 'interview_scheduled',
-    );
+  }, []);
 
-    // Ensure exactly 3 interviews on the 10th
-    const first = onlyScheduled[0] || candidates[0];
-    const second = onlyScheduled[1] || candidates[1] || first;
-    const third = onlyScheduled[2] || candidates[2] || first;
-    const fixedTenth = [first, second, third].map((c, i) => ({
-      ...c,
-      id: Number(`${c.id}${i}`),
-      interviewDate: dayIso(10),
-      interviewTime: timeSlots[i],
-    }));
+  const pendingFeedback: FeedbackItem[] = [
+    {
+      id: 101,
+      candidate: 'Jessica Martinez',
+      role: 'Full Stack Developer',
+      interviewDate: new Date().toISOString(),
+      submittedBy: 'S. Lee',
+      dueIn: '4 hrs',
+      focus: ['Fullstack', 'Culture add'],
+    },
+    {
+      id: 102,
+      candidate: 'Robert Wilson',
+      role: 'DevOps Engineer',
+      interviewDate: new Date(Date.now() - 86400000).toISOString(),
+      submittedBy: 'A. Carter',
+      dueIn: 'Today',
+      focus: ['Reliability', 'Automation'],
+    },
+    {
+      id: 103,
+      candidate: 'Lisa Anderson',
+      role: 'Product Manager',
+      interviewDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+      submittedBy: 'You',
+      dueIn: '1 day',
+      focus: ['Product sense', 'Leadership'],
+    },
+  ];
 
-    // Distribute remaining across other days
-    const baseDays = [3, 6, 12, 18, 18, 24, 24, 27];
-    const rest = onlyScheduled.slice(3);
-    const distributed = rest.map((c, idx) => ({
-      ...c,
-      interviewDate: dayIso(baseDays[idx % baseDays.length]),
-      interviewTime: timeSlots[(idx + 3) % timeSlots.length],
-    }));
+  const recordings: Recording[] = [
+    {
+      id: 201,
+      candidate: 'Noah Bennett',
+      role: 'QA Lead',
+      recordedAt: '2025-11-04T14:00:00.000Z',
+      url: '#',
+    },
+    {
+      id: 202,
+      candidate: 'Fatima Khan',
+      role: 'Growth Marketer',
+      recordedAt: '2025-11-03T16:30:00.000Z',
+      url: '#',
+    },
+    {
+      id: 203,
+      candidate: 'Leo Martins',
+      role: 'Data Analyst',
+      recordedAt: '2025-11-01T10:00:00.000Z',
+      url: '#',
+    },
+  ];
 
-    return [...fixedTenth, ...distributed];
-  }, [candidates]);
-  const interviewsCount = scheduledInterviews.length;
+  const userName = 'Taylor';
 
-  const startOfMonth = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth(), 1);
-  const endOfMonth = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const addMonths = (date: Date, delta: number) =>
-    new Date(date.getFullYear(), date.getMonth() + delta, 1);
-  const getMonthMatrix = (date: Date) => {
-    const start = startOfMonth(date);
-    const end = endOfMonth(date);
-    const startDay = (start.getDay() + 6) % 7; // make Monday=0
-    const daysInMonth = end.getDate();
-    const cells: Array<{ d: number | null; date?: Date }> = [];
-    for (let i = 0; i < startDay; i++) cells.push({ d: null });
-    for (let d = 1; d <= daysInMonth; d++) {
-      const cellDate = new Date(date.getFullYear(), date.getMonth(), d);
-      cells.push({ d, date: cellDate });
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(
+    null,
+  );
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const date = new Date();
+    date.setDate(1);
+    return date;
+  });
+
+  const upcomingSorted = useMemo(
+    () =>
+      [...upcomingInterviews].sort(
+        (a, b) =>
+          new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
+      ),
+    [upcomingInterviews],
+  );
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const isSameDay = (first: Date, second: Date) =>
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+
+  const todaysInterviews = useMemo(
+    () =>
+      upcomingSorted.filter((interview) =>
+        isSameDay(new Date(interview.datetime), today),
+      ),
+    [upcomingSorted, today],
+  );
+
+  const nextInterview = todaysInterviews[0] ?? upcomingSorted[0];
+
+  const weeklyLoad = useMemo(() => {
+    const start = new Date(today);
+    const day = start.getDay();
+    const mondayOffset = (day + 6) % 7; // Monday as start
+    start.setDate(start.getDate() - mondayOffset);
+    return Array.from({ length: 7 }).map((_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      const count = upcomingSorted.filter((interview) =>
+        isSameDay(new Date(interview.datetime), date),
+      ).length;
+      return {
+        label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        date,
+        count,
+      };
+    });
+  }, [today, upcomingSorted]);
+
+  const interviewDatesSet = useMemo(() => {
+    const set = new Set<string>();
+    upcomingSorted.forEach((interview) => {
+      const date = new Date(interview.datetime);
+      date.setHours(0, 0, 0, 0);
+      set.add(date.toDateString());
+    });
+    return set;
+  }, [upcomingSorted]);
+
+  const calendarCells = useMemo(() => {
+    const start = new Date(currentMonth);
+    start.setDate(1);
+    const firstWeekday = start.getDay();
+    const daysInMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() + 1,
+      0,
+    ).getDate();
+
+    const cells: Array<{
+      key: string;
+      day: number;
+      date: Date;
+      isCurrent: boolean;
+    }> = [];
+
+    for (let i = firstWeekday - 1; i >= 0; i--) {
+      const date = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        -i,
+      );
+      cells.push({
+        key: `prev-${i}`,
+        day: date.getDate(),
+        date,
+        isCurrent: false,
+      });
     }
-    while (cells.length % 7 !== 0) cells.push({ d: null });
-    return cells;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        day,
+      );
+      cells.push({ key: `cur-${day}`, day, date, isCurrent: true });
+    }
+
+    while (cells.length < 42) {
+      const last = cells[cells.length - 1];
+      const date = new Date(last.date);
+      date.setDate(date.getDate() + 1);
+      cells.push({
+        key: `next-${cells.length}`,
+        day: date.getDate(),
+        date,
+        isCurrent: false,
+      });
+    }
+
+    return cells.slice(0, 42);
+  }, [currentMonth]);
+
+  const calendarWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+  const formatDate = (iso: string, options?: Intl.DateTimeFormatOptions) =>
+    new Date(iso).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...options,
+    });
+
+  const handleViewDetails = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setIsDetailModalOpen(true);
   };
 
-  const parseTimeToMinutes = (time?: string): number => {
-    if (!time) return 0;
-    // Expected formats like '09:30 AM' or '2:00 PM'
-    const match = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-    if (!match) return 0;
-    let h = parseInt(match[1], 10);
-    const m = parseInt(match[2], 10);
-    const mer = match[3].toUpperCase();
-    if (mer === 'PM' && h !== 12) h += 12;
-    if (mer === 'AM' && h === 12) h = 0;
-    return h * 60 + m;
+  const handlePrevMonth = () => {
+    const next = new Date(currentMonth);
+    next.setMonth(currentMonth.getMonth() - 1);
+    setCurrentMonth(next);
   };
 
-  // Timeline helpers removed (timeline view deprecated)
+  const handleNextMonth = () => {
+    const next = new Date(currentMonth);
+    next.setMonth(currentMonth.getMonth() + 1);
+    setCurrentMonth(next);
+  };
+
+  const highlightCards = [
+    {
+      id: 'today',
+      title: "Today's Interviews",
+      metric: `${todaysInterviews.length} scheduled`,
+      caption: 'Stay prepared and on time',
+      icon: Calendar,
+      accent: 'bg-orange-100 text-orange-500',
+      rate: '+3.2%',
+      type: 'Compared to last week',
+    },
+    {
+      id: 'feedback',
+      title: 'Feedback Queue',
+      metric: `${pendingFeedback.length} open items`,
+      caption: 'Share insights within 24h',
+      icon: MessageSquare,
+      accent: 'bg-purple-100 text-purple-500',
+      rate: '92% on-time',
+      type: 'Last 14 days',
+    },
+    {
+      id: 'recordings',
+      title: 'Recent Recordings',
+      metric: `${recordings.length} to review`,
+      caption: 'Catch up on highlights',
+      icon: Video,
+      accent: 'bg-blue-100 text-blue-500',
+      rate: '2 new',
+      type: 'This week',
+    },
+    {
+      id: 'pipeline',
+      title: 'Active Pipeline',
+      metric: `${upcomingSorted.length} candidates`,
+      caption: 'Across all roles assigned',
+      icon: UserCheck,
+      accent: 'bg-emerald-100 text-emerald-500',
+      rate: '4.7⭐ avg',
+      type: 'Candidate rating',
+    },
+  ];
+
+  const pipelineItems = upcomingSorted.slice(0, 3).map((interview) => {
+    const progress = Math.round(((interview.score ?? 4.5) / 5) * 100);
+    return {
+      id: interview.id,
+      title: interview.role,
+      candidate: interview.candidate,
+      remaining: `${Math.max(1, Math.round(Math.random() * 8))}h ${Math.max(
+        1,
+        Math.round(Math.random() * 45),
+      )}m`,
+      status: interview.stage,
+      progress,
+    };
+  });
+
+  const assignments = pendingFeedback.map((item, index) => {
+    const status =
+      index === 0 ? 'In progress' : index === 1 ? 'Completed' : 'Upcoming';
+    return {
+      id: item.id,
+      title: item.candidate,
+      subtitle: item.role,
+      status,
+      date: new Date(item.interviewDate).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }),
+    };
+  });
+
+  const statusStyles: Record<string, string> = {
+    'In progress':
+      'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-200',
+    Completed:
+      'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200',
+    Upcoming:
+      'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200',
+  };
+
+  const monthLabel = currentMonth.toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const courseCards = pipelineItems.map((item) => ({
+    id: item.id,
+    title: item.title,
+    candidate: item.candidate,
+    status: item.status,
+    progress: item.progress,
+  }));
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-6 py-6"
-        >
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-8 shadow-lg border border-gray-200/50 dark:border-white/10 text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Your Interviews
+    <div className="min-h-screen space-y-4 p-3 sm:p-5 lg:p-2">
+      <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            Welcome back, {userName} <span role="img" aria-label="wave">👋</span>
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Assigned to you
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            Here’s a snapshot of today’s interviews, prep work, and follow-ups.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <Search className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search interviews"
+              className="w-32 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 focus:outline-none dark:text-gray-200 dark:placeholder:text-gray-500"
+            />
+          </div>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-gray-300">
+            <Bell className="h-4 w-4" />
+          </button>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+            {userName.charAt(0)}
+          </div>
+        </div>
+      </header>
+
+      <section className="rounded-3xl border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">
+              Today’s Highlight
+            </p>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {nextInterview ? `${nextInterview.candidate} • ${nextInterview.stage}` : 'No interviews scheduled'}
+            </h2>
+            {nextInterview && (
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {formatDate(nextInterview.datetime, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}{' '}
+                • {formatTime(nextInterview.datetime)}{' '}
+                • {nextInterview.mode}
               </p>
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-[#4F39F6] text-white shadow-lg">
-                <Calendar className="w-5 h-5" />
-                <span className="text-xl font-semibold">{interviewsCount}</span>
+            )}
+          </div>
+          <div className="flex gap-1.5">
+            {nextInterview && (
+              <Button
+                size="sm"
+                className="h-8 rounded-2xl bg-purple-600 px-3 text-xs font-semibold text-white shadow hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                onClick={() => window.open(nextInterview.meetingLink, '_blank')}
+              >
+                <Play className="h-3 w-3" /> Join call
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-2xl border-gray-200 px-3 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800"
+              onClick={() => nextInterview && handleViewDetails(nextInterview)}
+            >
+              <FileText className="h-3 w-3" /> View brief
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+            Quick insights
+          </h2>
+          <button className="text-[11px] font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
+            View all
+          </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {highlightCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.id}
+                className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {card.title}
+                    </p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                      {card.metric}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                  <span>{card.caption}</span>
+                  <span className="font-semibold text-indigo-500 dark:text-indigo-200">
+                    {card.rate}
+                  </span>
+                </div>
               </div>
-              <div className="mt-6 inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className={`px-4 py-2 text-sm ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
-                >
-                  Calendar
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 text-sm ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
-                >
-                  List
-                </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[2fr_1fr]">
+        <div className="space-y-5">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    Hours activity
+                  </h3>
+                  <p className="mt-1 text-[11px] font-medium text-emerald-500">
+                    +3% increase than last week
+                  </p>
+                </div>
+                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                  Weekly
+                </span>
+              </div>
+              <div className="mt-5 grid h-40 grid-cols-7 items-end gap-2">
+                {weeklyLoad.map((entry) => (
+                  <div key={entry.label} className="flex flex-col items-center gap-2">
+                    <div
+                      className="w-3 rounded-full bg-indigo-400 transition-all dark:bg-indigo-500"
+                      style={{ height: `${Math.max(entry.count * 20, 6)}px` }}
+                    />
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {entry.label.charAt(0)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-white/10">
-              {viewMode === 'list' ? (
-                <>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                    Scheduled Interviews
-                  </h2>
-                  {scheduledInterviews.length === 0 ? (
-                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">
-                      No scheduled interviews
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Daily schedule
+                </h3>
+                <button className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
+                  Today <ChevronRight className="h-3 w-3" />
+                </button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {scheduledInterviews.map((candidate) => (
+              <div className="mt-4 space-y-4">
+                {todaysInterviews.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No interviews scheduled today.
+                  </p>
+                )}
+                {todaysInterviews.map((interview) => (
                         <button
-                          key={candidate.id}
-                          onClick={() => {
-                            setSelectedCandidate(candidate);
-                            setIsDetailModalOpen(true);
-                          }}
-                          className="w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-white/10 hover:shadow-md transition-all"
-                        >
-                          <div className="flex items-center justify-between">
+                    key={interview.id}
+                    onClick={() => handleViewDetails(interview)}
+                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-3.5 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60"
+                  >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-[#4F39F6] rounded-xl flex items-center justify-center text-white font-bold">
-                                {candidate.avatar}
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                        {interview.candidate
+                          .split(' ')
+                          .map((part) => part[0])
+                          .join('')}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900 dark:text-gray-100">
-                                  {candidate.name}
-                                </div>
-                                <div className="text-xs text-gray-600 dark:text-gray-300">
-                                  {candidate.position}
+                        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                          {interview.candidate}
+                        </p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          {interview.role}
+                        </p>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                              <Clock className="w-4 h-4 text-gray-500 dark:text-gray-300" />
-                              <span>
-                                {candidate.interviewDate
-                                  ? new Date(
-                                      candidate.interviewDate,
-                                    ).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                    })
-                                  : ''}
-                                {candidate.interviewTime
-                                  ? ` at ${candidate.interviewTime}`
-                                  : ''}
-                              </span>
-                            </div>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(interview.datetime)}
                           </div>
                         </button>
                       ))}
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      Interview Calendar
-                    </h2>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          setCurrentMonth(addMonths(currentMonth, -1))
-                        }
-                        className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
-                      >
-                        Prev
-                      </button>
-                      <div className="px-2 text-sm text-gray-700 dark:text-gray-200">
-                        {currentMonth.toLocaleString('en-US', {
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </div>
-                      <button
-                        onClick={() =>
-                          setCurrentMonth(addMonths(currentMonth, 1))
-                        }
-                        className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-7 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
-                      (d) => (
-                        <div key={d} className="p-2 text-center">
-                          {d}
-                        </div>
-                      ),
-                    )}
-                  </div>
-                  <div className="grid grid-cols-7 gap-2">
-                    {getMonthMatrix(currentMonth).map((cell, idx) => {
-                      const dayEvents = cell.date
-                        ? scheduledInterviews.filter(
-                            (c) =>
-                              c.interviewDate &&
-                              new Date(c.interviewDate).toDateString() ===
-                                cell.date!.toDateString(),
-                          )
-                        : [];
-                      return (
-                        <div
-                          key={idx}
-                          className={`min-h-32 rounded-lg border border-gray-200 dark:border-white/10 p-2 ${cell.d ? 'bg-white/70 dark:bg-slate-900/40' : 'bg-transparent'}`}
-                        >
-                          <div className="text-right text-[10px] text-gray-500 dark:text-gray-400">
-                            {cell.d || ''}
-                          </div>
-                          <div className="space-y-1 mt-1 max-h-24 overflow-y-auto pr-1">
-                            {dayEvents.map((ev) => (
-                              <button
-                                key={`${ev.id}-${ev.interviewTime}`}
-                                onClick={() => {
-                                  setSelectedDay(
-                                    ev.interviewDate
-                                      ? new Date(ev.interviewDate)
-                                      : null,
-                                  );
-                                  setIsDayModalOpen(true);
-                                }}
-                                className="w-full text-left text-[11px] px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition truncate"
-                              >
-                                {ev.name}{' '}
-                                {ev.interviewTime
-                                  ? `• ${ev.interviewTime}`
-                                  : ''}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
             </div>
           </div>
-        </motion.div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Candidate pipeline
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Review upcoming stages for top candidates.
+                </p>
+              </div>
+              <button className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
+                Active <ChevronRight className="h-3 w-3" />
+                      </button>
+                      </div>
+            <div className="mt-5 space-y-4">
+              {courseCards.map((course) => (
+                <div
+                  key={course.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 px-3.5 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-900/60"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                      {course.title}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      With {course.candidate}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-20 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                        style={{ width: `${course.progress}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-semibold text-indigo-500 dark:text-indigo-200">
+                      {course.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500 dark:text-indigo-200">
+                  Interview assist
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Get coaching notes & templates
+                </h3>
+                <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                  Join our enablement program to receive interview scripts, rubrics, and best practices.
+                </p>
+              </div>
+              <div className="hidden sm:block h-16 w-16 rounded-full bg-purple-100/80 dark:bg-indigo-500/20" />
+                        </div>
+            <Button className="mt-3 h-8 w-full rounded-2xl bg-purple-600 text-xs font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+              Get Access
+            </Button>
+                  </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {monthLabel}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevMonth}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-800"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                              <button
+                  onClick={handleNextMonth}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-800"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                              </button>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+              {calendarWeekdays.map((day) => (
+                <span key={day}>{day}</span>
+                            ))}
+                          </div>
+            <div className="mt-2 grid grid-cols-7 gap-1.5 text-xs">
+              {calendarCells.map((cell) => {
+                const cellDate = cell.date.toDateString();
+                const isToday = isSameDay(cell.date, today);
+                const hasInterview = interviewDatesSet.has(cellDate);
+                return (
+                  <button
+                    key={cell.key}
+                    className={`flex h-9 items-center justify-center rounded-xl border text-xs transition ${
+                      cell.isCurrent
+                        ? 'border-transparent bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-200'
+                        : 'border-transparent text-gray-400 dark:text-gray-500'
+                    } ${hasInterview ? 'ring-2 ring-indigo-400 dark:ring-indigo-500' : ''} ${
+                      isToday ? 'bg-purple-100 text-purple-600 dark:bg-indigo-500/30 dark:text-indigo-200' : ''
+                    }`}
+                  >
+                    {cell.day}
+                  </button>
+                      );
+                    })}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Assignments
+              </h3>
+              <button className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
+                Add <Plus className="h-2.5 w-2.5" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/70 px-3.5 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-900/60"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                      {assignment.title}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {assignment.subtitle}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                      {assignment.date}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles[assignment.status]}`}>
+                    {assignment.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Candidate Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedCandidate && (
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          {selectedInterview && (
             <>
-              <DialogHeader>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 bg-[#4F39F6] rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                    {selectedCandidate.avatar}
-                  </div>
-                  <div className="flex-1">
-                    <DialogTitle className="text-2xl font-bold">
-                      {selectedCandidate.name}
+              <DialogHeader className="space-y-2">
+                <DialogTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedInterview.candidate}
                     </DialogTitle>
-                    <p className="text-gray-600 mt-1">
-                      {selectedCandidate.position}
-                    </p>
-                  </div>
-                  {/* Status badge removed in simplified view */}
-                </div>
+                <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+                  {selectedInterview.role} • {selectedInterview.stage}
+                </DialogDescription>
               </DialogHeader>
-
-              <DialogDescription>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Experience
-                    </h3>
-                    <p className="text-gray-600">
-                      {selectedCandidate.experience}
-                    </p>
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Calendar className="w-4 h-4 text-indigo-500" />
+                      {formatDate(selectedInterview.datetime, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Clock className="w-4 h-4 text-indigo-500" />
+                      {formatTime(selectedInterview.datetime)} •{' '}
+                      {selectedInterview.duration}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Mode: {selectedInterview.mode}
+                      {selectedInterview.location
+                        ? ` • ${selectedInterview.location}`
+                        : ''}
+                    </div>
                   </div>
-
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCandidate.skills.map((skill, index) => (
+                  <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 p-4">
+                    <p className="text-xs uppercase tracking-wide text-indigo-500 dark:text-indigo-200 font-semibold">
+                      Preparation focus
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2 text-xs text-indigo-700 dark:text-indigo-200">
+                      {selectedInterview.tags.map((tag) => (
                         <span
-                          key={index}
-                          className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium"
+                          key={tag}
+                          className="px-2 py-1 rounded-full bg-white dark:bg-slate-900/70 border border-indigo-100 dark:border-indigo-500/40"
                         >
-                          {skill}
+                          {tag}
                         </span>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        Contact
-                      </h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Mail className="w-4 h-4" />
-                          <span className="text-sm">
-                            {selectedCandidate.email}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Phone className="w-4 h-4" />
-                          <span className="text-sm">
-                            {selectedCandidate.phone}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedCandidate.interviewDate && (
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">
-                          Interview
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">
-                              {new Date(
-                                selectedCandidate.interviewDate,
-                              ).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-sm">
-                              {selectedCandidate.interviewTime}
-                            </span>
-                          </div>
-                        </div>
+                    {selectedInterview.score && (
+                      <div className="text-xs text-indigo-700 dark:text-indigo-200 mt-3 flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5" /> Candidate rating so
+                        far: {selectedInterview.score}/5
                       </div>
                     )}
                   </div>
-
-                  {selectedCandidate.matchScore && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        Match Score
-                      </h3>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full"
-                          style={{ width: `${selectedCandidate.matchScore}%` }}
-                        />
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {selectedCandidate.matchScore}% match with job
-                        requirements
-                      </p>
-                    </div>
-                  )}
                 </div>
-              </DialogDescription>
+
+                {selectedInterview.notes && (
+                  <div className="rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 p-4 text-sm text-gray-600 dark:text-gray-300">
+                    {selectedInterview.notes}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={() =>
+                      window.open(selectedInterview.meetingLink, '_blank')
+                    }
+                  >
+                    <Play className="w-4 h-4" /> Join meeting
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDetailModalOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+          </div>
             </>
           )}
         </DialogContent>
       </Dialog>
-      {/* Day Schedule Modal */}
-      <Dialog open={isDayModalOpen} onOpenChange={setIsDayModalOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              Interviews on{' '}
-              {selectedDay
-                ? selectedDay.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : ''}
-            </DialogTitle>
-            <DialogDescription>
-              Click play to join the meeting
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            {scheduledInterviews
-              .filter(
-                (c) =>
-                  selectedDay &&
-                  c.interviewDate &&
-                  new Date(c.interviewDate).toDateString() ===
-                    selectedDay.toDateString(),
-              )
-              .sort(
-                (a, b) =>
-                  parseTimeToMinutes(a.interviewTime) -
-                  parseTimeToMinutes(b.interviewTime),
-              )
-              .map((c) => (
-                <div
-                  key={`${c.id}-${c.interviewTime}`}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-gray-100">
-                      {c.name}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">
-                      {c.position}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200 mt-1">
-                      <Clock className="w-3 h-3" /> {c.interviewTime}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() =>
-                      window.open(`https://meet.example.com/${c.id}`, '_blank')
-                    }
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
-                  >
-                    <Play className="w-4 h-4" /> Join
-                  </button>
-                </div>
-              ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-      {/* Feedback and add candidate modals removed for simplified view */}
     </div>
   );
 };

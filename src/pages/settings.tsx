@@ -5,45 +5,26 @@ import { useUserRole } from '@/utils/getUserRole';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { logout } from '@/store/slices/authentication/login';
 import { updateUser } from '@/store/user/actions/userActions';
-import { forgotPassword } from '@/store/action/authentication/forgotPassword';
-import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Upload, Camera, X, Edit2, Save, Loader2, Info, Settings, Shield, Bell, User, Users, CreditCard, MapPin } from 'lucide-react';
+  Camera,
+  Edit2,
+  Loader2,
+  Info,
+  Settings,
+  Shield,
+  Bell,
+  User,
+  Users,
+  CreditCard,
+  MapPin,
+} from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { parsePhoneNumber } from 'react-phone-number-input';
-
-// Type definitions for country/state/city (matching react-country-state-city structure)
-type Country = {
-  id: number;
-  name: string;
-  iso2: string;
-  iso3: string;
-};
-
-type State = {
-  id: number;
-  name: string;
-  country_id?: number;
-  state_code?: string;
-};
-
-type City = {
-  id: number;
-  name: string;
-  state_id?: number;
-  country_id?: number;
-};
 import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
@@ -52,147 +33,45 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type SettingsTab = 'general-information' | 'preferences' | 'security' | 'notifications' | 'account' | 'account-manager' | 'billings';
+type SettingsTab =
+  | 'general-information'
+  | 'preferences'
+  | 'security'
+  | 'notifications'
+  | 'account'
+  | 'account-manager'
+  | 'billings';
 
-// Change Password Form Component
-const ChangePasswordFormComponent: React.FC<{
-  onSubmit: (data: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => void;
-}> = ({ onSubmit }) => {
-  const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<{
-    currentPassword?: string;
-    newPassword?: string;
-    confirmPassword?: string;
-  }>({});
+type Country = {
+  id: number;
+  name: string;
+  iso2?: string;
+  iso3?: string;
+};
 
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
+type State = {
+  id: number;
+  name: string;
+};
 
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
-    }
-
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit(formData);
-      setFormData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setErrors({});
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Change Password</CardTitle>
-        <CardDescription className="text-[10px]">
-          Update your password to keep your account secure
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Current Password
-            </label>
-            <Input
-              type="password"
-              placeholder="Enter current password"
-              className="h-8 text-sm w-full"
-              value={formData.currentPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, currentPassword: e.target.value })
-              }
-            />
-            {errors.currentPassword && (
-              <p className="text-xs text-red-600">{errors.currentPassword}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              New Password
-            </label>
-            <Input
-              type="password"
-              placeholder="Enter new password"
-              className="h-8 text-sm w-full"
-              value={formData.newPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, newPassword: e.target.value })
-              }
-            />
-            {errors.newPassword && (
-              <p className="text-xs text-red-600">{errors.newPassword}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Confirm New Password
-            </label>
-            <Input
-              type="password"
-              placeholder="Confirm new password"
-              className="h-8 text-sm w-full"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
-            />
-            {errors.confirmPassword && (
-              <p className="text-xs text-red-600">{errors.confirmPassword}</p>
-            )}
-          </div>
-          <div className="flex justify-end pt-1">
-            <Button type="submit" size="sm" className="h-8 px-3 text-xs">
-              Update Password
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
+type City = {
+  id: number;
+  name: string;
 };
 
 const SettingsPage: React.FC = () => {
   const role = useUserRole();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { httpClient } = initializeHttpClient();
   const { showToast } = useToast();
   const { user } = useAppSelector((state) => state.auth);
   const { loading: userLoading } = useAppSelector((state) => state.user);
-  const { isLoading: forgotPasswordLoading } = useAppSelector(
-    (state) => state.forgotPassword,
+  // const { isLoading: forgotPasswordLoading } = useAppSelector(
+  //   (state) => state.forgotPassword,
+  // );
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    'general-information',
   );
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general-information');
   const [businessName, setBusinessName] = useState('');
   const [fax, setFax] = useState('');
 
@@ -418,13 +297,33 @@ const SettingsPage: React.FC = () => {
   }, [cities, userDetails.cityId, selectedState, selectedCity]);
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general-information', label: 'General Information', icon: <Info className="w-4 h-4" /> },
-    { id: 'preferences', label: 'Preferences', icon: <Settings className="w-4 h-4" /> },
+    {
+      id: 'general-information',
+      label: 'General Information',
+      icon: <Info className="w-4 h-4" />,
+    },
+    {
+      id: 'preferences',
+      label: 'Preferences',
+      icon: <Settings className="w-4 h-4" />,
+    },
     { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: <Bell className="w-4 h-4" />,
+    },
     { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
-    { id: 'account-manager', label: 'Account Manager', icon: <Users className="w-4 h-4" /> },
-    { id: 'billings', label: 'Billings', icon: <CreditCard className="w-4 h-4" /> },
+    {
+      id: 'account-manager',
+      label: 'Account Manager',
+      icon: <Users className="w-4 h-4" />,
+    },
+    {
+      id: 'billings',
+      label: 'Billings',
+      icon: <CreditCard className="w-4 h-4" />,
+    },
   ];
 
   const handleLogout = () => {
@@ -517,50 +416,6 @@ const SettingsPage: React.FC = () => {
       showToast(errorMessage, 'error');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleChangePassword = async (_formData: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => {
-    // TODO: Implement password change API call
-    showToast('Password change functionality will be implemented soon', 'info');
-  };
-
-  const handleForgotPassword = async () => {
-    if (!userDetails.email) {
-      showToast('Email is required', 'error');
-      return;
-    }
-
-    try {
-      const result = await dispatch(
-        forgotPassword({
-          forgotPayload: { email: userDetails.email },
-          api: httpClient,
-        }),
-      ).unwrap();
-
-      if (result?.status === 'success') {
-        showToast(
-          'Password reset email sent! Please check your inbox.',
-          'success',
-        );
-      } else {
-        showToast(
-          (result as { error?: string })?.error || 'Failed to send reset email',
-          'error',
-        );
-      }
-    } catch (err: unknown) {
-      const errorMessage =
-        (err as { payload?: { message?: string }; message?: string })?.payload
-          ?.message ||
-        (err as { message?: string })?.message ||
-        'Failed to send password reset email. Please try again.';
-      showToast(errorMessage, 'error');
     }
   };
 
@@ -672,11 +527,20 @@ const SettingsPage: React.FC = () => {
                             'User'}
                       </h3>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                        {user?.role?.name || user?.role?.display_name || userDetails.role || 'No role assigned'}
+                        {user?.role?.name ||
+                          user?.role?.display_name ||
+                          userDetails.role ||
+                          'No role assigned'}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3" />
-                        {selectedCity?.name || selectedState?.name || selectedCountry?.name || userDetails.city || userDetails.state || userDetails.country || 'No location set'}
+                        {selectedCity?.name ||
+                          selectedState?.name ||
+                          selectedCountry?.name ||
+                          userDetails.city ||
+                          userDetails.state ||
+                          userDetails.country ||
+                          'No location set'}
                       </p>
                       {user?.email && (
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
@@ -728,9 +592,13 @@ const SettingsPage: React.FC = () => {
                       Business Name
                     </label>
                     <Input
-                      placeholder={user?.organizations?.[0]?.name || "Enter business name"}
+                      placeholder={
+                        user?.organizations?.[0]?.name || 'Enter business name'
+                      }
                       className="h-9 text-xs w-full"
-                      value={businessName || user?.organizations?.[0]?.name || ''}
+                      value={
+                        businessName || user?.organizations?.[0]?.name || ''
+                      }
                       onChange={(e) => setBusinessName(e.target.value)}
                       disabled={!isEditing}
                     />
@@ -760,7 +628,12 @@ const SettingsPage: React.FC = () => {
                     <PhoneInput
                       international
                       defaultCountry="US"
-                      value={phoneNumber || (userDetails.mobileCountryCode && userDetails.phone ? `${userDetails.mobileCountryCode}${userDetails.phone}` : '')}
+                      value={
+                        phoneNumber ||
+                        (userDetails.mobileCountryCode && userDetails.phone
+                          ? `${userDetails.mobileCountryCode}${userDetails.phone}`
+                          : '')
+                      }
                       onChange={(value) => {
                         setPhoneNumber(value || '');
                         if (value) {
@@ -801,8 +674,18 @@ const SettingsPage: React.FC = () => {
                         disabled={!isEditing}
                       />
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                       </div>
                     </div>
@@ -883,7 +766,9 @@ const SettingsPage: React.FC = () => {
                       }
                       searchPlaceholder="Search cities..."
                       emptyMessage={
-                        selectedState ? 'No cities found' : 'Select a state first'
+                        selectedState
+                          ? 'No cities found'
+                          : 'Select a state first'
                       }
                       disabled={!isEditing || !selectedState || loadingCities}
                       loading={loadingCities}
@@ -1057,8 +942,8 @@ const SettingsPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="min-h-screen bg-transparent">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-4">
           {/* Header Section */}
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -1072,12 +957,12 @@ const SettingsPage: React.FC = () => {
             {/* Top Right Action Buttons - Only show when NOT editing (Edit button) or when editing (Cancel/Save) */}
             <div className="flex items-center gap-3">
               {!isEditing ? (
-                  <Button
-                    type="button"
-                    onClick={handleEdit}
-                    disabled={isSaving || userLoading}
-                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
-                  >
+                <Button
+                  type="button"
+                  onClick={handleEdit}
+                  disabled={isSaving || userLoading}
+                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
+                >
                   <Edit2 className="w-3.5 h-3.5 mr-1.5" />
                   Edit
                 </Button>
@@ -1110,31 +995,37 @@ const SettingsPage: React.FC = () => {
                 </>
               )}
             </div>
-        </div>
+          </div>
 
           {/* Main Content - Sidebar + Content Area */}
           <div className="flex gap-4">
             {/* Left Sidebar Navigation */}
             <div className="w-56 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
               <nav className="space-y-0.5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       activeTab === tab.id
                         ? 'bg-[#4F39F6] text-white'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                     }`}
-            >
-                    <span className={activeTab === tab.id ? 'text-white' : 'text-gray-600 dark:text-gray-400'}>
+                  >
+                    <span
+                      className={
+                        activeTab === tab.id
+                          ? 'text-white'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }
+                    >
                       {tab.icon}
                     </span>
-              {tab.label}
-            </button>
-          ))}
+                    {tab.label}
+                  </button>
+                ))}
               </nav>
-        </div>
+            </div>
 
             {/* Right Content Area */}
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
@@ -1146,16 +1037,22 @@ const SettingsPage: React.FC = () => {
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-gray-100">
           <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Confirm Logout
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Are you sure you want to log out?
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsLogoutOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsLogoutOpen(false)}
+                className="border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200"
+              >
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleLogout}>

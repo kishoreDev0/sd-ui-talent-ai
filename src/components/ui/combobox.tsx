@@ -34,8 +34,10 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
-  const [internalValue, setInternalValue] = React.useState<string | undefined>(value || undefined);
-  
+  const [internalValue, setInternalValue] = React.useState<string | undefined>(
+    value || undefined,
+  );
+
   // Sync internal value with prop value
   React.useEffect(() => {
     if (value !== undefined && value !== null && value !== '') {
@@ -156,7 +158,8 @@ export function Combobox({
                     )}
                   >
                     <span className="truncate">{option.label}</span>
-                    {String(value || internalValue) === String(option.value) && (
+                    {String(value || internalValue) ===
+                      String(option.value) && (
                       <Check className="h-4 w-4 shrink-0" />
                     )}
                   </button>
