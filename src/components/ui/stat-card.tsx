@@ -38,12 +38,16 @@ const StatCard: React.FC<StatCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300"
+      className="bg-white dark:bg-slate-900/70 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-lg transition-all duration-300"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+            {title}
+          </p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {value}
+          </p>
           {trend && (
             <div
               className={`flex items-center mt-2 text-sm font-medium ${

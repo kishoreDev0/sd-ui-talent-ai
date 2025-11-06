@@ -131,6 +131,34 @@
       sans-serif;
   }
 
+  .dark body {
+    background-color: #040114;
+    background-image:
+      radial-gradient(
+        1200px circle at 5% 0%,
+        rgba(88, 28, 135, 0.38),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px circle at 100% 0%,
+        rgba(59, 130, 246, 0.32),
+        transparent 58%
+      ),
+      radial-gradient(
+        900px circle at 50% 100%,
+        rgba(16, 185, 129, 0.28),
+        transparent 60%
+      ),
+      radial-gradient(
+        600px circle at 25% 60%,
+        rgba(231, 60, 126, 0.25),
+        transparent 60%
+      );
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   h1,
   h2,
   h3,
@@ -211,18 +239,18 @@
 }
 
 .PhoneInput {
-  @apply flex items-center gap-2;
+  @apply flex items-center gap-2 h-9;
 }
 
 .PhoneInputInput {
-  @apply h-10 text-sm w-full rounded-md border border-input bg-background px-3 py-2 text-foreground;
+  @apply h-9 text-xs w-full rounded-md border border-input bg-background px-3 py-2 text-foreground;
   @apply placeholder:text-muted-foreground;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   @apply disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .PhoneInputCountry {
-  @apply flex items-center gap-1;
+  @apply flex items-center gap-1 h-9;
 }
 
 .PhoneInputCountryIcon {
@@ -230,8 +258,14 @@
 }
 
 .PhoneInputCountrySelect {
-  @apply text-sm border-none bg-transparent cursor-pointer focus:outline-none;
+  @apply text-xs border-none bg-transparent cursor-pointer focus:outline-none h-9;
   @apply focus-visible:ring-2 focus-visible:ring-ring rounded;
+  @apply flex items-center;
+}
+
+.PhoneInput--disabled .PhoneInputCountrySelect,
+.PhoneInput--disabled .PhoneInputInput {
+  @apply cursor-not-allowed opacity-50;
 }
 
 .PhoneInputCountrySelectArrow {
@@ -240,4 +274,28 @@
 
 .dark .PhoneInputInput {
   @apply bg-slate-800 border-slate-700 text-gray-100;
+}
+
+@layer utilities {
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #a855f7 transparent;
+  }
+
+  .custom-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a855f7, #6366f1);
+    border-radius: 9999px;
+  }
+
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #7c3aed, #4338ca);
+  }
 }

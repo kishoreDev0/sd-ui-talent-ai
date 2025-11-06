@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from './sidebar';
 import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import TalentEdgeLogo from '@/components/logo/talentedge-logo';
+import DarkVeil from '@/components/DarkVeil';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,21 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    checkDarkMode();
+    return () => observer.disconnect();
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -26,10 +42,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
   const showSidebar = true;
 
   return (
-    <div className="flex h-screen relative">
+    <div className="relative flex h-screen bg-[#f8f7f3] dark:bg-slate-900">
       {/* Desktop Sidebar */}
       {showSidebar && (
-        <div className="hidden lg:block">
+        <div className="relative z-20 hidden lg:block">
           <Sidebar
             role={role}
             isCollapsed={isSidebarCollapsed}
@@ -40,7 +56,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
 
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && showSidebar && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black bg-opacity-50"
@@ -58,9 +74,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-purple-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <main className="relative flex-1 overflow-y-auto bg-transparent">
+        {isDarkMode && (
+          <div className="pointer-events-none fixed inset-y-0 right-0 left-[72px] z-0 lg:left-[
+                ${isSidebarCollapsed ? '88px' : '280px'}
+              ]">
+            <DarkVeil />
+          </div>
+        )}
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-slate-700/50 px-4 py-3 flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between border-b border-gray-200/60 bg-white/80 px-4 py-3 backdrop-blur-lg dark:border-slate-700/60 dark:bg-slate-800/80 lg:hidden">
           <Button
             variant="outline"
             size="icon"
@@ -73,7 +96,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="relative z-10 p-4 lg:p-6 xl:p-7">{children}</div>
       </main>
     </div>
   );

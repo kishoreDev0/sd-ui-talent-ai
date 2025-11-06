@@ -30,15 +30,15 @@ interface LoginProps {
 
 const createLoginSchema = (t: (key: string) => string) =>
   z.object({
-    email: z
-      .string()
-      .min(1, t('login.emailRequired'))
-      .email(t('login.emailInvalid')),
-    password: z
-      .string()
-      .min(1, t('login.passwordRequired'))
-      .min(6, t('login.passwordMinLength')),
-  });
+  email: z
+    .string()
+    .min(1, t('login.emailRequired'))
+    .email(t('login.emailInvalid')),
+  password: z
+    .string()
+    .min(1, t('login.passwordRequired'))
+    .min(6, t('login.passwordMinLength')),
+});
 
 const Login: React.FC<LoginProps> = () => {
   const navigate = useNavigate();
@@ -133,7 +133,7 @@ const Login: React.FC<LoginProps> = () => {
       // Extract error message - handle both string and array formats
       // When using unwrap(), Redux Toolkit rejectWithValue() throws the rejected value directly
       let errorMessage = t('login.failed');
-
+      
       if (err) {
         // If err is already a string (from rejectWithValue)
         if (typeof err === 'string') {
@@ -163,7 +163,7 @@ const Login: React.FC<LoginProps> = () => {
           }
         }
       }
-
+      
       // Show error toast with the extracted error message
       showToast(errorMessage, 'error');
     }
@@ -253,7 +253,7 @@ const Login: React.FC<LoginProps> = () => {
           />
         ))}
       </div>
-
+      
       {isLoading && <Loader />}
 
       {/* Top Logo - Left Corner */}
@@ -268,14 +268,14 @@ const Login: React.FC<LoginProps> = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex relative z-10">
-        {/* Left Side - Marketing Content */}
+      {/* Left Side - Marketing Content */}
         <motion.div
           className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative z-10"
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center">
             <motion.div
               className="flex items-center gap-3 mb-4"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -294,7 +294,7 @@ const Login: React.FC<LoginProps> = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
               >
-                {t('marketing.title')}
+            {t('marketing.title')}
               </motion.h1>
             </motion.div>
             <motion.p
@@ -303,7 +303,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
             >
-              {t('marketing.description')}
+            {t('marketing.description')}
             </motion.p>
             <motion.p
               className="text-base text-gray-600 mt-3"
@@ -311,7 +311,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
             >
-              {t('marketing.subtitle')}
+            {t('marketing.subtitle')}
             </motion.p>
             <motion.p
               className="text-base text-gray-600 mt-3"
@@ -319,7 +319,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
             >
-              {t('marketing.tagline')}
+            {t('marketing.tagline')}
             </motion.p>
 
             {/* Interactive Feature Cards */}
@@ -330,36 +330,46 @@ const Login: React.FC<LoginProps> = () => {
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               {[
-                { icon: Shield, text: "Secure", color: "blue" },
-                { icon: Zap, text: "Fast", color: "yellow" },
+                { icon: Shield, text: 'Secure', color: 'blue' },
+                { icon: Zap, text: 'Fast', color: 'yellow' },
               ].map((feature, idx) => (
                 <motion.div
                   key={idx}
                   className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-gray-200/50 cursor-pointer"
-                  whileHover={{ scale: 1.05, y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -5,
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.7 + idx * 0.1 }}
                 >
-                  <feature.icon className={`w-6 h-6 mb-2 ${
-                    feature.color === 'blue' ? 'text-blue-600' : 'text-yellow-600'
-                  }`} />
-                  <p className="text-sm font-medium text-gray-700">{feature.text}</p>
+                  <feature.icon
+                    className={`w-6 h-6 mb-2 ${
+                      feature.color === 'blue'
+                        ? 'text-blue-600'
+                        : 'text-yellow-600'
+                    }`}
+                  />
+                  <p className="text-sm font-medium text-gray-700">
+                    {feature.text}
+                  </p>
                 </motion.div>
               ))}
             </motion.div>
-          </div>
+        </div>
 
-          {/* Footer */}
+        {/* Footer */}
           <motion.div
             className="flex items-center gap-6 text-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
           >
-            {/* Language Selector */}
-            <LanguageSelector />
+          {/* Language Selector */}
+          <LanguageSelector />
           </motion.div>
         </motion.div>
 
@@ -389,95 +399,98 @@ const Login: React.FC<LoginProps> = () => {
               {t('login.subtitle')}
             </motion.p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleFormSubmit(onSubmit)(e);
-                return false;
-              }}
-              className="space-y-4"
-              noValidate
-            >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleFormSubmit(onSubmit)(e);
+              return false;
+            }}
+            className="space-y-4"
+            noValidate
+          >
             {/* Email Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
               <label
                 htmlFor="email"
-                className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
+                  className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
               >
-                <Mail className="w-3.5 h-3.5" />
+                  <Mail className="w-3.5 h-3.5" />
                 {t('login.email')}
               </label>
-              <div className="relative">
-                <motion.input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  placeholder={t('login.emailPlaceholder')}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleFormSubmit(onSubmit)();
-                    }
-                  }}
-                  whileFocus={{ scale: 1.02, boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
-                  className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-                    errors.email
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                />
-                <motion.div
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-                  animate={{ 
-                    scale: errors.email ? [1, 1.2, 1] : 1,
-                    color: errors.email ? '#ef4444' : '#9ca3af'
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Mail className="w-4 h-4" />
-                </motion.div>
-                {!errors.email && (
+                <div className="relative">
+                  <motion.input
+                id="email"
+                type="email"
+                {...register('email')}
+                placeholder={t('login.emailPlaceholder')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleFormSubmit(onSubmit)();
+                  }
+                }}
+                    whileFocus={{
+                      scale: 1.02,
+                      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                    }}
+                    className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                  errors.email
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300'
+                }`}
+              />
                   <motion.div
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                    animate={{
+                      scale: errors.email ? [1, 1.2, 1] : 1,
+                      color: errors.email ? '#ef4444' : '#9ca3af',
+                    }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <Mail className="w-4 h-4" />
                   </motion.div>
-                )}
-              </div>
-              {errors.email && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-1 text-xs text-red-600 flex items-center gap-1"
-                >
-                  <span>⚠</span>
-                  {errors.email.message}
-                </motion.p>
+                  {!errors.email && (
+                    <motion.div
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    </motion.div>
               )}
-            </motion.div>
+            </div>
+                {errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-1 text-xs text-red-600 flex items-center gap-1"
+                  >
+                    <span>⚠</span>
+                    {errors.email.message}
+                  </motion.p>
+                )}
+              </motion.div>
 
             {/* Password Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
               <label
                 htmlFor="password"
-                className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
+                  className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
               >
-                <Lock className="w-3.5 h-3.5" />
+                  <Lock className="w-3.5 h-3.5" />
                 {t('login.password')}
               </label>
               <div className="relative">
-                <motion.input
+                  <motion.input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   {...register('password')}
@@ -488,53 +501,56 @@ const Login: React.FC<LoginProps> = () => {
                       handleFormSubmit(onSubmit)();
                     }
                   }}
-                  whileFocus={{ scale: 1.02, boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
-                  className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition pr-8 ${
+                    whileFocus={{
+                      scale: 1.02,
+                      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                    }}
+                    className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition pr-8 ${
                     errors.password
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                       : 'border-gray-300'
                   }`}
                 />
-                <motion.div
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-                  animate={{ 
-                    scale: errors.password ? [1, 1.2, 1] : 1,
-                    color: errors.password ? '#ef4444' : '#9ca3af'
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Lock className="w-4 h-4" />
-                </motion.div>
-                <motion.button
+                  <motion.div
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                    animate={{
+                      scale: errors.password ? [1, 1.2, 1] : 1,
+                      color: errors.password ? '#ef4444' : '#9ca3af',
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Lock className="w-4 h-4" />
+                  </motion.div>
+                  <motion.button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
-                  animate={{ 
-                    color: showPassword ? '#2563eb' : '#9ca3af'
-                  }}
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
+                    animate={{
+                      color: showPassword ? '#2563eb' : '#9ca3af',
+                    }}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
+                      <EyeOff className="w-4 h-4" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
                   )}
-                </motion.button>
+                  </motion.button>
               </div>
               {errors.password && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-1 text-xs text-red-600 flex items-center gap-1"
-                >
-                  <span>⚠</span>
-                  {errors.password.message}
-                </motion.p>
-              )}
-            </motion.div>
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-1 text-xs text-red-600 flex items-center gap-1"
+                  >
+                    <span>⚠</span>
+                    {errors.password.message}
+                  </motion.p>
+                )}
+              </motion.div>
 
-              {/* Remember Password */}
+            {/* Remember Password */}
               <motion.div
                 className="flex items-center cursor-pointer group"
                 initial={{ opacity: 0, x: -20 }}
@@ -546,7 +562,9 @@ const Login: React.FC<LoginProps> = () => {
                   className="relative w-4 h-4 border-2 rounded transition-colors"
                   animate={{
                     borderColor: rememberPassword ? '#2563eb' : '#d1d5db',
-                    backgroundColor: rememberPassword ? '#2563eb' : 'transparent',
+                    backgroundColor: rememberPassword
+                      ? '#2563eb'
+                      : 'transparent',
                   }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -565,32 +583,35 @@ const Login: React.FC<LoginProps> = () => {
                   htmlFor="remember"
                   className="ml-2 text-xs text-gray-700 cursor-pointer group-hover:text-blue-600 transition-colors"
                 >
-                  {t('login.remember')}
-                </label>
+                {t('login.remember')}
+              </label>
               </motion.div>
 
-              {/* Error Message */}
-              {error && (
+            {/* Error Message */}
+            {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-2.5 text-xs"
                 >
-                  {error}
+                {error}
                 </motion.div>
-              )}
+            )}
 
-              {/* Sign In Button */}
+            {/* Sign In Button */}
               <motion.button
-                type="button"
-                onClick={() => {
-                  handleFormSubmit(onSubmit)();
-                }}
-                disabled={isLoading || isSubmitting}
-                whileHover={{ 
+              type="button"
+              onClick={() => {
+                handleFormSubmit(onSubmit)();
+              }}
+              disabled={isLoading || isSubmitting}
+                whileHover={{
                   scale: isLoading || isSubmitting ? 1 : 1.02,
-                  boxShadow: isLoading || isSubmitting ? "none" : "0 10px 25px rgba(59, 130, 246, 0.3)"
+                  boxShadow:
+                    isLoading || isSubmitting
+                      ? 'none'
+                      : '0 10px 25px rgba(59, 130, 246, 0.3)',
                 }}
                 whileTap={{ scale: isLoading || isSubmitting ? 1 : 0.98 }}
                 className="relative w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group"
@@ -606,7 +627,11 @@ const Login: React.FC<LoginProps> = () => {
                     <>
                       <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
                         className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                       />
                       {t('login.signing')}
@@ -624,7 +649,7 @@ const Login: React.FC<LoginProps> = () => {
                   )}
                 </span>
               </motion.button>
-            </form>
+          </form>
 
             {/* Sign up link */}
             <motion.div

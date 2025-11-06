@@ -34,6 +34,7 @@ import PrivateRoute from './axios-setup/private-route';
 import Loader from './components/loader/loader';
 import { ToastProvider } from './components/ui/toast';
 import { LanguageProvider } from './contexts/language-context';
+import CardLayoutDemo from './components/cards/card-demo';
 
 const App = () => {
   return (
@@ -129,6 +130,10 @@ const App = () => {
                 <Route
                   path="/register-job"
                   element={<PrivateRoute element={<RegisterJob />} />}
+                />
+                <Route
+                  path="/cards-demo"
+                  element={<PrivateRoute element={<CardLayoutDemo />} />}
                 />
                 <Route path="/" element={<Navigate to="/dashboard" />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />
