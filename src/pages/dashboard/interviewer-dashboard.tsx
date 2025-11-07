@@ -464,7 +464,10 @@ const InterviewerDashboard: React.FC = () => {
       <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            Welcome back, {userName} <span role="img" aria-label="wave">👋</span>
+            Welcome back, {userName}{' '}
+            <span role="img" aria-label="wave">
+              👋
+            </span>
               </h1>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             Here’s a snapshot of today’s interviews, prep work, and follow-ups.
@@ -495,7 +498,9 @@ const InterviewerDashboard: React.FC = () => {
               Today’s Highlight
             </p>
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {nextInterview ? `${nextInterview.candidate} • ${nextInterview.stage}` : 'No interviews scheduled'}
+              {nextInterview
+                ? `${nextInterview.candidate} • ${nextInterview.stage}`
+                : 'No interviews scheduled'}
             </h2>
             {nextInterview && (
               <p className="text-xs text-gray-600 dark:text-gray-300">
@@ -504,8 +509,7 @@ const InterviewerDashboard: React.FC = () => {
                   month: 'short',
                   day: 'numeric',
                 })}{' '}
-                • {formatTime(nextInterview.datetime)}{' '}
-                • {nextInterview.mode}
+                • {formatTime(nextInterview.datetime)} • {nextInterview.mode}
               </p>
             )}
           </div>
@@ -549,7 +553,9 @@ const InterviewerDashboard: React.FC = () => {
                 className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}>
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${card.accent}`}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
@@ -592,7 +598,10 @@ const InterviewerDashboard: React.FC = () => {
               </div>
               <div className="mt-5 grid h-40 grid-cols-7 items-end gap-2">
                 {weeklyLoad.map((entry) => (
-                  <div key={entry.label} className="flex flex-col items-center gap-2">
+                  <div
+                    key={entry.label}
+                    className="flex flex-col items-center gap-2"
+                  >
                     <div
                       className="w-3 rounded-full bg-indigo-400 transition-all dark:bg-indigo-500"
                       style={{ height: `${Math.max(entry.count * 20, 6)}px` }}
@@ -708,7 +717,8 @@ const InterviewerDashboard: React.FC = () => {
                   Get coaching notes & templates
                 </h3>
                 <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                  Join our enablement program to receive interview scripts, rubrics, and best practices.
+                  Join our enablement program to receive interview scripts,
+                  rubrics, and best practices.
                 </p>
               </div>
               <div className="hidden sm:block h-16 w-16 rounded-full bg-purple-100/80 dark:bg-indigo-500/20" />
@@ -756,7 +766,9 @@ const InterviewerDashboard: React.FC = () => {
                         ? 'border-transparent bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-200'
                         : 'border-transparent text-gray-400 dark:text-gray-500'
                     } ${hasInterview ? 'ring-2 ring-indigo-400 dark:ring-indigo-500' : ''} ${
-                      isToday ? 'bg-purple-100 text-purple-600 dark:bg-indigo-500/30 dark:text-indigo-200' : ''
+                      isToday
+                        ? 'bg-purple-100 text-purple-600 dark:bg-indigo-500/30 dark:text-indigo-200'
+                        : ''
                     }`}
                   >
                     {cell.day}
@@ -792,7 +804,9 @@ const InterviewerDashboard: React.FC = () => {
                       {assignment.date}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles[assignment.status]}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles[assignment.status]}`}
+                  >
                     {assignment.status}
                   </span>
                 </div>
