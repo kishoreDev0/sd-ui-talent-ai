@@ -463,7 +463,7 @@ const OrganizationsPage: React.FC = () => {
     <MainLayout role={role}>
       <div className="space-y-4">
         {/* Header */}
-        <div className="px-4 py-2">
+        <div className="">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Organizations
           </h1>

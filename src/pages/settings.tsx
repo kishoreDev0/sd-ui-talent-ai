@@ -4,22 +4,22 @@ import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { logout } from '@/store/slices/authentication/login';
-import { updateUser } from '@/store/user/actions/userActions';
+import { updateSelfProfile } from '@/store/user/actions/userActions';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import ResetPassword from '@/components/reset-password';
+import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
+import { forgotPassword } from '@/store/action/authentication/forgotPassword';
 import {
   Camera,
   Edit2,
   Loader2,
   Info,
-  Settings,
-  Shield,
   Bell,
-  User,
-  Users,
-  CreditCard,
   MapPin,
+  Lock,
+  Mail,
 } from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
 import PhoneInput from 'react-phone-number-input';
@@ -33,14 +33,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type SettingsTab =
-  | 'general-information'
-  | 'preferences'
-  | 'security'
-  | 'notifications'
-  | 'account'
-  | 'account-manager'
-  | 'billings';
+type SettingsTab = 'general-information' | 'password' | 'notifications';
 
 type Country = {
   id: number;
@@ -66,9 +59,9 @@ const SettingsPage: React.FC = () => {
   const { showToast } = useToast();
   const { user } = useAppSelector((state) => state.auth);
   const { loading: userLoading } = useAppSelector((state) => state.user);
-  // const { isLoading: forgotPasswordLoading } = useAppSelector(
-  //   (state) => state.forgotPassword,
-  // );
+  const { isLoading: forgotPasswordLoading, error: forgotPasswordError } =
+    useAppSelector((state) => state.forgotPassword);
+  const { httpClient } = initializeHttpClient();
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     'general-information',
   );
@@ -151,6 +144,46 @@ const SettingsPage: React.FC = () => {
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+
+  const displayLocation =
+    selectedCity?.name ||
+    selectedState?.name ||
+    selectedCountry?.name ||
+    userDetails.city ||
+    userDetails.state ||
+    userDetails.country ||
+    '';
+
+  const handleSendResetLink = async () => {
+    if (!forgotEmail.trim()) {
+      showToast(
+        'Please enter an email address to send the reset link.',
+        'error',
+      );
+      return;
+    }
+    try {
+      await dispatch(
+        forgotPassword({
+          forgotPayload: { email: forgotEmail.trim() },
+          api: httpClient,
+        }),
+      ).unwrap();
+      showToast(
+        'Password reset email sent successfully. Please check your inbox.',
+        'success',
+      );
+    } catch (error: any) {
+      const message =
+        error?.error ||
+        error?.message ||
+        error?.response?.data?.message ||
+        'Failed to send password reset email.';
+      showToast(message, 'error');
+    }
+  };
 
   useEffect(() => {
     // Populate user details from Redux or localStorage
@@ -198,6 +231,14 @@ const SettingsPage: React.FC = () => {
       setOriginalAvatarPreview(imageUrl);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (userDetails.email) {
+      setForgotEmail(userDetails.email);
+    } else if (user?.email) {
+      setForgotEmail(user.email);
+    }
+  }, [userDetails.email, user?.email]);
 
   // Load countries on mount
   useEffect(() => {
@@ -303,26 +344,14 @@ const SettingsPage: React.FC = () => {
       icon: <Info className="w-4 h-4" />,
     },
     {
-      id: 'preferences',
-      label: 'Preferences',
-      icon: <Settings className="w-4 h-4" />,
+      id: 'password',
+      label: 'Password',
+      icon: <Lock className="w-4 h-4" />,
     },
-    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
     {
       id: 'notifications',
       label: 'Notifications',
       icon: <Bell className="w-4 h-4" />,
-    },
-    { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
-    {
-      id: 'account-manager',
-      label: 'Account Manager',
-      icon: <Users className="w-4 h-4" />,
-    },
-    {
-      id: 'billings',
-      label: 'Billings',
-      icon: <CreditCard className="w-4 h-4" />,
     },
   ];
 
@@ -343,65 +372,92 @@ const SettingsPage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        first_name: userDetails.firstName,
-        last_name: userDetails.lastName,
-        email: userDetails.email,
-        mobile_number: userDetails.phone,
-        mobile_country_code: userDetails.mobileCountryCode,
-        city: selectedCity?.name || userDetails.city,
-        state: selectedState?.name || userDetails.state,
-        country: selectedCountry?.name || userDetails.country,
-        zip_code: userDetails.zipCode,
-        preferred_timezone: userDetails.preferredTimeZone,
+      const formData = new FormData();
+      const appendIfValue = (key: string, value?: string | null) => {
+        if (
+          value !== undefined &&
+          value !== null &&
+          String(value).trim() !== ''
+        ) {
+          formData.append(key, value);
+        }
       };
 
-      // If a new avatar file was selected, include it in the payload
-      if (avatarFile) {
-        // Create FormData for file upload
-        const uploadFormData = new FormData();
-        Object.keys(payload).forEach((key) => {
-          uploadFormData.append(key, String(payload[key]));
-        });
-        uploadFormData.append('image', avatarFile);
+      appendIfValue('first_name', userDetails.firstName);
+      appendIfValue('last_name', userDetails.lastName);
+      appendIfValue('email', userDetails.email);
+      appendIfValue('mobile_number', userDetails.phone);
+      appendIfValue('mobile_country_code', userDetails.mobileCountryCode);
+      appendIfValue('city', selectedCity?.name || userDetails.city);
+      appendIfValue('state', selectedState?.name || userDetails.state);
+      appendIfValue('country', selectedCountry?.name || userDetails.country);
+      appendIfValue('zip_code', userDetails.zipCode);
+      appendIfValue('preferred_timezone', userDetails.preferredTimeZone);
 
-        // TODO: Update this to use the actual API endpoint for file upload
-        // For now, if the API supports image_url, we'll send it as base64 or URL
-        // You may need to upload the file separately first and get the URL
-        if (avatarPreview && avatarPreview.startsWith('data:')) {
-          // If it's a data URL from file upload, you might need to convert it
-          // This depends on your API implementation
-          payload.image_url = avatarPreview;
-        }
-      } else if (userDetails.imageUrl) {
-        payload.image_url = userDetails.imageUrl;
+      if (avatarFile) {
+        formData.append('profile_pic', avatarFile);
       }
 
-      const result = await dispatch(
-        updateUser({ id: user.id, payload }),
-      ).unwrap();
+      const result = await dispatch(updateSelfProfile(formData)).unwrap();
 
       if (result?.success) {
         showToast('Profile updated successfully!', 'success');
-        // Update local user data
-        const updatedUser = { ...user, ...result.data };
-        if (result.data?.image_url) {
-          updatedUser.image_url = result.data.image_url;
-          setAvatarPreview(result.data.image_url);
-          setUserDetails({
-            ...userDetails,
-            imageUrl: result.data.image_url,
-          });
-        }
+        const updatedUserFromApi = result.data;
+
+        const updatedPhoneNumber = updatedUserFromApi.mobile_number
+          ? `${updatedUserFromApi.mobile_country_code || ''}${updatedUserFromApi.mobile_number}`
+          : '';
+
+        const matchedCountry =
+          countries.find((c) => c.name === updatedUserFromApi.country) || null;
+        const matchedState =
+          states.find((s) => s.name === updatedUserFromApi.state) || null;
+        const matchedCity =
+          cities.find((c) => c.name === updatedUserFromApi.city) || null;
+
+        const updatedDetails = {
+          firstName: updatedUserFromApi.first_name || '',
+          lastName: updatedUserFromApi.last_name || '',
+          email: updatedUserFromApi.email || '',
+          phone: updatedUserFromApi.mobile_number || '',
+          mobileCountryCode: updatedUserFromApi.mobile_country_code || '+1',
+          birthday: userDetails.birthday,
+          bio: userDetails.bio,
+          city: updatedUserFromApi.city || '',
+          state: updatedUserFromApi.state || '',
+          zipCode: updatedUserFromApi.zip_code || '',
+          country: updatedUserFromApi.country || '',
+          countryId: matchedCountry?.id
+            ? String(matchedCountry.id)
+            : userDetails.countryId,
+          stateId: matchedState?.id
+            ? String(matchedState.id)
+            : userDetails.stateId,
+          cityId: matchedCity?.id ? String(matchedCity.id) : userDetails.cityId,
+          preferredTimeZone: updatedUserFromApi.preferred_timezone || '',
+          isActive: updatedUserFromApi.is_active ?? userDetails.isActive,
+          lastLogin: updatedUserFromApi.last_login || userDetails.lastLogin,
+          role: updatedUserFromApi.role?.name || userDetails.role,
+          imageUrl: updatedUserFromApi.image_url || userDetails.imageUrl,
+        };
+
+        setUserDetails(updatedDetails);
+        setAvatarPreview(updatedDetails.imageUrl || avatarPreview);
+        setAvatarFile(null);
+        setPhoneNumber(updatedPhoneNumber);
+        setSelectedCountry(matchedCountry);
+        setSelectedState(matchedState);
+        setSelectedCity(matchedCity);
+
+        const updatedUser = { ...user, ...updatedUserFromApi };
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        setAvatarFile(null); // Clear the file after successful upload
-        // Update original values to match the saved values
-        setOriginalUserDetails({ ...userDetails });
-        setOriginalPhoneNumber(phoneNumber);
-        setOriginalSelectedCountry(selectedCountry);
-        setOriginalSelectedState(selectedState);
-        setOriginalSelectedCity(selectedCity);
-        setOriginalAvatarPreview(avatarPreview);
+
+        setOriginalUserDetails(updatedDetails);
+        setOriginalPhoneNumber(updatedPhoneNumber);
+        setOriginalSelectedCountry(matchedCountry);
+        setOriginalSelectedState(matchedState);
+        setOriginalSelectedCity(matchedCity);
+        setOriginalAvatarPreview(updatedDetails.imageUrl || avatarPreview);
         setOriginalAvatarFile(null);
         setIsEditing(false); // Exit edit mode after successful update
       } else {
@@ -478,47 +534,119 @@ const SettingsPage: React.FC = () => {
     switch (activeTab) {
       case 'general-information':
         return (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {/* Section Header */}
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                General Information
-              </h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                Update your profile and organization details
-              </p>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  General Information
+                </h2>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  Update your profile and organization details
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isEditing ? (
+                  <Button
+                    type="button"
+                    onClick={handleEdit}
+                    disabled={isSaving || userLoading}
+                    className="h-8 px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] sm:h-9 sm:px-4 sm:text-sm"
+                  >
+                    <Edit2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Edit
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={isSaving || userLoading}
+                      className="h-8 px-3 text-xs border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white sm:h-9 sm:px-4 sm:text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleUpdateProfile}
+                      disabled={isSaving || userLoading}
+                      className="h-8 px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] sm:h-9 sm:px-4 sm:text-sm"
+                    >
+                      {isSaving || userLoading ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-
-            <form className="space-y-5">
+            <form className="space-y-6">
               {/* Profile Picture Upload Section */}
-              <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                  Profile Picture
-                </h3>
-                <div className="flex items-start gap-4">
+              <div className="space-y-2 border-b border-gray-200 pb-3 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
+                    Profile Picture
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                      disabled={!isEditing}
+                    />
+                    <label htmlFor="avatar-upload">
+                      <Button
+                        type="button"
+                        disabled={!isEditing}
+                        className="h-8 cursor-pointer px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:px-4 sm:text-sm"
+                      >
+                        Upload New Photo
+                      </Button>
+                    </label>
+                    {isEditing && avatarPreview && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRemoveAvatar}
+                        className="h-8 px-3 text-xs border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white sm:h-9 sm:px-4 sm:text-sm"
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-700 sm:h-18 sm:w-18">
                       {avatarPreview ? (
                         <img
                           src={avatarPreview}
                           alt="Avatar"
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
-                          <Camera className="w-8 h-8" />
+                        <div className="flex h-full w-full items-center justify-center text-gray-400 dark:text-gray-500">
+                          <Camera className="h-7 w-7" />
                         </div>
                       )}
                     </div>
                     {avatarPreview && (
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#4F39F6] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
-                        <MapPin className="w-3 h-3 text-white" />
+                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#4F39F6] dark:border-slate-800">
+                        <MapPin className="h-3 w-3 text-white" />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
+                  <div className="flex-1 space-y-1.5">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 sm:text-lg">
                         {userDetails.firstName && userDetails.lastName
                           ? `${userDetails.firstName} ${userDetails.lastName}`
                           : userDetails.firstName ||
@@ -526,55 +654,22 @@ const SettingsPage: React.FC = () => {
                             user?.email?.split('@')[0] ||
                             'User'}
                       </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
                         {user?.role?.name ||
                           user?.role?.display_name ||
                           userDetails.role ||
                           'No role assigned'}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3" />
-                        {selectedCity?.name ||
-                          selectedState?.name ||
-                          selectedCountry?.name ||
-                          userDetails.city ||
-                          userDetails.state ||
-                          userDetails.country ||
-                          'No location set'}
-                      </p>
-                      {user?.email && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                          {user.email}
+                      {displayLocation && (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          {displayLocation}
                         </p>
                       )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <input
-                        id="avatar-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                        disabled={!isEditing}
-                      />
-                      <label htmlFor="avatar-upload">
-                        <Button
-                          type="button"
-                          disabled={!isEditing}
-                          className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Upload New Photo
-                        </Button>
-                      </label>
-                      {isEditing && avatarPreview && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleRemoveAvatar}
-                          className="border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white h-8 px-3 text-xs"
-                        >
-                          Delete
-                        </Button>
+                      {user?.email && (
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-500">
+                          {user.email}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -582,20 +677,20 @@ const SettingsPage: React.FC = () => {
               </div>
 
               {/* Organization Information Section */}
-              <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <div className="space-y-3 border-b border-gray-200 pb-3 dark:border-gray-700">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
                   Organization Information
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Business Name
                     </label>
                     <Input
                       placeholder={
                         user?.organizations?.[0]?.name || 'Enter business name'
                       }
-                      className="h-9 text-xs w-full"
+                      className="h-9 w-full text-sm"
                       value={
                         businessName || user?.organizations?.[0]?.name || ''
                       }
@@ -604,13 +699,13 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Email Address
                     </label>
                     <Input
                       type="email"
                       placeholder="Enter email address"
-                      className="h-9 text-xs w-full"
+                      className="h-9 w-full text-sm"
                       value={userDetails.email || user?.email || ''}
                       onChange={(e) =>
                         setUserDetails({
@@ -622,7 +717,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Phone Number
                     </label>
                     <PhoneInput
@@ -662,13 +757,13 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Fax
                     </label>
                     <div className="relative">
                       <Input
                         placeholder="Enter fax number"
-                        className="h-9 text-xs w-full pr-10"
+                        className="h-9 w-full pr-10 text-sm"
                         value={fax}
                         onChange={(e) => setFax(e.target.value)}
                         disabled={!isEditing}
@@ -695,12 +790,12 @@ const SettingsPage: React.FC = () => {
 
               {/* Address Section */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
                   Address
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Country
                     </label>
                     <Combobox
@@ -737,7 +832,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       City
                     </label>
                     <Combobox
@@ -776,12 +871,12 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Postcode
                     </label>
                     <Input
                       placeholder="Enter postcode"
-                      className="h-9 text-xs w-full"
+                      className="h-9 w-full text-sm"
                       value={userDetails.zipCode}
                       onChange={(e) =>
                         setUserDetails({
@@ -793,7 +888,7 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       State
                     </label>
                     <Combobox
@@ -839,35 +934,71 @@ const SettingsPage: React.FC = () => {
             </form>
           </div>
         );
-      case 'preferences':
+      case 'password':
         return (
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Preferences
+                Password Management
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your preferences and settings.
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Change your current password or send a reset link to your email.
               </p>
             </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Preferences section coming soon...
-            </div>
-          </div>
-        );
-      case 'security':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Security
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your security settings.
-              </p>
-            </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Security section coming soon...
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-slate-800 space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                  <Lock className="h-4 w-4" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wide">
+                    Change Password
+                  </h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Use this option to set a new password while you are logged in.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => setIsResetPasswordOpen(true)}
+                  className="h-9 w-full sm:w-auto bg-[#4F39F6] hover:bg-[#3D2DC4] text-white text-sm"
+                >
+                  Reset Password
+                </Button>
+              </div>
+
+              <div className="space-y-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Send Reset Link
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  We will email a password reset link to the address below.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                  <Input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(event) => setForgotEmail(event.target.value)}
+                    placeholder="Enter email address"
+                    className="h-9 w-full text-sm"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSendResetLink}
+                    disabled={forgotPasswordLoading}
+                    className="h-9 w-full sm:w-auto bg-[#4F39F6] hover:bg-[#3D2DC4] text-white text-sm disabled:opacity-60"
+                  >
+                    {forgotPasswordLoading ? 'Sending...' : 'Send Reset Link'}
+                  </Button>
+                </div>
+                {forgotPasswordError && (
+                  <p className="text-xs text-red-500">
+                    {typeof forgotPasswordError === 'string'
+                      ? forgotPasswordError
+                      : 'Unable to send reset link. Please try again.'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -887,54 +1018,6 @@ const SettingsPage: React.FC = () => {
             </div>
           </div>
         );
-      case 'account':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Account
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your account settings.
-              </p>
-            </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Account section coming soon...
-            </div>
-          </div>
-        );
-      case 'account-manager':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Account Manager
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your account managers.
-              </p>
-            </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Account Manager section coming soon...
-            </div>
-          </div>
-        );
-      case 'billings':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Billings
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your billing information.
-              </p>
-            </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Billings section coming soon...
-            </div>
-          </div>
-        );
       default:
         return null;
     }
@@ -943,70 +1026,31 @@ const SettingsPage: React.FC = () => {
   return (
     <MainLayout role={role}>
       <div className="min-h-screen bg-transparent">
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-4">
+        <div className="relative z-10 mx-auto w-full max-w-5xl ">
           {/* Header Section */}
-          <div className="flex items-start justify-between mb-4">
+          <div className="mb-4 flex items-start justify-between sm:mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">
                 Settings
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 sm:mt-1">
                 Manage your account settings and preferences
               </p>
             </div>
             {/* Top Right Action Buttons - Only show when NOT editing (Edit button) or when editing (Cancel/Save) */}
-            <div className="flex items-center gap-3">
-              {!isEditing ? (
-                <Button
-                  type="button"
-                  onClick={handleEdit}
-                  disabled={isSaving || userLoading}
-                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
-                >
-                  <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                  Edit
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isSaving || userLoading}
-                    className="border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white h-8 px-3 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleUpdateProfile}
-                    disabled={isSaving || userLoading}
-                    className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white h-8 px-3 text-xs"
-                  >
-                    {isSaving || userLoading ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </Button>
-                </>
-              )}
-            </div>
+            <div className="hidden" />
           </div>
 
           {/* Main Content - Sidebar + Content Area */}
-          <div className="flex gap-4">
+          <div className="flex gap-6">
             {/* Left Sidebar Navigation */}
-            <div className="w-56 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-              <nav className="space-y-0.5">
+            <div className="w-64 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-slate-800">
+              <nav className="space-y-1">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                       activeTab === tab.id
                         ? 'bg-[#4F39F6] text-white'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
@@ -1028,30 +1072,37 @@ const SettingsPage: React.FC = () => {
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex-1 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-slate-800">
               {renderContent()}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="sm:max-w-md p-0">
+          <ResetPassword onClose={() => setIsResetPasswordOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
       {/* Logout Confirmation Dialog */}
       <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-gray-100">
+        <DialogContent className="sm:max-w-md border border-gray-200 bg-white text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Confirm Logout
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-base text-gray-600 dark:text-gray-300">
               Are you sure you want to log out?
             </p>
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setIsLogoutOpen(false)}
-                className="border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200"
+                className="border-gray-300 bg-white text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200"
               >
                 Cancel
               </Button>

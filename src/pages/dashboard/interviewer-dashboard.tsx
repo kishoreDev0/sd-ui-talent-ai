@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
   Clock,
@@ -22,6 +22,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
+import { INTERVIEWS } from '@/store/endpoints';
+import { useAppSelector } from '@/store';
+import { getUserFullName } from '@/types';
 
 type Interview = {
   id: number;
@@ -56,8 +60,167 @@ type Recording = {
   url: string;
 };
 
+const normalizeMode = (value?: string): Interview['mode'] => {
+  if (!value) {
+    return 'Video';
+  }
+  const mode = value.toLowerCase();
+  if (mode.includes('phone') || mode.includes('call')) {
+    return 'Phone';
+  }
+  if (
+    mode.includes('site') ||
+    mode.includes('office') ||
+    mode.includes('room')
+  ) {
+    return 'Onsite';
+  }
+  return 'Video';
+};
+
+const parseTags = (tags: unknown): string[] => {
+  if (Array.isArray(tags)) {
+    return tags.map((tag) => String(tag));
+  }
+  if (typeof tags === 'string') {
+    return tags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const getFirstAvailable = <T,>(
+  ...values: Array<T | undefined | null>
+): T | undefined =>
+  values.find((value) => value !== undefined && value !== null);
+
+const mapInterviewRecord = (record: Record<string, any>): Interview | null => {
+  if (!record) {
+    return null;
+  }
+
+  const idValue = getFirstAvailable(
+    record.id,
+    record.interview_id,
+    record.uuid,
+  );
+  const candidateValue = getFirstAvailable(
+    record.candidate?.name,
+    record.candidate?.full_name,
+    record.candidate_name,
+    record.candidateName,
+    record.name,
+  );
+  const roleValue = getFirstAvailable(
+    record.role,
+    record.role_title,
+    record.position,
+    record.job_title,
+  );
+  const datetimeValue = getFirstAvailable(
+    record.datetime,
+    record.scheduled_at,
+    record.scheduledAt,
+    record.start_time,
+    record.startTime,
+  );
+  const meetingLinkValue = getFirstAvailable(
+    record.meeting_link,
+    record.meetingLink,
+    record.link,
+    record.url,
+  );
+  const stageValue = getFirstAvailable(
+    record.stage,
+    record.stage_label,
+    record.current_stage,
+    record.status,
+  );
+  const scoreValue = getFirstAvailable(
+    record.score,
+    record.rating,
+    record.average_score,
+  );
+  const durationValue = getFirstAvailable(
+    record.duration,
+    record.expected_duration,
+    record.length,
+    record.meeting_duration,
+  );
+  const locationValue = getFirstAvailable(
+    record.location,
+    record.meeting_location,
+    record.office,
+    record.site,
+  );
+  const notesValue = getFirstAvailable(
+    record.notes,
+    record.brief,
+    record.summary,
+  );
+  const modeValue = getFirstAvailable(
+    record.mode,
+    record.interview_mode,
+    record.type,
+  );
+
+  const candidate = candidateValue ? String(candidateValue).trim() : '';
+  if (!candidate) {
+    return null;
+  }
+
+  const id =
+    typeof idValue === 'number'
+      ? idValue
+      : idValue !== undefined &&
+          idValue !== null &&
+          !Number.isNaN(Number(idValue))
+        ? Number(idValue)
+        : Date.now();
+
+  const isoDatetime =
+    typeof datetimeValue === 'string'
+      ? datetimeValue
+      : datetimeValue instanceof Date
+        ? datetimeValue.toISOString()
+        : new Date().toISOString();
+
+  const score =
+    typeof scoreValue === 'number'
+      ? scoreValue
+      : scoreValue !== undefined && !Number.isNaN(Number(scoreValue))
+        ? Number(scoreValue)
+        : undefined;
+
+  return {
+    id,
+    candidate,
+    role: roleValue ? String(roleValue) : '—',
+    stage: stageValue ? String(stageValue) : 'Upcoming interview',
+    datetime: isoDatetime,
+    duration: durationValue ? String(durationValue) : '45m',
+    mode: normalizeMode(modeValue ? String(modeValue) : undefined),
+    meetingLink: meetingLinkValue ? String(meetingLinkValue) : '#',
+    location: locationValue ? String(locationValue) : undefined,
+    notes: notesValue ? String(notesValue) : undefined,
+    tags: parseTags(
+      getFirstAvailable(
+        record.tags,
+        record.focus,
+        record.labels,
+        record.topics,
+      ),
+    ),
+    score,
+  };
+};
+
 const InterviewerDashboard: React.FC = () => {
-  const upcomingInterviews = useMemo<Interview[]>(() => {
+  const { user } = useAppSelector((state) => state.auth);
+
+  const fallbackInterviews = useMemo<Interview[]>(() => {
     const base = new Date();
     base.setHours(0, 0, 0, 0);
     const createDate = (dayOffset: number, hour: number, minute: number) => {
@@ -68,8 +231,8 @@ const InterviewerDashboard: React.FC = () => {
     };
 
     return [
-    {
-      id: 1,
+      {
+        id: 1,
         candidate: 'Emily Davis',
         role: 'Senior Product Designer',
         stage: 'Portfolio Review',
@@ -80,9 +243,9 @@ const InterviewerDashboard: React.FC = () => {
         tags: ['Design', 'Product'],
         notes: 'Focus on mobile-first workflow and system thinking',
         score: 4.6,
-    },
-    {
-      id: 2,
+      },
+      {
+        id: 2,
         candidate: 'Michael Chen',
         role: 'Frontend Engineer',
         stage: 'Technical Deep Dive',
@@ -93,9 +256,9 @@ const InterviewerDashboard: React.FC = () => {
         tags: ['React', 'System Design'],
         notes: 'Prepare code review scenario and performance question',
         score: 4.9,
-    },
-    {
-      id: 3,
+      },
+      {
+        id: 3,
         candidate: 'Sarah Johnson',
         role: 'Product Manager',
         stage: 'Leadership Round',
@@ -150,61 +313,147 @@ const InterviewerDashboard: React.FC = () => {
     ];
   }, []);
 
-  const pendingFeedback: FeedbackItem[] = [
-    {
-      id: 101,
-      candidate: 'Jessica Martinez',
-      role: 'Full Stack Developer',
-      interviewDate: new Date().toISOString(),
-      submittedBy: 'S. Lee',
-      dueIn: '4 hrs',
-      focus: ['Fullstack', 'Culture add'],
-    },
-    {
-      id: 102,
-      candidate: 'Robert Wilson',
-      role: 'DevOps Engineer',
-      interviewDate: new Date(Date.now() - 86400000).toISOString(),
-      submittedBy: 'A. Carter',
-      dueIn: 'Today',
-      focus: ['Reliability', 'Automation'],
-    },
-    {
-      id: 103,
-      candidate: 'Lisa Anderson',
-      role: 'Product Manager',
-      interviewDate: new Date(Date.now() - 2 * 86400000).toISOString(),
-      submittedBy: 'You',
-      dueIn: '1 day',
-      focus: ['Product sense', 'Leadership'],
-    },
-  ];
+  const [interviewData, setInterviewData] = useState<Interview[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState<boolean>(true);
+  const [isUsingFallback, setIsUsingFallback] = useState<boolean>(false);
 
-  const recordings: Recording[] = [
-    {
-      id: 201,
-      candidate: 'Noah Bennett',
-      role: 'QA Lead',
-      recordedAt: '2025-11-04T14:00:00.000Z',
-      url: '#',
-    },
-    {
-      id: 202,
-      candidate: 'Fatima Khan',
-      role: 'Growth Marketer',
-      recordedAt: '2025-11-03T16:30:00.000Z',
-      url: '#',
-    },
-    {
-      id: 203,
-      candidate: 'Leo Martins',
-      role: 'Data Analyst',
-      recordedAt: '2025-11-01T10:00:00.000Z',
-      url: '#',
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
 
-  const userName = 'Taylor';
+    const fetchInterviews = async () => {
+      try {
+        setIsLoadingInterviews(true);
+        setIsUsingFallback(false);
+
+        const { httpClient } = initializeHttpClient();
+        const params =
+          user?.id !== undefined ? { interviewer_id: user.id } : undefined;
+        const response = await httpClient.get(INTERVIEWS.LIST, {
+          params,
+        });
+
+        const rawData = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.results)
+            ? response.data.results
+            : Array.isArray(response.data)
+              ? response.data
+              : [];
+
+        if (!Array.isArray(rawData)) {
+          throw new Error('Unexpected interview data format.');
+        }
+
+        const normalized = rawData
+          .map((item: Record<string, any>) => mapInterviewRecord(item))
+          .filter((item): item is Interview => item !== null)
+          .sort(
+            (a, b) =>
+              new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
+          );
+
+        if (isMounted) {
+          if (normalized.length === 0) {
+            setInterviewData(fallbackInterviews);
+            setIsUsingFallback(true);
+          } else {
+            setInterviewData(normalized);
+            setIsUsingFallback(false);
+          }
+        }
+      } catch (error: any) {
+        if (isMounted) {
+          console.error('Failed to load interviewer dashboard data', error);
+          setInterviewData(fallbackInterviews);
+          setIsUsingFallback(true);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingInterviews(false);
+        }
+      }
+    };
+
+    fetchInterviews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, fallbackInterviews]);
+
+  const defaultPendingFeedback = useMemo<FeedbackItem[]>(
+    () => [
+      {
+        id: 101,
+        candidate: 'Jessica Martinez',
+        role: 'Full Stack Developer',
+        interviewDate: new Date().toISOString(),
+        submittedBy: 'S. Lee',
+        dueIn: '4 hrs',
+        focus: ['Fullstack', 'Culture add'],
+      },
+      {
+        id: 102,
+        candidate: 'Robert Wilson',
+        role: 'DevOps Engineer',
+        interviewDate: new Date(Date.now() - 86400000).toISOString(),
+        submittedBy: 'A. Carter',
+        dueIn: 'Today',
+        focus: ['Reliability', 'Automation'],
+      },
+      {
+        id: 103,
+        candidate: 'Lisa Anderson',
+        role: 'Product Manager',
+        interviewDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+        submittedBy: 'You',
+        dueIn: '1 day',
+        focus: ['Product sense', 'Leadership'],
+      },
+    ],
+    [],
+  );
+
+  const defaultRecordings = useMemo<Recording[]>(
+    () => [
+      {
+        id: 201,
+        candidate: 'Noah Bennett',
+        role: 'QA Lead',
+        recordedAt: '2025-11-04T14:00:00.000Z',
+        url: '#',
+      },
+      {
+        id: 202,
+        candidate: 'Fatima Khan',
+        role: 'Growth Marketer',
+        recordedAt: '2025-11-03T16:30:00.000Z',
+        url: '#',
+      },
+      {
+        id: 203,
+        candidate: 'Leo Martins',
+        role: 'Data Analyst',
+        recordedAt: '2025-11-01T10:00:00.000Z',
+        url: '#',
+      },
+    ],
+    [],
+  );
+
+  const userName = useMemo(() => {
+    if (!user) {
+      return 'Interviewer';
+    }
+    const fullName = getUserFullName(user);
+    if (fullName.trim()) {
+      return fullName;
+    }
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Interviewer';
+  }, [user]);
 
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(
     null,
@@ -216,14 +465,115 @@ const InterviewerDashboard: React.FC = () => {
     return date;
   });
 
-  const upcomingSorted = useMemo(
-    () =>
-      [...upcomingInterviews].sort(
+  const upcomingSorted = useMemo(() => {
+    const now = Date.now();
+    return interviewData
+      .filter((interview) => new Date(interview.datetime).getTime() >= now)
+      .sort(
         (a, b) =>
           new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
-      ),
-    [upcomingInterviews],
-  );
+      );
+  }, [interviewData]);
+
+  const pastInterviews = useMemo(() => {
+    const now = Date.now();
+    return interviewData.filter(
+      (interview) => new Date(interview.datetime).getTime() < now,
+    );
+  }, [interviewData]);
+
+  const feedbackFromData = useMemo<FeedbackItem[]>(() => {
+    if (!interviewData.length) {
+      return [];
+    }
+    const now = Date.now();
+    const submittedByName =
+      user && getUserFullName(user).trim()
+        ? getUserFullName(user).trim()
+        : 'You';
+
+    return interviewData
+      .filter((interview) => {
+        const stage = interview.stage?.toLowerCase?.() ?? '';
+        const interviewTime = new Date(interview.datetime).getTime();
+        return (
+          stage.includes('feedback') ||
+          (interviewTime < now && stage.includes('review'))
+        );
+      })
+      .slice(0, 5)
+      .map((interview) => {
+        const interviewDate = new Date(interview.datetime);
+        const diffMs = Math.max(now - interviewDate.getTime(), 0);
+        const diffHours = Math.max(1, Math.round(diffMs / 3600000));
+        return {
+          id: interview.id,
+          candidate: interview.candidate,
+          role: interview.role,
+          interviewDate: interviewDate.toISOString(),
+          submittedBy: submittedByName,
+          dueIn:
+            interviewDate.getTime() > now ? 'Due soon' : `${diffHours} hrs`,
+          focus:
+            interview.tags && interview.tags.length
+              ? interview.tags.slice(0, 3)
+              : [],
+        };
+      });
+  }, [interviewData, user]);
+
+  const pendingFeedback = useMemo<FeedbackItem[]>(() => {
+    if (feedbackFromData.length) {
+      return feedbackFromData;
+    }
+    if (isLoadingInterviews) {
+      return [];
+    }
+    return defaultPendingFeedback;
+  }, [defaultPendingFeedback, feedbackFromData, isLoadingInterviews]);
+
+  const recordingsFromData = useMemo<Recording[]>(() => {
+    if (!pastInterviews.length) {
+      return [];
+    }
+    return [...pastInterviews]
+      .sort(
+        (a, b) =>
+          new Date(b.datetime).getTime() - new Date(a.datetime).getTime(),
+      )
+      .slice(0, 4)
+      .map((interview) => ({
+        id: interview.id,
+        candidate: interview.candidate,
+        role: interview.role,
+        recordedAt: interview.datetime,
+        url: interview.meetingLink || '#',
+      }));
+  }, [pastInterviews]);
+
+  const recordings = useMemo<Recording[]>(() => {
+    if (recordingsFromData.length) {
+      return recordingsFromData;
+    }
+    if (isLoadingInterviews) {
+      return [];
+    }
+    return defaultRecordings;
+  }, [defaultRecordings, isLoadingInterviews, recordingsFromData]);
+
+  const averageScore = useMemo(() => {
+    const scored = upcomingSorted.filter(
+      (interview) => typeof interview.score === 'number',
+    );
+    if (!scored.length) {
+      return null;
+    }
+    const total = scored.reduce(
+      (sum, interview) => sum + (interview.score ?? 0),
+      0,
+    );
+    return total / scored.length;
+  }, [upcomingSorted]);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -362,48 +712,97 @@ const InterviewerDashboard: React.FC = () => {
     setCurrentMonth(next);
   };
 
-  const highlightCards = [
-    {
-      id: 'today',
-      title: "Today's Interviews",
-      metric: `${todaysInterviews.length} scheduled`,
-      caption: 'Stay prepared and on time',
-      icon: Calendar,
-      accent: 'bg-orange-100 text-orange-500',
-      rate: '+3.2%',
-      type: 'Compared to last week',
-    },
-    {
-      id: 'feedback',
-      title: 'Feedback Queue',
-      metric: `${pendingFeedback.length} open items`,
-      caption: 'Share insights within 24h',
-      icon: MessageSquare,
-      accent: 'bg-purple-100 text-purple-500',
-      rate: '92% on-time',
-      type: 'Last 14 days',
-    },
-    {
-      id: 'recordings',
-      title: 'Recent Recordings',
-      metric: `${recordings.length} to review`,
-      caption: 'Catch up on highlights',
-      icon: Video,
-      accent: 'bg-blue-100 text-blue-500',
-      rate: '2 new',
-      type: 'This week',
-    },
-    {
-      id: 'pipeline',
-      title: 'Active Pipeline',
-      metric: `${upcomingSorted.length} candidates`,
-      caption: 'Across all roles assigned',
-      icon: UserCheck,
-      accent: 'bg-emerald-100 text-emerald-500',
-      rate: '4.7⭐ avg',
-      type: 'Candidate rating',
-    },
-  ];
+  const highlightCards = useMemo(
+    () => [
+      {
+        id: 'today',
+        title: "Today's Interviews",
+        metric: isLoadingInterviews
+          ? 'Loading…'
+          : `${todaysInterviews.length} scheduled`,
+        caption: isUsingFallback
+          ? 'Showing sample schedule'
+          : 'Stay prepared and on time',
+        icon: Calendar,
+        accent: 'bg-orange-100 text-orange-500',
+        rate: isLoadingInterviews
+          ? 'Syncing'
+          : todaysInterviews.length
+            ? isUsingFallback
+              ? 'Sample data'
+              : 'Live today'
+            : isUsingFallback
+              ? 'Sample data'
+              : 'No sessions',
+        type: isUsingFallback ? 'Sample data' : 'Live updates',
+      },
+      {
+        id: 'feedback',
+        title: 'Feedback Queue',
+        metric: isLoadingInterviews
+          ? 'Loading…'
+          : `${pendingFeedback.length} open ${
+              pendingFeedback.length === 1 ? 'item' : 'items'
+            }`,
+        caption: 'Share insights within 24h',
+        icon: MessageSquare,
+        accent: 'bg-purple-100 text-purple-500',
+        rate: isLoadingInterviews
+          ? 'Syncing'
+          : pendingFeedback.length
+            ? isUsingFallback
+              ? 'Sample data'
+              : 'Action needed'
+            : 'All clear',
+        type: isUsingFallback ? 'Sample data' : 'Feedback status',
+      },
+      {
+        id: 'recordings',
+        title: 'Recent Recordings',
+        metric: isLoadingInterviews
+          ? 'Loading…'
+          : `${recordings.length} to review`,
+        caption: 'Catch up on highlights',
+        icon: Video,
+        accent: 'bg-blue-100 text-blue-500',
+        rate: isLoadingInterviews
+          ? 'Syncing'
+          : recordings.length
+            ? isUsingFallback
+              ? 'Sample data'
+              : 'New updates'
+            : 'Nothing pending',
+        type: isUsingFallback ? 'Sample data' : 'This week',
+      },
+      {
+        id: 'pipeline',
+        title: 'Active Pipeline',
+        metric: isLoadingInterviews
+          ? 'Loading…'
+          : `${upcomingSorted.length} candidates`,
+        caption: 'Across all roles assigned',
+        icon: UserCheck,
+        accent: 'bg-emerald-100 text-emerald-500',
+        rate: isLoadingInterviews
+          ? 'Syncing'
+          : averageScore !== null
+            ? `${averageScore.toFixed(1)}⭐ avg`
+            : isUsingFallback
+              ? 'Sample data'
+              : 'No score yet',
+        type: isUsingFallback ? 'Sample data' : 'Candidate rating',
+      },
+    ],
+    [
+      averageScore,
+      isLoadingInterviews,
+      isUsingFallback,
+      pendingFeedback.length,
+      recordings.length,
+      todaysInterviews.length,
+      upcomingSorted.length,
+    ],
+  );
 
   const pipelineItems = upcomingSorted.slice(0, 3).map((interview) => {
     const progress = Math.round(((interview.score ?? 4.5) / 5) * 100);
@@ -468,7 +867,7 @@ const InterviewerDashboard: React.FC = () => {
             <span role="img" aria-label="wave">
               👋
             </span>
-              </h1>
+          </h1>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             Here’s a snapshot of today’s interviews, prep work, and follow-ups.
           </p>
@@ -498,11 +897,15 @@ const InterviewerDashboard: React.FC = () => {
               Today’s Highlight
             </p>
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {nextInterview
-                ? `${nextInterview.candidate} • ${nextInterview.stage}`
-                : 'No interviews scheduled'}
+              {isLoadingInterviews
+                ? 'Loading your next interview…'
+                : nextInterview
+                  ? `${nextInterview.candidate} • ${nextInterview.stage}`
+                  : isUsingFallback
+                    ? 'No live interviews scheduled'
+                    : 'No interviews scheduled'}
             </h2>
-            {nextInterview && (
+            {nextInterview && !isLoadingInterviews && (
               <p className="text-xs text-gray-600 dark:text-gray-300">
                 {formatDate(nextInterview.datetime, {
                   weekday: 'short',
@@ -510,6 +913,13 @@ const InterviewerDashboard: React.FC = () => {
                   day: 'numeric',
                 })}{' '}
                 • {formatTime(nextInterview.datetime)} • {nextInterview.mode}
+              </p>
+            )}
+            {!nextInterview && !isLoadingInterviews && (
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {isUsingFallback
+                  ? 'Showing sample schedule. Connect to live data to view your actual interviews.'
+                  : 'You’re all caught up for today.'}
               </p>
             )}
           </div>
@@ -622,42 +1032,50 @@ const InterviewerDashboard: React.FC = () => {
                 <button className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
                   Today <ChevronRight className="h-3 w-3" />
                 </button>
-                    </div>
+              </div>
               <div className="mt-4 space-y-4">
-                {todaysInterviews.length === 0 && (
+                {isLoadingInterviews && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No interviews scheduled today.
+                    Fetching your schedule…
                   </p>
                 )}
-                {todaysInterviews.map((interview) => (
-                        <button
-                    key={interview.id}
-                    onClick={() => handleViewDetails(interview)}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-3.5 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60"
-                  >
-                            <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
-                        {interview.candidate
-                          .split(' ')
-                          .map((part) => part[0])
-                          .join('')}
-                              </div>
-                              <div>
-                        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                          {interview.candidate}
-                        </p>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                          {interview.role}
-                        </p>
-                                </div>
-                              </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-                      <Clock className="h-3 w-3" />
-                      {formatTime(interview.datetime)}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                {!isLoadingInterviews && todaysInterviews.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {isUsingFallback
+                      ? 'No interviews scheduled in sample data.'
+                      : 'No interviews scheduled today.'}
+                  </p>
+                )}
+                {!isLoadingInterviews &&
+                  todaysInterviews.map((interview) => (
+                    <button
+                      key={interview.id}
+                      onClick={() => handleViewDetails(interview)}
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-3.5 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                          {interview.candidate
+                            .split(' ')
+                            .map((part) => part[0])
+                            .join('')}
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                            {interview.candidate}
+                          </p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            {interview.role}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                        <Clock className="h-3 w-3" />
+                        {formatTime(interview.datetime)}
+                      </div>
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
 
@@ -673,8 +1091,8 @@ const InterviewerDashboard: React.FC = () => {
               </div>
               <button className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
                 Active <ChevronRight className="h-3 w-3" />
-                      </button>
-                      </div>
+              </button>
+            </div>
             <div className="mt-5 space-y-4">
               {courseCards.map((course) => (
                 <div
@@ -722,11 +1140,11 @@ const InterviewerDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="hidden sm:block h-16 w-16 rounded-full bg-purple-100/80 dark:bg-indigo-500/20" />
-                        </div>
+            </div>
             <Button className="mt-3 h-8 w-full rounded-2xl bg-purple-600 text-xs font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
               Get Access
             </Button>
-                  </div>
+          </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
             <div className="flex items-center justify-between">
@@ -740,19 +1158,19 @@ const InterviewerDashboard: React.FC = () => {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                              <button
+                <button
                   onClick={handleNextMonth}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-800"
                 >
                   <ChevronRight className="h-4 w-4" />
-                              </button>
+                </button>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-gray-400 dark:text-gray-500">
               {calendarWeekdays.map((day) => (
                 <span key={day}>{day}</span>
-                            ))}
-                          </div>
+              ))}
+            </div>
             <div className="mt-2 grid grid-cols-7 gap-1.5 text-xs">
               {calendarCells.map((cell) => {
                 const cellDate = cell.date.toDateString();
@@ -773,8 +1191,8 @@ const InterviewerDashboard: React.FC = () => {
                   >
                     {cell.day}
                   </button>
-                      );
-                    })}
+                );
+              })}
             </div>
           </div>
 
@@ -788,6 +1206,15 @@ const InterviewerDashboard: React.FC = () => {
               </button>
             </div>
             <div className="mt-4 space-y-3">
+              {pendingFeedback.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {isLoadingInterviews
+                    ? 'Fetching assignments…'
+                    : isUsingFallback
+                      ? 'No assignments pending in sample data.'
+                      : 'No assignments pending.'}
+                </p>
+              )}
               {assignments.map((assignment) => (
                 <div
                   key={assignment.id}
@@ -823,7 +1250,7 @@ const InterviewerDashboard: React.FC = () => {
               <DialogHeader className="space-y-2">
                 <DialogTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                   {selectedInterview.candidate}
-                    </DialogTitle>
+                </DialogTitle>
                 <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedInterview.role} • {selectedInterview.stage}
                 </DialogDescription>
@@ -895,7 +1322,7 @@ const InterviewerDashboard: React.FC = () => {
                     Close
                   </Button>
                 </div>
-          </div>
+              </div>
             </>
           )}
         </DialogContent>

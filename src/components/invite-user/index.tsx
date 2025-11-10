@@ -438,30 +438,30 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                     {errors.lastName.message}
                   </p>
                 )}
-            </div>
+              </div>
 
-            {/* Email */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Email Address <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter email address"
-                className={`h-10 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600 ${
-                  errors.email ? 'border-red-500 focus:ring-red-500' : ''
-                }`}
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                  {errors.email.message}
-                </p>
-              )}
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Email Address <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  className={`h-10 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600 ${
+                    errors.email ? 'border-red-500 focus:ring-red-500' : ''
+                  }`}
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -580,8 +580,8 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                         disabled={
                           !selectedCountry || timezoneOptions.length === 0
                         }
-                >
-                  <SelectTrigger
+                      >
+                        <SelectTrigger
                           id="preferredTimeZone"
                           className={`w-full h-10 dark:bg-slate-700 dark:text-gray-100 dark:border-gray-600 ${
                             errors.preferredTimeZone
@@ -598,31 +598,31 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                                   : 'Select Timezone'
                             }
                           />
-                  </SelectTrigger>
+                        </SelectTrigger>
                         <SelectContent
                           className="dark:bg-slate-700 dark:border-gray-600 max-h-[300px]"
                           position="popper"
                           sideOffset={4}
                         >
                           {timezoneOptions.length === 0 ? (
-                      <div className="px-2 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                            <div className="px-2 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                               {!selectedCountry
                                 ? 'Select Country first'
                                 : 'Loading timezones...'}
-                      </div>
-                    ) : (
+                            </div>
+                          ) : (
                             timezoneOptions.map((option) => (
-                          <SelectItem
+                              <SelectItem
                                 key={option.value}
                                 value={option.value}
                                 className="dark:text-gray-100 dark:focus:bg-slate-600 cursor-pointer"
                               >
                                 {option.label}
-                          </SelectItem>
-                        ))
-                    )}
-                  </SelectContent>
-                </Select>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     );
                   }}
                 />

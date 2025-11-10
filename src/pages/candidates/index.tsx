@@ -72,8 +72,8 @@ interface CandidateDetail extends CandidateListItem {
 }
 
 const candidatesData: CandidateDetail[] = [
-    {
-      id: 1,
+  {
+    id: 1,
     name: 'Courtney Henry',
     role: 'Product Designer',
     statusLabel: 'Needs Follow-up',
@@ -147,9 +147,9 @@ const candidatesData: CandidateDetail[] = [
         timestamp: 'Added at 08.11.25 • 12:42',
       },
     ],
-    },
-    {
-      id: 2,
+  },
+  {
+    id: 2,
     name: 'Wade Warren',
     role: 'FrontEnd Developer',
     statusLabel: 'Awaiting',
@@ -229,9 +229,9 @@ const candidatesData: CandidateDetail[] = [
         timestamp: 'Added at 12.01.23 • 14:28',
       },
     ],
-    },
-    {
-      id: 3,
+  },
+  {
+    id: 3,
     name: 'Albert Flores',
     role: 'DevOps Engineer',
     statusLabel: 'Scheduled',
@@ -578,67 +578,67 @@ const CandidatesPage: React.FC = () => {
   return (
     <MainLayout role={role}>
       <div className="min-h-screen bg-transparent">
-        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:px-5">
+        <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-5">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:px-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+              <div>
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Candidates
-              </h1>
-                <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">
+                  Candidates
+                </h1>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                   Manage your interview pipeline, track statuses, and
                   collaborate with your hiring team.
-              </p>
-            </div>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                <Button
                   variant="outline"
-                  className="h-9 w-full border-gray-200 px-3 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-800 sm:h-8 sm:w-auto"
+                  className="h-9 w-full border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-800 sm:h-9 sm:w-auto"
                 >
                   Export Report
                 </Button>
-                <Button className="h-9 w-full bg-purple-600 px-3 text-xs font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-8 sm:w-auto">
+                <Button className="h-9 w-full bg-purple-600 px-4 text-sm font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-9 sm:w-auto">
                   Invite Candidate
-            </Button>
+                </Button>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4">
+          <div className="mt-4 space-y-4">
             <section className="space-y-3">
-              <div className="border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <div className="relative w-full sm:flex-1">
                     <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <Input
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder="Search for role or candidate"
-                      className="h-9 border border-gray-200 bg-white pl-9 text-xs text-gray-700 focus-visible:ring-1 focus-visible:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 sm:h-8"
+                      className="h-9 border border-gray-200 bg-white pl-9 text-sm text-gray-700 focus-visible:ring-1 focus-visible:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 sm:h-9"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center">
-                  <Button
-                      className="h-9 w-full border border-gray-200 bg-white px-3 text-xs text-gray-500 hover:text-purple-600 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 sm:h-8 sm:w-8 sm:p-0"
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center sm:gap-3">
+                    <Button
+                      className="h-9 w-full border border-gray-200 bg-white px-3 text-sm text-gray-500 hover:text-purple-600 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 sm:h-9 sm:w-auto"
                       variant="outline"
                     >
-                      <Filter className="hidden h-3 w-3 sm:block" />
+                      <Filter className="hidden h-3.5 w-3.5 sm:inline-block" />
                       <span className="text-xs sm:hidden">Filter</span>
                     </Button>
-                    <Button className="h-9 w-full bg-purple-600 px-3 text-xs text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-8 sm:w-8 sm:p-0">
-                      <Plus className="hidden h-3 w-3 sm:block" />
+                    <Button className="h-9 w-full bg-purple-600 px-3 text-sm text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-9 sm:w-auto">
+                      <Plus className="hidden h-3.5 w-3.5 sm:inline-block" />
                       <span className="text-xs sm:hidden">Add</span>
-                  </Button>
+                    </Button>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredCandidates.length === 0 ? (
                   <div className="border border-dashed border-gray-200 bg-white p-4 text-center text-xs text-gray-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-gray-300">
                     No candidates matched this search.
                   </div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     {filteredCandidates.map((candidate) => {
                       const initials = candidate.name
                         .split(' ')
@@ -654,16 +654,16 @@ const CandidatesPage: React.FC = () => {
 
                       return (
                         <div
-                    key={candidate.id}
-                          className="flex h-full flex-col gap-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-purple-200 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-400 sm:p-5"
+                          key={candidate.id}
+                          className="flex h-full min-w-0 flex-col gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-sm ring-1 ring-transparent transition hover:border-purple-200 hover:ring-purple-100 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-400 dark:hover:ring-indigo-500/10"
                         >
                           <div className="flex flex-col gap-3">
                             <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-start gap-3">
+                              <div className="flex min-w-0 items-start gap-3">
                                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 text-sm font-semibold text-indigo-700 dark:from-indigo-600/50 dark:to-purple-600/40 dark:text-indigo-100">
                                   {initials}
                                 </div>
-                                <div className="space-y-1">
+                                <div className="min-w-0 space-y-1">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                                       {candidate.name}
@@ -675,10 +675,10 @@ const CandidatesPage: React.FC = () => {
                                       {candidate.location}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  <p className="break-words text-xs text-gray-500 dark:text-gray-400">
                                     {candidate.email} • {candidate.timezone}
                                   </p>
-                                  <div className="flex items-center gap-1 text-indigo-500">
+                                  <div className="flex flex-wrap items-center gap-1 text-indigo-500">
                                     {renderStars(candidate.rating)}
                                     <span className="ml-1 text-xs font-medium text-gray-500 dark:text-gray-300">
                                       {candidate.rating.toFixed(1)}
@@ -686,14 +686,12 @@ const CandidatesPage: React.FC = () => {
                                   </div>
                                 </div>
                               </div>
-                              <div
-                                className={`max-w-[160px] rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-indigo-700 shadow-sm dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-200`}
-                              >
+                              <div className="w-fit max-w-[180px] break-words rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-center text-[11px] font-semibold leading-snug text-indigo-700 shadow-sm dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-200">
                                 {candidate.statusNote}
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[11px] text-gray-600 dark:text-gray-400">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] text-gray-600 dark:text-gray-400">
                               <span>
                                 <span className="font-semibold text-gray-500 dark:text-gray-300">
                                   Experience:
@@ -765,12 +763,12 @@ const CandidatesPage: React.FC = () => {
                               </span>
                               <span className="font-medium text-purple-600 dark:text-indigo-300">
                                 {primaryStage.rating}
-                                  </span>
+                              </span>
                             </div>
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                            <p className="mt-1 break-words text-xs text-gray-600 dark:text-gray-300">
                               {primaryStage.description}
-                        </p>
-                      </div>
+                            </p>
+                          </div>
                         </div>
                       );
                     })}

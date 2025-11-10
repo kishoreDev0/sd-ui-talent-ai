@@ -233,22 +233,22 @@ const AdminAccessPage: React.FC = () => {
   return (
     <>
       <MainLayout role={role}>
-        <div className="p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <div className="px-0">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Access Control
               </h1>
-              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
+              <p className="mt-0.5 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
                 Manage roles and permissions
               </p>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto px-0">
             <Button
-              variant={activeTab === 'roles' ? 'default' : 'outline'}
+              variant={activeTab === 'roles' ? 'secondary' : 'outline'}
               onClick={() => {
                 hasClickedTab.current = true;
                 // Reset roles loaded state when switching to roles tab to allow re-fetch
@@ -257,17 +257,25 @@ const AdminAccessPage: React.FC = () => {
                 }
                 setActiveTab('roles');
               }}
-              className="h-8 px-4 text-sm"
+              className={`h-8 px-4 text-sm rounded-full transition-colors ${
+                activeTab === 'roles'
+                  ? 'bg-[#4F39F6] text-white hover:bg-[#3D2DC4]'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700'
+              }`}
             >
               Roles
             </Button>
             <Button
-              variant={activeTab === 'permissions' ? 'default' : 'outline'}
+              variant={activeTab === 'permissions' ? 'secondary' : 'outline'}
               onClick={() => {
                 hasClickedTab.current = true;
                 setActiveTab('permissions');
               }}
-              className="h-8 px-4 text-sm"
+              className={`h-8 px-4 text-sm rounded-full transition-colors ${
+                activeTab === 'permissions'
+                  ? 'bg-[#4F39F6] text-white hover:bg-[#3D2DC4]'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700'
+              }`}
             >
               Permissions
             </Button>
@@ -278,8 +286,8 @@ const AdminAccessPage: React.FC = () => {
             <div className="space-y-3">
               {/* Secondary tabs removed */}
               {/* Search and Add Button */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 py-1">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+              <div className="flex flex-col gap-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:space-x-3 sm:w-auto">
                   <div className="flex items-center space-x-1.5">
                     <input
                       type="checkbox"
@@ -292,18 +300,18 @@ const AdminAccessPage: React.FC = () => {
                     </label>
                   </div>
                   <div className="relative w-full sm:w-auto">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 transform text-gray-400 sm:h-3.5 sm:w-3.5" />
                     <Input
                       type="text"
                       placeholder="Search roles..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-7 sm:pl-8 w-full sm:w-48 md:w-64 h-7 sm:h-8 text-xs sm:text-sm"
+                      className="h-8 w-full pl-7 text-xs sm:h-8 sm:w-48 sm:text-sm md:w-64 sm:pl-8"
                     />
                   </div>
                 </div>
                 <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm w-full sm:w-auto"
+                  className="h-8 w-full bg-indigo-600 px-3 text-xs text-white hover:bg-indigo-700 sm:w-auto sm:text-sm"
                   disabled={loading}
                   onClick={() => {
                     setIsCreating(true);
@@ -316,8 +324,8 @@ const AdminAccessPage: React.FC = () => {
                 </Button>
               </div>
               {/* Roles Table */}
-              <div className="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <div className="overflow-hidden rounded-lg border-t border-gray-200 bg-white dark:border-white/10 dark:bg-slate-800">
+                <div className="-mx-2 overflow-x-auto sm:mx-0">
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
                     <thead className="bg-gray-50 dark:bg-slate-900">
                       <tr>
@@ -425,16 +433,16 @@ const AdminAccessPage: React.FC = () => {
                 </div>
               </div>
               {/* Pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-1 border-t border-gray-200 dark:border-white/10">
-                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200">
+              <div className="flex flex-col gap-2 border-t border-gray-200 py-2 text-xs text-gray-700 dark:border-white/10 dark:text-gray-200 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+                <div>
                   Page {page} • {rolesToRender.length} of{' '}
                   {total || rolesToRender.length} roles
                 </div>
-                <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+                <div className="flex w-full items-center justify-center space-x-2 sm:w-auto sm:justify-end">
                   <Button
                     variant="outline"
                     disabled={page <= 1}
-                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    className="h-8 flex-1 px-3 text-xs text-gray-700 sm:flex-none sm:text-sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
                     Previous
@@ -442,7 +450,7 @@ const AdminAccessPage: React.FC = () => {
                   <Button
                     variant="outline"
                     disabled={rolesToRender.length < pageSize}
-                    className="text-gray-700 h-7 sm:h-8 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+                    className="h-8 flex-1 px-3 text-xs text-gray-700 sm:flex-none sm:text-sm"
                     onClick={() => setPage((p) => p + 1)}
                   >
                     Next
@@ -451,13 +459,13 @@ const AdminAccessPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
                   Permissions
                 </h2>
                 <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white h-8 px-3 text-sm"
+                  className="h-8 bg-indigo-600 px-3 text-xs text-white hover:bg-indigo-700 sm:text-sm"
                   disabled={scanning}
                   onClick={handleScanPermissions}
                 >
@@ -555,7 +563,7 @@ const AdminAccessPage: React.FC = () => {
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                <label className="text-xs text-gray-700 dark:text-gray-300 sm:text-sm">
                   Role Name
                 </label>
                 <Input
@@ -589,7 +597,7 @@ const AdminAccessPage: React.FC = () => {
                   }
                   className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                 />
-                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-xs text-gray-700 dark:text-gray-300 sm:text-sm">
                   Active
                 </span>
               </div>
@@ -597,7 +605,7 @@ const AdminAccessPage: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setIsEditOpen(false)}
-                  className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+                  className="h-8 w-full text-xs sm:h-9 sm:w-auto sm:text-sm"
                 >
                   Cancel
                 </Button>
@@ -667,7 +675,7 @@ const AdminAccessPage: React.FC = () => {
                       setIsSaving(false);
                     }
                   }}
-                  className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+                  className="h-8 w-full text-xs sm:h-9 sm:w-auto sm:text-sm"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
@@ -686,17 +694,17 @@ const AdminAccessPage: React.FC = () => {
         >
           <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 Manage Permissions — {currentRole?.name || ''}
               </DialogTitle>
             </DialogHeader>
             <div className="overflow-x-auto">
               {Object.keys(permMatrix).length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                <p className="py-4 text-center text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
                   No permissions available for this role
                 </p>
               ) : (
-                <table className="min-w-full text-sm">
+                <table className="min-w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="text-left text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
                       <th className="py-2 pr-4">Resource</th>
