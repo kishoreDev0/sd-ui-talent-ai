@@ -69,3 +69,23 @@ export const updateUser = createAsyncThunk<
     return rejectWithValue({ message: errorMessage });
   }
 });
+
+export const updateSelfProfile = createAsyncThunk<
+  UserResponse,
+  FormData,
+  { rejectValue: { message: string } }
+>('user/updateSelfProfile', async (payload, { rejectWithValue }) => {
+  try {
+    const res = await userAPI.updateProfile(payload);
+    return res.data as UserResponse;
+  } catch (error: any) {
+    const errorMessage =
+      error?.response?.data?.error ||
+      (Array.isArray(error?.response?.data?.error)
+        ? error.response.data.error.join(', ')
+        : error?.response?.data?.error) ||
+      error?.message ||
+      'Failed to update profile';
+    return rejectWithValue({ message: errorMessage });
+  }
+});

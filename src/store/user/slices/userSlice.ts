@@ -1,5 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getAllUsers, getUserById, updateUser } from '../actions/userActions';
+import {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  updateSelfProfile,
+} from '../actions/userActions';
 import type {
   UsersState,
   User,
@@ -97,6 +102,29 @@ const userSlice = createSlice({
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to update user';
+      })
+      .addCase(updateSelfProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        updateSelfProfile.fulfilled,
+        (state, action: PayloadAction<UserResponse>) => {
+          state.loading = false;
+          if (action.payload.success && action.payload.data) {
+            const userIndex = state.users.findIndex(
+              (u) => u.id === action.payload.data.id,
+            );
+            if (userIndex !== -1) {
+              state.users[userIndex] = action.payload.data;
+            }
+          }
+          state.error = null;
+        },
+      )
+      .addCase(updateSelfProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to update profile';
       });
   },
 });

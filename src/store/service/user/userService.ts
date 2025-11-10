@@ -22,5 +22,12 @@ export class UserAPI {
   updateUser = async (id: number, payload: any) =>
     axiosInstance.patch(USERS.UPDATE(id), payload);
 
+  updateProfile = async (payload: FormData) =>
+    axiosInstance.patch(USERS.UPDATE_PROFILE, payload, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
   deleteUser = async (id: number) => axiosInstance.delete(USERS.DELETE(id));
 }

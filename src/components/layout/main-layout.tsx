@@ -76,9 +76,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       {/* Main Content */}
       <main className="relative flex-1 overflow-y-auto bg-transparent">
         {isDarkMode && (
-          <div className="pointer-events-none fixed inset-y-0 right-0 left-[72px] z-0 lg:left-[
+          <div
+            className="pointer-events-none fixed inset-y-0 right-0 left-[72px] z-0 lg:left-[
                 ${isSidebarCollapsed ? '88px' : '280px'}
-              ]">
+              ]"
+          >
             <DarkVeil />
           </div>
         )}

@@ -17,10 +17,11 @@ export const AUTH = {
 // Users endpoints
 export const USERS = {
   LIST: '/api/v1/users',
-  GET_BY_ID: (id: number) => `/api/v1/users/${id}`,
+  GET_BY_ID: (id: number) => `/api/v1/user/${id}`,
   CREATE: '/api/v1/users',
-  UPDATE: (id: number) => `/api/v1/users/${id}`,
+  UPDATE: (id: number) => `/api/v1/user/${id}`,
   DELETE: (id: number) => `/api/v1/users/${id}`,
+  UPDATE_PROFILE: '/api/v1/user/profile',
   UPDATE_ONBOARDING: (id: number) => `/api/v1/users/${id}/onboarding`,
 } as const;
 

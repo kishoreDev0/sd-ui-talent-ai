@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   Users,
   TrendingUp,
@@ -33,6 +32,9 @@ import {
   Legend,
 } from 'recharts';
 import * as Recharts from 'recharts';
+import type { PieLabelRenderProps } from 'recharts';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { getAllUsers } from '@/store/user/actions/userActions';
 
 const LineChart = Recharts.LineChart;
 const BarChart = Recharts.BarChart;
@@ -42,6 +44,18 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   // Metrics related to admin features
+  const dispatch = useAppDispatch();
+  const { users } = useAppSelector((state) => state.user);
+
+  useEffect(() => {
+    dispatch(
+      getAllUsers({
+        page: 1,
+        page_size: 200,
+      }),
+    );
+  }, [dispatch]);
+
   const metrics = [
     {
       label: 'Total Users',
@@ -91,14 +105,50 @@ const AdminDashboard: React.FC = () => {
     { month: 'Jun', users: 247, roles: 6 },
   ];
 
-  const roleDistributionData = [
-    { name: 'Admin', value: 5, color: '#3b82f6' },
-    { name: 'TA Executive', value: 25, color: '#10b981' },
-    { name: 'TA Manager', value: 15, color: '#f59e0b' },
-    { name: 'Hiring Manager', value: 30, color: '#ef4444' },
-    { name: 'Interview Panel', value: 50, color: '#8b5cf6' },
-    { name: 'HR Ops', value: 15, color: '#ec4899' },
+  const fallbackRoleDistribution = [
+    { name: 'Admin', value: 12, color: '#3b82f6' },
+    { name: 'TA Executive', value: 38, color: '#10b981' },
+    { name: 'TA Manager', value: 22, color: '#f59e0b' },
+    { name: 'Hiring Manager', value: 47, color: '#ef4444' },
+    { name: 'Interview Panel', value: 63, color: '#8b5cf6' },
+    { name: 'HR Ops', value: 18, color: '#ec4899' },
   ];
+
+  const roleDistributionData = useMemo(() => {
+    if (!users || users.length === 0) {
+      return fallbackRoleDistribution;
+    }
+
+    const colorPalette = [
+      '#3b82f6',
+      '#10b981',
+      '#f59e0b',
+      '#ef4444',
+      '#8b5cf6',
+      '#ec4899',
+      '#14b8a6',
+      '#f97316',
+    ];
+
+    const roleCounts = users.reduce<Record<string, number>>((acc, user) => {
+      const roleInfo =
+        (user.role as {
+          display_name?: string;
+          name?: string;
+          description?: string;
+        }) || {};
+      const roleLabel =
+        roleInfo.display_name || roleInfo.name || roleInfo.description || 'Unassigned';
+      acc[roleLabel] = (acc[roleLabel] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(roleCounts).map(([name, value], index) => ({
+      name,
+      value,
+      color: colorPalette[index % colorPalette.length],
+    }));
+  }, [users]);
 
   const accessActivityData = [
     { day: 'Mon', logins: 45, requests: 12 },
@@ -148,153 +198,192 @@ const AdminDashboard: React.FC = () => {
     },
   ];
 
+  const pipelineStages = [
+    {
+      label: 'Applied',
+      count: 120,
+      gradient: 'from-blue-500 to-cyan-500',
+    },
+    {
+      label: 'Screening',
+      count: 45,
+      gradient: 'from-yellow-500 to-orange-500',
+    },
+    {
+      label: 'Interview Scheduled',
+      count: 18,
+      gradient: 'from-[#4F39F6] to-[#4F39F6]',
+    },
+    {
+      label: 'Feedback Pending',
+      count: 12,
+      gradient: 'from-[#4F39F6] to-[#4F39F6]',
+    },
+    {
+      label: 'Offer Sent',
+      count: 8,
+      gradient: 'from-green-500 to-emerald-500',
+    },
+    {
+      label: 'Hired / Rejected',
+      count: 30,
+      gradient: 'from-slate-500 to-gray-600',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-2 sm:p-3 md:p-4">
-      <div className="max-w-7xl mx-auto w-full">
-        {/* Metrics Grid - Based on admin menu items */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-          {metrics.map((metric, index) => {
+    <div className="min-h-screen space-y-4 bg-transparent p-3 sm:p-5 lg:p-2">
+      <div className="mx-auto w-full max-w-6xl space-y-5">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              Admin Control Center
+            </h1>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Monitor system usage, manage roles, and stay ahead of access requests.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-8 w-full rounded-2xl border-gray-200 px-3 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800 sm:w-auto"
+              onClick={() => navigate('/analytics')}
+            >
+              View analytics
+            </Button>
+            <Button
+              className="h-8 w-full rounded-2xl bg-purple-600 px-3 text-xs font-semibold text-white shadow hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:w-auto"
+              onClick={() => navigate('/users')}
+            >
+              <UserCog className="mr-1.5 h-3.5 w-3.5" />
+              Manage users
+            </Button>
+          </div>
+        </header>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-200">
+              Key indicators
+            </h2>
+            <button className="text-[11px] font-semibold text-indigo-500 hover:text-indigo-600 dark:text-indigo-200">
+              Export summary
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {metrics.map((metric) => {
             const Icon = metric.icon;
+              const trendColor =
+                metric.trend === 'up'
+                  ? 'text-emerald-500 dark:text-emerald-300'
+                  : 'text-orange-500 dark:text-orange-300';
             return (
-              <motion.div
+                <button
                 key={metric.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card
-                  className="hover:shadow-lg transition-shadow cursor-pointer h-full"
                   onClick={() => navigate(metric.path)}
+                  className="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80"
                 >
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div
-                        className={`${metric.color} p-2 rounded-lg shadow-md`}
-                      >
-                        <Icon className="h-4 w-4 text-white" />
-                      </div>
-                      <span
-                        className={`text-xs font-semibold ${
-                          metric.trend === 'up'
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-blue-600 dark:text-blue-400'
-                        }`}
-                      >
-                        {metric.change}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${metric.color}`}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">
-                      {metric.value}
-                    </h3>
-                    <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       {metric.label}
                     </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {metric.value}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                    <span>vs last period</span>
+                    <span className={`font-semibold ${trendColor}`}>
+                      {metric.change}
+                    </span>
+                  </div>
+                </button>
             );
           })}
         </div>
+        </section>
 
-        {/* Quick Actions - Based on admin menu items */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-3"
-        >
-          <Card>
-            <CardHeader className="p-2 pb-1">
-              <CardTitle className="text-xs sm:text-sm">
-                Quick Actions
-              </CardTitle>
-              <CardDescription className="text-[9px] sm:text-[10px]">
-                Access admin features
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 pt-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
+        <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              Quick actions
+            </h2>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              Frequently used admin tools
+            </span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <button
                   onClick={() => navigate('/users')}
-                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
-                >
-                  <Users className="h-3 w-3 text-white mb-0.5" />
-                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
-                    Manage Users
-                  </p>
-                  <p className="text-blue-100 text-[8px] sm:text-[9px]">
-                    View all users
+              className="group flex h-full w-full flex-col justify-center rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-left text-xs transition hover:border-blue-200 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
+            >
+              <Users className="mb-1.5 h-4 w-4 text-blue-600 dark:text-blue-300" />
+              <p className="font-semibold text-blue-700 dark:text-blue-200">
+                Manage users
+              </p>
+              <p className="text-[11px] text-blue-500/80 dark:text-blue-300/80">
+                View & edit accounts
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/admin/access')}
-                  className="group p-1.5 sm:p-2 bg-[#4F39F6] rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
-                >
-                  <Shield className="h-3 w-3 text-white mb-0.5" />
-                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
-                    Access Control
-                  </p>
-                  <p className="text-white text-[8px] sm:text-[9px]">
+              className="group flex h-full w-full flex-col justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-left text-xs transition hover:border-indigo-200 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
+            >
+              <Shield className="mb-1.5 h-4 w-4 text-indigo-600 dark:text-indigo-300" />
+              <p className="font-semibold text-indigo-700 dark:text-indigo-200">
+                Access control
+              </p>
+              <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/80">
                     Manage roles & permissions
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/analytics')}
-                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
+              className="group flex h-full w-full flex-col justify-center rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-left text-xs transition hover:border-emerald-200 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
                 >
-                  <TrendingUp className="h-3 w-3 text-white mb-0.5" />
-                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
+              <TrendingUp className="mb-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+              <p className="font-semibold text-emerald-700 dark:text-emerald-200">
                     Analytics
                   </p>
-                  <p className="text-green-100 text-[8px] sm:text-[9px]">
-                    View system analytics
+              <p className="text-[11px] text-emerald-500/80 dark:text-emerald-300/80">
+                Review system reports
                   </p>
                 </button>
                 <button
                   onClick={() => navigate('/settings')}
-                  className="group p-1.5 sm:p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 w-full"
-                >
-                  <Settings className="h-3 w-3 text-white mb-0.5" />
-                  <p className="text-white font-semibold text-[9px] sm:text-[10px]">
-                    Settings
-                  </p>
-                  <p className="text-orange-100 text-[8px] sm:text-[9px]">
+              className="group flex h-full w-full flex-col justify-center rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-left text-xs transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20"
+            >
+              <Settings className="mb-1.5 h-4 w-4 text-orange-500 dark:text-orange-300" />
+              <p className="font-semibold text-orange-600 dark:text-orange-200">
                     System settings
                   </p>
+              <p className="text-[11px] text-orange-500/80 dark:text-orange-300/80">
+                Configure platform
+              </p>
                 </button>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        </section>
 
-        {/* Charts Section - User Growth & Role Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-3 mb-3">
-          {/* User Growth Line Chart */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-            className="lg:col-span-2"
-          >
-            <Card>
-              <CardHeader className="p-2 sm:p-3 pb-2">
-                <CardTitle className="text-sm sm:text-base">
-                  User Growth Trend
-                </CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">
-                  Users and roles over time
+        <div className="grid gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <Card className="min-w-0 rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">User growth</CardTitle>
+                <CardDescription className="text-xs">
+                  Adoption and role expansion over time
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer
-                  config={chartConfig}
-                  className="h-[180px] sm:h-[200px] w-full overflow-x-auto"
-                >
-                  <LineChart
-                    data={userGrowthData}
-                    width={undefined}
-                    height={undefined}
-                  >
+              <CardContent className="p-3 pt-0">
+                <div className="w-full overflow-x-auto">
+                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
+                  <LineChart data={userGrowthData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -316,48 +405,42 @@ const AdminDashboard: React.FC = () => {
                     />
                   </LineChart>
                 </ChartContainer>
+                </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          {/* Role Distribution Pie Chart */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Card>
-              <CardHeader className="p-2 sm:p-3 pb-2">
-                <CardTitle className="text-sm sm:text-base">
-                  Role Distribution
-                </CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">
-                  Users by role
+          <div>
+            <Card className="min-w-0 rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Role distribution</CardTitle>
+                <CardDescription className="text-xs">
+                  Current user mix across teams
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer
-                  config={chartConfig}
-                  className="h-[180px] sm:h-[200px] w-full"
-                >
+              <CardContent className="p-3 pt-0">
+                <div className="w-full overflow-x-auto">
+                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
                   <PieChart>
                     <Pie
                       data={roleDistributionData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({
-                        percent,
-                      }: {
-                        percent?: number;
-                        [key: string]: unknown;
-                      }) => (percent ? `${(percent * 100).toFixed(0)}%` : '')}
+                      label={(props: PieLabelRenderProps) => {
+                        const rawPercent = props.percent;
+                        const percentValue =
+                          typeof rawPercent === 'number'
+                            ? rawPercent
+                            : Number(rawPercent ?? 0);
+                        return `${Math.round(percentValue * 100)}%`;
+                      }}
                       outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       {roleDistributionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`role-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <ChartTooltip content={<ChartTooltipContent />} />
@@ -369,38 +452,25 @@ const AdminDashboard: React.FC = () => {
                     />
                   </PieChart>
                 </ChartContainer>
+                </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Access Activity & User Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 mb-3">
-          {/* Access Activity Bar Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <Card>
-              <CardHeader className="p-2 sm:p-3 pb-2">
-                <CardTitle className="text-sm sm:text-base">
-                  Access Activity
-                </CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <Card className="min-w-0 rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Access activity</CardTitle>
+                <CardDescription className="text-xs">
                   Daily logins and permission requests
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-2 sm:p-3 pt-0">
-                <ChartContainer
-                  config={chartConfig}
-                  className="h-[180px] sm:h-[200px] w-full overflow-x-auto"
-                >
-                  <BarChart
-                    data={accessActivityData}
-                    width={undefined}
-                    height={undefined}
-                  >
+              <CardContent className="p-3 pt-0">
+                <div className="w-full overflow-x-auto">
+                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
+                  <BarChart data={accessActivityData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
@@ -418,101 +488,177 @@ const AdminDashboard: React.FC = () => {
                     />
                   </BarChart>
                 </ChartContainer>
+                </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          {/* User Management Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <Card>
-              <CardHeader className="p-2 sm:p-3 pb-2">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <CardTitle className="text-sm sm:text-base">
-                    User Management
-                  </CardTitle>
+          <Card className="min-w-0 rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <CardHeader className="p-3 pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">User management</CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => navigate('/users')}
-                    className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs w-full sm:w-auto"
+                  className="h-7 px-2 text-xs"
                   >
-                    View All
+                  View all
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-2 sm:p-3 pt-0">
-                <div className="space-y-2">
+            <CardContent className="p-3 pt-0">
+              <div className="space-y-2 text-xs">
                   <button
                     onClick={() => navigate('/users')}
-                    className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:bg-indigo-500/10"
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
-                          Manage Users
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        Manage users
                         </p>
-                        <p className="text-[10px] text-gray-600 dark:text-gray-400">
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
                           View and edit user accounts
                         </p>
-                      </div>
-                      <UserCog className="h-3 w-3 text-gray-400" />
+                    </div>
+                    <UserCog className="h-4 w-4 text-indigo-500 dark:text-indigo-300" />
                     </div>
                   </button>
                   <button
                     onClick={() => navigate('/admin/access')}
-                    className="w-full p-2 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 text-left"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:bg-indigo-500/10"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        Access control
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                        Manage roles and permissions
+                      </p>
+                    </div>
+                    <Shield className="h-4 w-4 text-indigo-500 dark:text-indigo-300" />
+                  </div>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-base">Recruitment pipeline</CardTitle>
+            <CardDescription className="text-xs">
+              System-wide candidate distribution
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-6">
+              {pipelineStages.map((stage) => (
+                <div
+                  key={stage.label}
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <div
+                    className={`flex h-8 w-full items-center justify-center rounded-lg bg-gradient-to-r ${stage.gradient} text-xs font-semibold text-white shadow`}
                   >
-                    <div className="flex items-center justify-between">
+                    {stage.count}
+                  </div>
+                  <p className="mt-2 text-center text-[10px] font-semibold text-gray-700 dark:text-gray-200">
+                    {stage.label}
+                  </p>
+                  <div className="mt-1 h-1.5 w-full rounded bg-gray-200 dark:bg-gray-800">
+                    <div
+                      className="h-1.5 rounded bg-gradient-to-r from-green-500 to-emerald-500"
+                      style={{ width: `${Math.min(100, stage.count)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <Card className="rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base">Upcoming reviews</CardTitle>
+                <CardDescription className="text-xs">
+                  Scheduled admin tasks for this week
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="grid gap-2 md:grid-cols-2">
+                  {[
+                    {
+                      name: 'Access audit',
+                      role: 'Quarterly review',
+                      time: 'Jan 28 • 10:00 AM',
+                      status: 'Scheduled',
+                    },
+                    {
+                      name: 'Role policy sync',
+                      role: 'TA Leadership',
+                      time: 'Jan 29 • 2:00 PM',
+                      status: 'In prep',
+                    },
+                    {
+                      name: 'Security posture',
+                      role: 'InfoSec',
+                      time: 'Jan 30 • 11:30 AM',
+                      status: 'Pending docs',
+                    },
+                  ].map(({ name, role, time, status }, index) => (
+                    <div
+                      key={`${name}-${index}`}
+                      className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs dark:border-gray-800 dark:bg-gray-900"
+                    >
                       <div>
-                        <p className="font-semibold text-xs text-gray-900 dark:text-gray-100">
-                          Access Control
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                          {name}
                         </p>
-                        <p className="text-[10px] text-gray-600 dark:text-gray-400">
-                          Manage roles and permissions
+                        <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                          {role}
                         </p>
                       </div>
-                      <Shield className="h-3 w-3 text-gray-400" />
+                      <div className="text-right">
+                        <p className="text-[11px] text-gray-700 dark:text-gray-200">
+                          {time}
+                        </p>
+                        <span className="mt-1 inline-block rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200">
+                          {status}
+                        </span>
+                      </div>
                     </div>
-                  </button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
         </div>
 
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-        >
-          <Card>
-            <CardHeader className="p-2 sm:p-3 pb-2">
-              <CardTitle className="text-sm sm:text-base">
-                Recent Activity
-              </CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
+          <Card className="rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-base">Recent activity</CardTitle>
+              <CardDescription className="text-xs">
                 Latest admin actions and updates
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-2 sm:p-3 pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <CardContent className="p-3 pt-0">
+              <div className="space-y-2 text-xs">
                 {recentActivity.map((activity) => (
                   <div
                     key={activity.id}
-                    className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-gray-800 dark:bg-gray-900"
                   >
-                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">
                       {activity.action}
                     </p>
-                    <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">
                       {activity.resource}
                     </p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
                       {activity.time}
                     </p>
                   </div>
@@ -520,7 +666,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
