@@ -72,8 +72,8 @@ interface CandidateDetail extends CandidateListItem {
 }
 
 const candidatesData: CandidateDetail[] = [
-  {
-    id: 1,
+    {
+      id: 1,
     name: 'Courtney Henry',
     role: 'Product Designer',
     statusLabel: 'Needs Follow-up',
@@ -147,9 +147,9 @@ const candidatesData: CandidateDetail[] = [
         timestamp: 'Added at 08.11.25 • 12:42',
       },
     ],
-  },
-  {
-    id: 2,
+    },
+    {
+      id: 2,
     name: 'Wade Warren',
     role: 'FrontEnd Developer',
     statusLabel: 'Awaiting',
@@ -229,9 +229,9 @@ const candidatesData: CandidateDetail[] = [
         timestamp: 'Added at 12.01.23 • 14:28',
       },
     ],
-  },
-  {
-    id: 3,
+    },
+    {
+      id: 3,
     name: 'Albert Flores',
     role: 'DevOps Engineer',
     statusLabel: 'Scheduled',
@@ -508,36 +508,6 @@ const candidatesData: CandidateDetail[] = [
   },
 ];
 
-const stageToneMap: Record<
-  string,
-  { bg: string; badge: string; text: string }
-> = {
-  Completed: {
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-    badge:
-      'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200',
-    text: 'text-emerald-600 dark:text-emerald-200',
-  },
-  'In review': {
-    bg: 'bg-amber-50 dark:bg-amber-500/10',
-    badge:
-      'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-200',
-    text: 'text-amber-600 dark:text-amber-200',
-  },
-  'Next step': {
-    bg: 'bg-indigo-50 dark:bg-indigo-500/10',
-    badge:
-      'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200',
-    text: 'text-indigo-600 dark:text-indigo-200',
-  },
-  Waiting: {
-    bg: 'bg-slate-50 dark:bg-slate-700/40',
-    badge:
-      'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200',
-    text: 'text-slate-600 dark:text-slate-200',
-  },
-};
-
 const CandidatesPage: React.FC = () => {
   const role = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
@@ -581,17 +551,17 @@ const CandidatesPage: React.FC = () => {
         <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-5">
           <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:px-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
+            <div>
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Candidates
-                </h1>
+                Candidates
+              </h1>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                   Manage your interview pipeline, track statuses, and
                   collaborate with your hiring team.
-                </p>
-              </div>
+              </p>
+            </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                <Button
+            <Button
                   variant="outline"
                   className="h-9 w-full border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-800 sm:h-9 sm:w-auto"
                 >
@@ -599,7 +569,7 @@ const CandidatesPage: React.FC = () => {
                 </Button>
                 <Button className="h-9 w-full bg-purple-600 px-4 text-sm font-semibold text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-9 sm:w-auto">
                   Invite Candidate
-                </Button>
+            </Button>
               </div>
             </div>
           </div>
@@ -618,7 +588,7 @@ const CandidatesPage: React.FC = () => {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center sm:gap-3">
-                    <Button
+                  <Button
                       className="h-9 w-full border border-gray-200 bg-white px-3 text-sm text-gray-500 hover:text-purple-600 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 sm:h-9 sm:w-auto"
                       variant="outline"
                     >
@@ -628,7 +598,7 @@ const CandidatesPage: React.FC = () => {
                     <Button className="h-9 w-full bg-purple-600 px-3 text-sm text-white hover:bg-purple-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:h-9 sm:w-auto">
                       <Plus className="hidden h-3.5 w-3.5 sm:inline-block" />
                       <span className="text-xs sm:hidden">Add</span>
-                    </Button>
+                  </Button>
                   </div>
                 </div>
               </div>
@@ -647,14 +617,11 @@ const CandidatesPage: React.FC = () => {
                         .slice(0, 2)
                         .toUpperCase();
                       const primaryStage = candidate.stages[0];
-                      const tone =
-                        stageToneMap[primaryStage.status] ??
-                        stageToneMap['Next step'];
                       const StageIcon = primaryStage.icon;
 
                       return (
                         <div
-                          key={candidate.id}
+                    key={candidate.id}
                           className="flex h-full min-w-0 flex-col gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-sm ring-1 ring-transparent transition hover:border-purple-200 hover:ring-purple-100 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-400 dark:hover:ring-indigo-500/10"
                         >
                           <div className="flex flex-col gap-3">
@@ -688,8 +655,8 @@ const CandidatesPage: React.FC = () => {
                               </div>
                               <div className="w-fit max-w-[180px] break-words rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-center text-[11px] font-semibold leading-snug text-indigo-700 shadow-sm dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-200">
                                 {candidate.statusNote}
-                              </div>
                             </div>
+                        </div>
 
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] text-gray-600 dark:text-gray-400">
                               <span>
@@ -728,7 +695,7 @@ const CandidatesPage: React.FC = () => {
                                   .join('')
                                   .slice(0, 2)
                                   .toUpperCase() || 'UA'}
-                              </div>
+                                </div>
                               <div className="text-left text-gray-600 dark:text-gray-300">
                                 <p className="font-semibold text-indigo-600 dark:text-indigo-200">
                                   {candidate.assignedTo || 'Unassigned'}
@@ -741,34 +708,24 @@ const CandidatesPage: React.FC = () => {
                             <p className="text-[11px] font-semibold text-indigo-500 dark:text-indigo-200">
                               Created by {candidate.createdBy}
                             </p>
-                          </div>
+        </div>
 
-                          <div
-                            className={`rounded-2xl border px-4 py-3 text-sm ${tone.bg} border-gray-100 dark:border-slate-700`}
-                          >
-                            <div className="flex items-center justify-between text-[11px] font-semibold">
-                              <span className={tone.text}>
-                                {primaryStage.status}
-                              </span>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] ${tone.badge}`}
-                              >
-                                {primaryStage.badge}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
-                              <StageIcon className="h-4 w-4 text-purple-600 dark:text-indigo-300" />
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/60">
+                            <div className="flex items-center justify-between font-semibold">
+                              <span className="text-gray-700 dark:text-gray-200">
                                 {primaryStage.title}
+                      </span>
+                              <span className="text-indigo-500 dark:text-indigo-300">
+                                {primaryStage.status}
+                          </span>
+                        </div>
+                            <div className="mt-2 flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                              <StageIcon className="h-4 w-4 text-purple-600 dark:text-indigo-300" />
+                              <span className="font-medium">
+                                {primaryStage.description}
                               </span>
-                              <span className="font-medium text-purple-600 dark:text-indigo-300">
-                                {primaryStage.rating}
-                              </span>
-                            </div>
-                            <p className="mt-1 break-words text-xs text-gray-600 dark:text-gray-300">
-                              {primaryStage.description}
-                            </p>
-                          </div>
+                      </div>
+                    </div>
                         </div>
                       );
                     })}
