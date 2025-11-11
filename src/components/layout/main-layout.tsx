@@ -38,6 +38,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
+  useEffect(() => {
+    if (isMobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileSidebarOpen]);
+
   // Always show sidebar for all roles and routes
   const showSidebar = true;
 
@@ -55,15 +66,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, role }) => {
       )}
 
       {/* Mobile Sidebar Overlay */}
-      {isMobileSidebarOpen && showSidebar && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
+      {showSidebar && (
+        <div
+          className={`fixed inset-0 z-50 transform transition-all duration-300 ease-in-out lg:hidden ${
+            isMobileSidebarOpen
+              ? 'pointer-events-auto opacity-100'
+              : 'pointer-events-none opacity-0'
+          }`}
+        >
           <div
-            className="absolute inset-0 bg-black bg-opacity-50"
+            className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
+              isMobileSidebarOpen ? 'opacity-100' : 'opacity-0'
+            }`}
             onClick={() => setIsMobileSidebarOpen(false)}
           />
-          {/* Sidebar */}
-          <div className="relative h-full">
+          <div
+            className={`relative h-full w-64 max-w-[80vw] transform transition-transform duration-300 ease-in-out ${
+              isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
             <Sidebar
               role={role}
               isCollapsed={false}

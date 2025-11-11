@@ -327,9 +327,9 @@ const Sidebar: React.FC<SidebarProps> = ({ role, isCollapsed, onToggle }) => {
 
   return (
     <div
-      className={`flex h-screen flex-col border-r bg-background transition-all duration-300 ${
+      className={`flex h-screen flex-col border-r bg-background transition-[width] duration-300 ease-in-out ${
         isCollapsed ? 'w-16' : 'w-64'
-      } lg:relative lg:z-auto z-50`}
+      } lg:relative lg:z-auto z-50 overflow-hidden flex-shrink-0`}
     >
       {/* Header */}
       <div className="flex h-14 items-center border-b px-4">
