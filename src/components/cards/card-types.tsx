@@ -1,12 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  LucideIcon,
-  Clock,
-  Users,
-  ChevronRight,
-  CheckCircle2,
-} from 'lucide-react';
+import { LucideIcon, Users, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export interface Avatar {
   src?: string;
@@ -180,6 +174,24 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   className = '',
   onClick,
 }) => {
+  const statusStyles: Record<
+    NonNullable<TaskCardProps['status']>,
+    { badge: string; label: string }
+  > = {
+    pending: {
+      badge: 'bg-amber-100 text-amber-700',
+      label: 'Pending',
+    },
+    'in-progress': {
+      badge: 'bg-blue-100 text-blue-700',
+      label: 'In Progress',
+    },
+    completed: {
+      badge: 'bg-emerald-100 text-emerald-700',
+      label: 'Completed',
+    },
+  };
+
   return (
     <motion.div
       className={`bg-white rounded-2xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow ${className}`}
@@ -211,6 +223,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
           </div>
         )}
+      </div>
+      <div className="mt-3">
+        <span
+          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${statusStyles[status].badge}`}
+        >
+          {statusStyles[status].label}
+        </span>
       </div>
     </motion.div>
   );

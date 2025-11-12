@@ -11,7 +11,7 @@ import {
   CardGrid,
   GridItem,
 } from './index';
-import { Zap, Bed, Dumbbell, Video, Calendar } from 'lucide-react';
+import { Zap, Bed, Dumbbell, Video } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 

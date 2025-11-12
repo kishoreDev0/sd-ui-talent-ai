@@ -55,12 +55,11 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
     // Handle 401 Unauthorized - Token expired or invalid
-    // if (error.response?.status === 401 && !originalRequest._retry) {
+    // const originalRequest = error.config as InternalAxiosRequestConfig & {
+    //   _retry?: boolean;
+    // };
+    // if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
     //   originalRequest._retry = true;
 
     //   try {

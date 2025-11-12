@@ -10,16 +10,18 @@ type ListParams = {
   is_active?: boolean;
 };
 
+type UserPayload = Record<string, unknown>;
+
 export class UserAPI {
   getAllUsers = async (params?: ListParams) =>
     axiosInstance.get(USERS.LIST, { params });
 
   getUserById = async (id: number) => axiosInstance.get(USERS.GET_BY_ID(id));
 
-  createUser = async (payload: any) =>
+  createUser = async (payload: UserPayload) =>
     axiosInstance.post(USERS.CREATE, payload);
 
-  updateUser = async (id: number, payload: any) =>
+  updateUser = async (id: number, payload: UserPayload) =>
     axiosInstance.patch(USERS.UPDATE(id), payload);
 
   updateProfile = async (payload: FormData) =>

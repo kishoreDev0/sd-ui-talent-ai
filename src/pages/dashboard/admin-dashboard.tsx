@@ -39,6 +39,12 @@ import { getAllUsers } from '@/store/user/actions/userActions';
 const LineChart = Recharts.LineChart;
 const BarChart = Recharts.BarChart;
 const PieChart = Recharts.PieChart;
+const FALLBACK_ROLE_DISTRIBUTION = [
+  { name: 'Product Leadership', value: 12, color: '#6366F1' },
+  { name: 'Engineering Leadership', value: 15, color: '#22C55E' },
+  { name: 'Talent Acquisition', value: 10, color: '#F97316' },
+  { name: 'Recruiting Operations', value: 8, color: '#8B5CF6' },
+];
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -105,18 +111,9 @@ const AdminDashboard: React.FC = () => {
     { month: 'Jun', users: 247, roles: 6 },
   ];
 
-  const fallbackRoleDistribution = [
-    { name: 'Admin', value: 12, color: '#3b82f6' },
-    { name: 'TA Executive', value: 38, color: '#10b981' },
-    { name: 'TA Manager', value: 22, color: '#f59e0b' },
-    { name: 'Hiring Manager', value: 47, color: '#ef4444' },
-    { name: 'Interview Panel', value: 63, color: '#8b5cf6' },
-    { name: 'HR Ops', value: 18, color: '#ec4899' },
-  ];
-
   const roleDistributionData = useMemo(() => {
     if (!users || users.length === 0) {
-      return fallbackRoleDistribution;
+      return FALLBACK_ROLE_DISTRIBUTION;
     }
 
     const colorPalette = [
@@ -138,7 +135,10 @@ const AdminDashboard: React.FC = () => {
           description?: string;
         }) || {};
       const roleLabel =
-        roleInfo.display_name || roleInfo.name || roleInfo.description || 'Unassigned';
+        roleInfo.display_name ||
+        roleInfo.name ||
+        roleInfo.description ||
+        'Unassigned';
       acc[roleLabel] = (acc[roleLabel] ?? 0) + 1;
       return acc;
     }, {});
@@ -240,7 +240,8 @@ const AdminDashboard: React.FC = () => {
               Admin Control Center
             </h1>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Monitor system usage, manage roles, and stay ahead of access requests.
+              Monitor system usage, manage roles, and stay ahead of access
+              requests.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -272,14 +273,14 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {metrics.map((metric) => {
-            const Icon = metric.icon;
+              const Icon = metric.icon;
               const trendColor =
                 metric.trend === 'up'
                   ? 'text-emerald-500 dark:text-emerald-300'
                   : 'text-orange-500 dark:text-orange-300';
-            return (
+              return (
                 <button
-                key={metric.label}
+                  key={metric.label}
                   onClick={() => navigate(metric.path)}
                   className="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80"
                 >
@@ -291,8 +292,8 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      {metric.label}
-                    </p>
+                        {metric.label}
+                      </p>
                       <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                         {metric.value}
                       </p>
@@ -305,9 +306,9 @@ const AdminDashboard: React.FC = () => {
                     </span>
                   </div>
                 </button>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         </section>
 
         <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
@@ -320,8 +321,8 @@ const AdminDashboard: React.FC = () => {
             </span>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                <button
-                  onClick={() => navigate('/users')}
+            <button
+              onClick={() => navigate('/users')}
               className="group flex h-full w-full flex-col justify-center rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-left text-xs transition hover:border-blue-200 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
             >
               <Users className="mb-1.5 h-4 w-4 text-blue-600 dark:text-blue-300" />
@@ -330,10 +331,10 @@ const AdminDashboard: React.FC = () => {
               </p>
               <p className="text-[11px] text-blue-500/80 dark:text-blue-300/80">
                 View & edit accounts
-                  </p>
-                </button>
-                <button
-                  onClick={() => navigate('/admin/access')}
+              </p>
+            </button>
+            <button
+              onClick={() => navigate('/admin/access')}
               className="group flex h-full w-full flex-col justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-left text-xs transition hover:border-indigo-200 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
             >
               <Shield className="mb-1.5 h-4 w-4 text-indigo-600 dark:text-indigo-300" />
@@ -341,34 +342,34 @@ const AdminDashboard: React.FC = () => {
                 Access control
               </p>
               <p className="text-[11px] text-indigo-500/80 dark:text-indigo-300/80">
-                    Manage roles & permissions
-                  </p>
-                </button>
-                <button
-                  onClick={() => navigate('/analytics')}
+                Manage roles & permissions
+              </p>
+            </button>
+            <button
+              onClick={() => navigate('/analytics')}
               className="group flex h-full w-full flex-col justify-center rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-left text-xs transition hover:border-emerald-200 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
-                >
+            >
               <TrendingUp className="mb-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-300" />
               <p className="font-semibold text-emerald-700 dark:text-emerald-200">
-                    Analytics
-                  </p>
+                Analytics
+              </p>
               <p className="text-[11px] text-emerald-500/80 dark:text-emerald-300/80">
                 Review system reports
-                  </p>
-                </button>
-                <button
-                  onClick={() => navigate('/settings')}
+              </p>
+            </button>
+            <button
+              onClick={() => navigate('/settings')}
               className="group flex h-full w-full flex-col justify-center rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-left text-xs transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20"
             >
               <Settings className="mb-1.5 h-4 w-4 text-orange-500 dark:text-orange-300" />
               <p className="font-semibold text-orange-600 dark:text-orange-200">
-                    System settings
-                  </p>
+                System settings
+              </p>
               <p className="text-[11px] text-orange-500/80 dark:text-orange-300/80">
                 Configure platform
               </p>
-                </button>
-              </div>
+            </button>
+          </div>
         </section>
 
         <div className="grid gap-4 xl:grid-cols-3">
@@ -382,29 +383,32 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
-                  <LineChart data={userGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="users"
-                      stroke="hsl(var(--chart-1))"
-                      strokeWidth={2}
-                      dot={{ fill: 'hsl(var(--chart-1))' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="roles"
-                      stroke="hsl(var(--chart-2))"
-                      strokeWidth={2}
-                      dot={{ fill: 'hsl(var(--chart-2))' }}
-                    />
-                  </LineChart>
-                </ChartContainer>
+                  <ChartContainer
+                    config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                  >
+                    <LineChart data={userGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="users"
+                        stroke="hsl(var(--chart-1))"
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--chart-1))' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="roles"
+                        stroke="hsl(var(--chart-2))"
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--chart-2))' }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
                 </div>
               </CardContent>
             </Card>
@@ -420,38 +424,41 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
-                  <PieChart>
-                    <Pie
-                      data={roleDistributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(props: PieLabelRenderProps) => {
-                        const rawPercent = props.percent;
-                        const percentValue =
-                          typeof rawPercent === 'number'
-                            ? rawPercent
-                            : Number(rawPercent ?? 0);
-                        return `${Math.round(percentValue * 100)}%`;
-                      }}
-                      outerRadius={70}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {roleDistributionData.map((entry, index) => (
-                        <Cell key={`role-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend
-                      wrapperStyle={{ fontSize: '10px' }}
-                      formatter={(value) => (
-                        <span style={{ fontSize: '10px' }}>{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ChartContainer>
+                  <ChartContainer
+                    config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                  >
+                    <PieChart>
+                      <Pie
+                        data={roleDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(props: PieLabelRenderProps) => {
+                          const rawPercent = props.percent;
+                          const percentValue =
+                            typeof rawPercent === 'number'
+                              ? rawPercent
+                              : Number(rawPercent ?? 0);
+                          return `${Math.round(percentValue * 100)}%`;
+                        }}
+                        outerRadius={70}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {roleDistributionData.map((entry, index) => (
+                          <Cell key={`role-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend
+                        wrapperStyle={{ fontSize: '10px' }}
+                        formatter={(value) => (
+                          <span style={{ fontSize: '10px' }}>{value}</span>
+                        )}
+                      />
+                    </PieChart>
+                  </ChartContainer>
                 </div>
               </CardContent>
             </Card>
@@ -469,25 +476,28 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
-                  <BarChart data={accessActivityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Bar
-                      dataKey="logins"
-                      fill="hsl(var(--chart-1))"
-                      radius={[8, 8, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="requests"
-                      fill="hsl(var(--chart-2))"
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
+                  <ChartContainer
+                    config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                  >
+                    <BarChart data={accessActivityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend />
+                      <Bar
+                        dataKey="logins"
+                        fill="hsl(var(--chart-1))"
+                        radius={[8, 8, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="requests"
+                        fill="hsl(var(--chart-2))"
+                        radius={[8, 8, 0, 0]}
+                      />
+                    </BarChart>
+                  </ChartContainer>
                 </div>
               </CardContent>
             </Card>
@@ -497,36 +507,36 @@ const AdminDashboard: React.FC = () => {
             <CardHeader className="p-3 pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">User management</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/users')}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/users')}
                   className="h-7 px-2 text-xs"
-                  >
+                >
                   View all
-                  </Button>
-                </div>
-              </CardHeader>
+                </Button>
+              </div>
+            </CardHeader>
             <CardContent className="p-3 pt-0">
               <div className="space-y-2 text-xs">
-                  <button
-                    onClick={() => navigate('/users')}
+                <button
+                  onClick={() => navigate('/users')}
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:bg-indigo-500/10"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
                       <p className="font-semibold text-gray-900 dark:text-gray-100">
                         Manage users
-                        </p>
+                      </p>
                       <p className="text-[11px] text-gray-600 dark:text-gray-400">
-                          View and edit user accounts
-                        </p>
+                        View and edit user accounts
+                      </p>
                     </div>
                     <UserCog className="h-4 w-4 text-indigo-500 dark:text-indigo-300" />
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => navigate('/admin/access')}
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate('/admin/access')}
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400 dark:hover:bg-indigo-500/10"
                 >
                   <div className="flex items-center justify-between">
@@ -636,7 +646,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-        </div>
+          </div>
 
           <Card className="rounded-3xl border border-gray-200 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
             <CardHeader className="p-3 pb-2">

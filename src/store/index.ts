@@ -20,5 +20,6 @@ export type { RootState };
 
 // Export job actions for convenience
 export * from './job/actions/jobActions';
+export * from './jobCategory/actions/jobCategoryActions';
 
 export default store;

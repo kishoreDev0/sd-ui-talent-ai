@@ -49,6 +49,63 @@ const createLoginSchema = (
       ),
   });
 
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+  if (!error) {
+    return fallback;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  if (typeof error === 'object') {
+    const errRecord = error as Record<string, unknown>;
+    const direct = errRecord.error;
+    const message = errRecord.message;
+    const responseData = (errRecord.response as Record<string, unknown>)
+      ?.data as Record<string, unknown> | undefined;
+
+    if (typeof direct === 'string') {
+      return direct;
+    }
+
+    if (Array.isArray(direct) && direct.length > 0) {
+      return direct
+        .filter((item): item is string => typeof item === 'string')
+        .join(', ');
+    }
+
+    if (typeof message === 'string') {
+      return message;
+    }
+
+    if (responseData) {
+      const responseError = responseData.error;
+      const responseMessage = responseData.message;
+
+      if (typeof responseError === 'string') {
+        return responseError;
+      }
+
+      if (Array.isArray(responseError) && responseError.length > 0) {
+        return responseError
+          .filter((item): item is string => typeof item === 'string')
+          .join(', ');
+      }
+
+      if (typeof responseMessage === 'string') {
+        return responseMessage;
+      }
+    }
+  }
+
+  return fallback;
+};
+
 const Login: React.FC<LoginProps> = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -170,43 +227,12 @@ const Login: React.FC<LoginProps> = () => {
           navigate('/dashboard', { replace: true });
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Login failed', err);
-      // Extract error message - handle both string and array formats
-      // When using unwrap(), Redux Toolkit rejectWithValue() throws the rejected value directly
-      let errorMessage = translate('login.failed', 'Login failed');
-
-      if (err) {
-        // If err is already a string (from rejectWithValue)
-        if (typeof err === 'string') {
-          errorMessage = err;
-        }
-        // If err is an error object with message
-        else if (err?.message) {
-          errorMessage = err.message;
-        }
-        // If err is an object with error property (could be string or array)
-        else if (err?.error) {
-          if (Array.isArray(err.error)) {
-            errorMessage = err.error.join(', ');
-          } else {
-            errorMessage = err.error;
-          }
-        }
-        // Handle axios error response structure
-        else if (err?.response?.data) {
-          const errorData = err.response.data.error;
-          if (Array.isArray(errorData) && errorData.length > 0) {
-            errorMessage = errorData.join(', ');
-          } else if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          } else if (err.response.data.message) {
-            errorMessage = err.response.data.message;
-          }
-        }
-      }
-
-      // Show error toast with the extracted error message
+      const errorMessage = extractErrorMessage(
+        err,
+        translate('login.failed', 'Login failed'),
+      );
       showToast(errorMessage, 'error');
     }
   };
@@ -228,12 +254,11 @@ const Login: React.FC<LoginProps> = () => {
       );
       resetForgotForm();
       setShowForgotPassword(false);
-    } catch (err: any) {
-      const errorMessage =
-        err?.error ||
-        err?.message ||
-        err?.response?.data?.message ||
-        translate('login.resetEmailFailed', 'Unable to send reset link.');
+    } catch (err) {
+      const errorMessage = extractErrorMessage(
+        err,
+        translate('login.resetEmailFailed', 'Unable to send reset link.'),
+      );
       showToast(errorMessage, 'error');
     }
   };

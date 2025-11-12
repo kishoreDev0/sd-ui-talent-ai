@@ -7,7 +7,6 @@ import {
 } from '../actions/userActions';
 import type {
   UsersState,
-  User,
   ListUsersResponse,
   GetUserByIdResponse,
   UserResponse,

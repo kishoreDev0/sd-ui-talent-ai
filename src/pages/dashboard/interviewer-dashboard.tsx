@@ -96,7 +96,9 @@ const getFirstAvailable = <T,>(
 ): T | undefined =>
   values.find((value) => value !== undefined && value !== null);
 
-const mapInterviewRecord = (record: Record<string, any>): Interview | null => {
+const mapInterviewRecord = (
+  record: Record<string, unknown>,
+): Interview | null => {
   if (!record) {
     return null;
   }
@@ -345,7 +347,7 @@ const InterviewerDashboard: React.FC = () => {
         }
 
         const normalized = rawData
-          .map((item: Record<string, any>) => mapInterviewRecord(item))
+          .map((item: Record<string, unknown>) => mapInterviewRecord(item))
           .filter((item): item is Interview => item !== null)
           .sort(
             (a, b) =>
@@ -361,7 +363,7 @@ const InterviewerDashboard: React.FC = () => {
             setIsUsingFallback(false);
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         if (isMounted) {
           console.error('Failed to load interviewer dashboard data', error);
           setInterviewData(fallbackInterviews);

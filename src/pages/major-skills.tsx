@@ -147,12 +147,6 @@ const MajorSkills: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ACTIVE
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CREATED DATE
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    UPDATED
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -191,16 +185,6 @@ const MajorSkills: React.FC = () => {
                         <span className="ml-2 text-sm text-gray-900">
                           {majorSkill.active ? 'Active' : 'Inactive'}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {majorSkill.createdDate}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {majorSkill.updated}
                       </div>
                     </td>
                   </tr>

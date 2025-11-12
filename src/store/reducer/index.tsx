@@ -10,6 +10,7 @@ import roleReducer from '../role/slices/roleSlice';
 import permissionReducer from '../permission/slices/permissionSlice';
 import organizationReducer from '../organization/slices/organizationSlice';
 import userReducer from '../user/slices/userSlice';
+import jobCategoryReducer from '../jobCategory/slices/jobCategorySlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   inviteUser: inviteUserReducer,
   register: registerReducer,
   job: jobReducer,
+  jobCategory: jobCategoryReducer,
   role: roleReducer,
   permission: permissionReducer,
   organization: organizationReducer,

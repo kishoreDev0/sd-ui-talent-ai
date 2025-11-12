@@ -57,6 +57,15 @@ export const JOBS = {
   SEARCH: '/api/v1/jobs/search',
 } as const;
 
+// Job categories endpoints
+export const JOB_CATEGORIES = {
+  LIST: '/api/v1/job-categories',
+  GET_BY_ID: (id: number | string) => `/api/v1/job-category/${id}`,
+  CREATE: '/api/v1/job-category',
+  UPDATE: (id: number | string) => `/api/v1/job-category/${id}`,
+  DELETE: (id: number | string) => `/api/v1/job-category/${id}`,
+} as const;
+
 // Candidates endpoints
 export const CANDIDATES = {
   LIST: '/api/v1/candidates',
