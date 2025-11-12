@@ -33,12 +33,12 @@ const createLoginSchema = (
   translate: (key: string, fallback: string) => string,
 ) =>
   z.object({
-    email: z
-      .string()
+  email: z
+    .string()
       .min(1, translate('login.emailRequired', 'Email is required'))
       .email(translate('login.emailInvalid', 'Please enter a valid email')),
-    password: z
-      .string()
+  password: z
+    .string()
       .min(1, translate('login.passwordRequired', 'Password is required'))
       .min(
         6,
@@ -47,7 +47,7 @@ const createLoginSchema = (
           'Password must be at least 6 characters',
         ),
       ),
-  });
+});
 
 const Login: React.FC<LoginProps> = () => {
   const navigate = useNavigate();
@@ -175,7 +175,7 @@ const Login: React.FC<LoginProps> = () => {
       // Extract error message - handle both string and array formats
       // When using unwrap(), Redux Toolkit rejectWithValue() throws the rejected value directly
       let errorMessage = translate('login.failed', 'Login failed');
-
+      
       if (err) {
         // If err is already a string (from rejectWithValue)
         if (typeof err === 'string') {
@@ -205,7 +205,7 @@ const Login: React.FC<LoginProps> = () => {
           }
         }
       }
-
+      
       // Show error toast with the extracted error message
       showToast(errorMessage, 'error');
     }
@@ -322,7 +322,7 @@ const Login: React.FC<LoginProps> = () => {
           />
         ))}
       </div>
-
+      
       {isLoading && <Loader />}
 
       {/* Top Logo - Left Corner */}
@@ -337,14 +337,14 @@ const Login: React.FC<LoginProps> = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex relative z-10">
-        {/* Left Side - Marketing Content */}
+      {/* Left Side - Marketing Content */}
         <motion.div
           className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative z-10"
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center">
             <motion.div
               className="flex items-center gap-3 mb-4"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -363,7 +363,7 @@ const Login: React.FC<LoginProps> = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
               >
-                {t('marketing.title')}
+            {t('marketing.title')}
               </motion.h1>
             </motion.div>
             <motion.p
@@ -372,7 +372,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
             >
-              {t('marketing.description')}
+            {t('marketing.description')}
             </motion.p>
             <motion.p
               className="text-base text-gray-600 mt-3"
@@ -380,7 +380,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
             >
-              {t('marketing.subtitle')}
+            {t('marketing.subtitle')}
             </motion.p>
             <motion.p
               className="text-base text-gray-600 mt-3"
@@ -388,7 +388,7 @@ const Login: React.FC<LoginProps> = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
             >
-              {t('marketing.tagline')}
+            {t('marketing.tagline')}
             </motion.p>
 
             {/* Interactive Feature Cards */}
@@ -428,17 +428,17 @@ const Login: React.FC<LoginProps> = () => {
                 </motion.div>
               ))}
             </motion.div>
-          </div>
+        </div>
 
-          {/* Footer */}
+        {/* Footer */}
           <motion.div
             className="flex items-center gap-6 text-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
           >
-            {/* Language Selector */}
-            <LanguageSelector />
+          {/* Language Selector */}
+          <LanguageSelector />
           </motion.div>
         </motion.div>
 
@@ -609,54 +609,54 @@ const Login: React.FC<LoginProps> = () => {
               </form>
             ) : (
               <>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleFormSubmit(onSubmit)(e);
-                    return false;
-                  }}
-                  className="space-y-4"
-                  noValidate
-                >
-                  {/* Email Field */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleFormSubmit(onSubmit)(e);
+              return false;
+            }}
+            className="space-y-4"
+            noValidate
+          >
+            {/* Email Field */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5, delay: 0.4 }}
                   >
-                    <label
-                      htmlFor="email"
+              <label
+                htmlFor="email"
                       className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
-                    >
+              >
                       <Mail className="w-3.5 h-3.5" />
                       {translate('login.email', 'Email')}
-                    </label>
+              </label>
                     <div className="relative">
                       <motion.input
-                        id="email"
-                        type="email"
-                        {...register('email')}
+                id="email"
+                type="email"
+                {...register('email')}
                         placeholder={translate(
                           'login.emailPlaceholder',
                           'Enter your email',
                         )}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleFormSubmit(onSubmit)();
-                          }
-                        }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleFormSubmit(onSubmit)();
+                  }
+                }}
                         whileFocus={{
                           scale: 1.02,
                           boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
                         }}
                         className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-                          errors.email
-                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                            : 'border-gray-300'
-                        }`}
-                      />
+                  errors.email
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300'
+                }`}
+              />
                       <motion.div
                         className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
                         animate={{
@@ -675,8 +675,8 @@ const Login: React.FC<LoginProps> = () => {
                         >
                           <CheckCircle2 className="w-4 h-4 text-green-500" />
                         </motion.div>
-                      )}
-                    </div>
+              )}
+            </div>
                     {errors.email && (
                       <motion.p
                         initial={{ opacity: 0, y: -10 }}
@@ -689,44 +689,44 @@ const Login: React.FC<LoginProps> = () => {
                     )}
                   </motion.div>
 
-                  {/* Password Field */}
+            {/* Password Field */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5, delay: 0.5 }}
                   >
-                    <label
-                      htmlFor="password"
+              <label
+                htmlFor="password"
                       className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2"
-                    >
+              >
                       <Lock className="w-3.5 h-3.5" />
                       {translate('login.password', 'Password')}
-                    </label>
-                    <div className="relative">
+              </label>
+              <div className="relative">
                       <motion.input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        {...register('password')}
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
                         placeholder={translate(
                           'login.passwordPlaceholder',
                           'Enter your password',
                         )}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleFormSubmit(onSubmit)();
-                          }
-                        }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleFormSubmit(onSubmit)();
+                    }
+                  }}
                         whileFocus={{
                           scale: 1.02,
                           boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
                         }}
                         className={`w-full px-2.5 py-2 pl-9 text-xs border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition pr-8 ${
-                          errors.password
-                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                            : 'border-gray-300'
-                        }`}
-                      />
+                    errors.password
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
                       <motion.div
                         className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
                         animate={{
@@ -738,23 +738,23 @@ const Login: React.FC<LoginProps> = () => {
                         <Lock className="w-4 h-4" />
                       </motion.div>
                       <motion.button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
                         whileHover={{ scale: 1.2, rotate: 5 }}
                         whileTap={{ scale: 0.9 }}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
                         animate={{
                           color: showPassword ? '#2563eb' : '#9ca3af',
                         }}
-                      >
-                        {showPassword ? (
+                >
+                  {showPassword ? (
                           <EyeOff className="w-4 h-4" />
-                        ) : (
+                  ) : (
                           <Eye className="w-4 h-4" />
-                        )}
+                  )}
                       </motion.button>
-                    </div>
-                    {errors.password && (
+              </div>
+              {errors.password && (
                       <motion.p
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -803,8 +803,8 @@ const Login: React.FC<LoginProps> = () => {
                         className="ml-2 text-xs text-gray-700 cursor-pointer group-hover:text-blue-600 transition-colors"
                       >
                         {translate('login.remember', 'Remember me')}
-                      </label>
-                    </div>
+              </label>
+            </div>
                     <motion.button
                       type="button"
                       onClick={() => {
@@ -819,25 +819,25 @@ const Login: React.FC<LoginProps> = () => {
                     </motion.button>
                   </motion.div>
 
-                  {/* Error Message */}
-                  {error && (
+            {/* Error Message */}
+            {error && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-2.5 text-xs"
                     >
-                      {error}
+                {error}
                     </motion.div>
-                  )}
+            )}
 
-                  {/* Sign In Button */}
+            {/* Sign In Button */}
                   <motion.button
-                    type="button"
-                    onClick={() => {
-                      handleFormSubmit(onSubmit)();
-                    }}
-                    disabled={isLoading || isSubmitting}
+              type="button"
+              onClick={() => {
+                handleFormSubmit(onSubmit)();
+              }}
+              disabled={isLoading || isSubmitting}
                     whileHover={{
                       scale: isLoading || isSubmitting ? 1 : 1.02,
                       boxShadow:
@@ -881,24 +881,24 @@ const Login: React.FC<LoginProps> = () => {
                       )}
                     </span>
                   </motion.button>
-                </form>
+          </form>
 
-                {/* Sign up link */}
+            {/* Sign up link */}
                 <motion.div
                   className="text-center mt-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.7 }}
                 >
-                  <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600">
                     {translate('login.noAccount', "Don't have an account?")}{' '}
                     <motion.button
-                      type="button"
-                      onClick={() => navigate('/registerform')}
+                  type="button"
+                  onClick={() => navigate('/registerform')}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
-                    >
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
                       {translate('login.signUp', 'Sign up')}
                     </motion.button>
                   </p>

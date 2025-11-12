@@ -138,7 +138,10 @@ const AdminDashboard: React.FC = () => {
           description?: string;
         }) || {};
       const roleLabel =
-        roleInfo.display_name || roleInfo.name || roleInfo.description || 'Unassigned';
+        roleInfo.display_name ||
+        roleInfo.name ||
+        roleInfo.description ||
+        'Unassigned';
       acc[roleLabel] = (acc[roleLabel] ?? 0) + 1;
       return acc;
     }, {});
@@ -240,7 +243,8 @@ const AdminDashboard: React.FC = () => {
               Admin Control Center
             </h1>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Monitor system usage, manage roles, and stay ahead of access requests.
+              Monitor system usage, manage roles, and stay ahead of access
+              requests.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -382,8 +386,11 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
-                  <LineChart data={userGrowthData}>
+                <ChartContainer
+                  config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                  >
+                    <LineChart data={userGrowthData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -420,27 +427,30 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
+                <ChartContainer
+                  config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                >
                   <PieChart>
                     <Pie
                       data={roleDistributionData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(props: PieLabelRenderProps) => {
-                        const rawPercent = props.percent;
-                        const percentValue =
-                          typeof rawPercent === 'number'
-                            ? rawPercent
-                            : Number(rawPercent ?? 0);
-                        return `${Math.round(percentValue * 100)}%`;
-                      }}
+                        label={(props: PieLabelRenderProps) => {
+                          const rawPercent = props.percent;
+                          const percentValue =
+                            typeof rawPercent === 'number'
+                              ? rawPercent
+                              : Number(rawPercent ?? 0);
+                          return `${Math.round(percentValue * 100)}%`;
+                        }}
                       outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       {roleDistributionData.map((entry, index) => (
-                        <Cell key={`role-${index}`} fill={entry.color} />
+                          <Cell key={`role-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <ChartTooltip content={<ChartTooltipContent />} />
@@ -469,8 +479,11 @@ const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <div className="w-full overflow-x-auto">
-                  <ChartContainer config={chartConfig} className="h-[200px] min-w-[280px]">
-                  <BarChart data={accessActivityData}>
+                <ChartContainer
+                  config={chartConfig}
+                    className="h-[200px] min-w-[280px]"
+                  >
+                    <BarChart data={accessActivityData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
