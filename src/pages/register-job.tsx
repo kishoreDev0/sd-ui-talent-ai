@@ -19,17 +19,20 @@ import {
   Undo,
   Redo,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { getAllOrganizations } from '@/store/organization/actions/organizationActions';
 import { fetchJobCategories } from '@/store/jobCategory/actions/jobCategoryActions';
+import { fetchMajorSkills } from '@/store/majorSkill/actions/majorSkillActions';
+import { fetchSkills } from '@/store/skill/actions/skillActions';
 
 interface JobFormData {
   jobTitle: string;
   employmentType: string;
   experience: string;
-  majorSkill: string;
-  selectedSkills: string[];
+  majorSkills: number[];
+  selectedSkills: number[];
   organization: string;
   priority: string;
   currency: string;
@@ -41,22 +44,6 @@ interface JobFormData {
   jobResponsibilities: string;
 }
 
-const FALLBACK_ORGANIZATIONS = [
-  { value: 'Tech Corp', label: 'Tech Corp' },
-  { value: 'Design Studio', label: 'Design Studio' },
-  { value: 'Startup Inc', label: 'Startup Inc' },
-  { value: 'Global Solutions', label: 'Global Solutions' },
-  { value: 'Creative Agency', label: 'Creative Agency' },
-];
-
-const FALLBACK_JOB_CATEGORIES = [
-  { value: 'Technology', label: 'Technology' },
-  { value: 'Design', label: 'Design' },
-  { value: 'Marketing', label: 'Marketing' },
-  { value: 'Sales', label: 'Sales' },
-  { value: 'Operations', label: 'Operations' },
-];
-
 const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
   const role = useUserRole();
@@ -65,13 +52,18 @@ const RegisterJob: React.FC = () => {
     useAppSelector((state) => state.organization);
   const { items: jobCategoryList, isLoading: jobCategoriesLoading } =
     useAppSelector((state) => state.jobCategory);
+  const { items: majorSkillItems, isLoading: majorSkillsLoading } =
+    useAppSelector((state) => state.majorSkill);
+  const { items: skillItems, isLoading: skillsLoading } = useAppSelector(
+    (state) => state.skill,
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<JobFormData>({
     jobTitle: '',
     employmentType: '',
     experience: '',
-    majorSkill: '',
+    majorSkills: [],
     selectedSkills: [],
     organization: '',
     priority: 'Medium',
@@ -96,89 +88,39 @@ const RegisterJob: React.FC = () => {
     }
   }, [dispatch, jobCategoryList.length]);
 
-  const organizationOptions = useMemo(() => {
-    if (organizationList.length > 0) {
-      return organizationList
-        .filter((org) => org.name)
+  useEffect(() => {
+    if (majorSkillItems.length === 0) {
+      dispatch(fetchMajorSkills());
+    }
+  }, [dispatch, majorSkillItems.length]);
+
+  useEffect(() => {
+    if (skillItems.length === 0) {
+      dispatch(fetchSkills());
+    }
+  }, [dispatch, skillItems.length]);
+
+  const organizationOptions = useMemo(
+    () =>
+      organizationList
+        .filter((org) => org?.name?.trim())
         .map((org) => ({
-          value: org.name ?? `Organization ${org.id ?? ''}`,
-          label: org.name ?? `Organization ${org.id ?? ''}`,
-        }));
-    }
-    return FALLBACK_ORGANIZATIONS;
-  }, [organizationList]);
+          value: org.name as string,
+          label: org.name as string,
+        })),
+    [organizationList],
+  );
 
-  const jobCategoryOptions = useMemo(() => {
-    if (jobCategoryList.length > 0) {
-      return jobCategoryList
-        .filter((category) => category.name)
+  const jobCategoryOptions = useMemo(
+    () =>
+      jobCategoryList
+        .filter((category) => category?.name?.trim())
         .map((category) => ({
-          value: category.name ?? `Category ${category.id ?? ''}`,
-          label: category.name ?? `Category ${category.id ?? ''}`,
-        }));
-    }
-    return FALLBACK_JOB_CATEGORIES;
-  }, [jobCategoryList]);
-
-  // Mock skills database filtered by major skill
-  const getSkillsByMajorSkill = (
-    majorSkill: string,
-  ): { value: string; label: string }[] => {
-    const skillsMap: Record<string, { value: string; label: string }[]> = {
-      'Web Development': [
-        { value: 'React', label: 'React' },
-        { value: 'Vue.js', label: 'Vue.js' },
-        { value: 'Angular', label: 'Angular' },
-        { value: 'Node.js', label: 'Node.js' },
-        { value: 'Express', label: 'Express' },
-        { value: 'TypeScript', label: 'TypeScript' },
-        { value: 'JavaScript', label: 'JavaScript' },
-        { value: 'HTML/CSS', label: 'HTML/CSS' },
-      ],
-      'Mobile Development': [
-        { value: 'iOS', label: 'iOS' },
-        { value: 'Android', label: 'Android' },
-        { value: 'React Native', label: 'React Native' },
-        { value: 'Flutter', label: 'Flutter' },
-        { value: 'Swift', label: 'Swift' },
-        { value: 'Kotlin', label: 'Kotlin' },
-        { value: 'Java', label: 'Java' },
-      ],
-      'UI/UX Design': [
-        { value: 'Figma', label: 'Figma' },
-        { value: 'Adobe XD', label: 'Adobe XD' },
-        { value: 'Sketch', label: 'Sketch' },
-        { value: 'InVision', label: 'InVision' },
-        { value: 'Prototyping', label: 'Prototyping' },
-        { value: 'User Research', label: 'User Research' },
-        { value: 'Wireframing', label: 'Wireframing' },
-      ],
-      'Data Science': [
-        { value: 'Python', label: 'Python' },
-        { value: 'R', label: 'R' },
-        { value: 'SQL', label: 'SQL' },
-        { value: 'Machine Learning', label: 'Machine Learning' },
-        { value: 'Data Visualization', label: 'Data Visualization' },
-        { value: 'Pandas', label: 'Pandas' },
-      ],
-      DevOps: [
-        { value: 'Docker', label: 'Docker' },
-        { value: 'Kubernetes', label: 'Kubernetes' },
-        { value: 'AWS', label: 'AWS' },
-        { value: 'CI/CD', label: 'CI/CD' },
-        { value: 'Jenkins', label: 'Jenkins' },
-      ],
-      'Machine Learning': [
-        { value: 'TensorFlow', label: 'TensorFlow' },
-        { value: 'PyTorch', label: 'PyTorch' },
-        { value: 'Scikit-learn', label: 'Scikit-learn' },
-        { value: 'Deep Learning', label: 'Deep Learning' },
-      ],
-    };
-    return skillsMap[majorSkill] || [];
-  };
-
-  const availableSkills = getSkillsByMajorSkill(formData.majorSkill);
+          value: category.name as string,
+          label: category.name as string,
+        })),
+    [jobCategoryList],
+  );
 
   // Initialize TipTap editors for Description and Responsibilities
   const editorDescription = useEditor({
@@ -313,15 +255,6 @@ const RegisterJob: React.FC = () => {
     { value: '6+ Years', label: '6+ Years' },
   ];
 
-  const majorSkillsOptions = [
-    { value: 'Web Development', label: 'Web Development' },
-    { value: 'Mobile Development', label: 'Mobile Development' },
-    { value: 'UI/UX Design', label: 'UI/UX Design' },
-    { value: 'Data Science', label: 'Data Science' },
-    { value: 'DevOps', label: 'DevOps' },
-    { value: 'Machine Learning', label: 'Machine Learning' },
-  ];
-
   const priorities = [
     { value: 'High', label: 'High' },
     { value: 'Medium', label: 'Medium' },
@@ -342,33 +275,193 @@ const RegisterJob: React.FC = () => {
     { value: 'Lead Level', label: 'Lead Level' },
   ];
 
-  const handleInputChange = (field: keyof JobFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const majorSkillOptions = useMemo(
+    () =>
+      majorSkillItems
+        .map((item) => {
+          const id = Number(item.id);
+          const name = item.name?.trim();
+          if (!Number.isFinite(id) || !name) {
+            return null;
+          }
+          return { id, name };
+        })
+        .filter(
+          (item): item is { id: number; name: string } => Boolean(item),
+        ),
+    [majorSkillItems],
+  );
 
-    // Clear selected skills when major skill changes
-    if (field === 'majorSkill') {
-      setFormData((prev) => ({ ...prev, selectedSkills: [] }));
+  const skillOptions = useMemo(
+    () =>
+      skillItems
+        .map((item) => {
+          const id = Number(item.id);
+          const name = item.name?.trim();
+          const majorSkillId = Number(item.major_skill_id);
+          if (
+            !Number.isFinite(id) ||
+            !name ||
+            !Number.isFinite(majorSkillId)
+          ) {
+            return null;
+          }
+          return { id, name, majorSkillId };
+        })
+        .filter(
+          (
+            item,
+          ): item is { id: number; name: string; majorSkillId: number } =>
+            Boolean(item),
+        ),
+    [skillItems],
+  );
+
+  const filteredSkills = useMemo(() => {
+    if (formData.majorSkills.length === 0) {
+      return [];
+    }
+    const majorSet = new Set(formData.majorSkills);
+    return skillOptions.filter((skill) => majorSet.has(skill.majorSkillId));
+  }, [skillOptions, formData.majorSkills]);
+
+  const skillNameMap = useMemo(() => {
+    const map = new Map<number, string>();
+    skillOptions.forEach((skill) => {
+      map.set(skill.id, skill.name);
+    });
+    return map;
+  }, [skillOptions]);
+
+  const allMajorSelected =
+    majorSkillOptions.length > 0 &&
+    majorSkillOptions.every((item) =>
+      formData.majorSkills.includes(item.id),
+    );
+
+  const allSkillsSelected =
+    filteredSkills.length > 0 &&
+    filteredSkills.every((item) =>
+      formData.selectedSkills.includes(item.id),
+    );
+
+  const handleInputChange = <K extends keyof JobFormData>(
+    field: K,
+    value: JobFormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleMajorSkill = (id: number) => {
+    setFormData((prev) => {
+      const exists = prev.majorSkills.includes(id);
+      const nextMajorSkills = exists
+        ? prev.majorSkills.filter((item) => item !== id)
+        : [...prev.majorSkills, id];
+
+      const allowedSkillIds =
+        nextMajorSkills.length === 0
+          ? new Set<number>()
+          : new Set(
+              skillOptions
+                .filter((skill) => nextMajorSkills.includes(skill.majorSkillId))
+                .map((skill) => skill.id),
+            );
+
+      const filteredSelectedSkills = prev.selectedSkills.filter((skillId) =>
+        allowedSkillIds.has(skillId),
+      );
+
+      return {
+        ...prev,
+        majorSkills: nextMajorSkills,
+        selectedSkills: filteredSelectedSkills,
+      };
+    });
+
+    if (errors.majorSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, majorSkills: '' }));
+    }
+    if (errors.selectedSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, selectedSkills: '' }));
     }
   };
 
-  const handleSkillToggle = (skill: string) => {
+  const toggleAllMajorSkills = () => {
+    if (majorSkillOptions.length === 0) {
+      return;
+    }
+
     setFormData((prev) => {
-      const isSelected = prev.selectedSkills.includes(skill);
-      if (isSelected) {
-        return {
-          ...prev,
-          selectedSkills: prev.selectedSkills.filter((s) => s !== skill),
-        };
-      } else {
-        return { ...prev, selectedSkills: [...prev.selectedSkills, skill] };
+      if (allMajorSelected) {
+        return { ...prev, majorSkills: [], selectedSkills: [] };
       }
+
+      const allIds = majorSkillOptions.map((item) => item.id);
+      return {
+        ...prev,
+        majorSkills: allIds,
+        selectedSkills: prev.selectedSkills.filter((skillId) =>
+          skillOptions.some(
+            (skill) =>
+              skill.id === skillId &&
+              allIds.includes(skill.majorSkillId),
+          ),
+        ),
+      };
     });
+
+    if (errors.majorSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, majorSkills: '' }));
+    }
+    if (errors.selectedSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, selectedSkills: '' }));
+    }
   };
 
-  const handleRemoveSkill = (skill: string) => {
+  const toggleSkill = (id: number) => {
+    setFormData((prev) => {
+      const exists = prev.selectedSkills.includes(id);
+      return {
+        ...prev,
+        selectedSkills: exists
+          ? prev.selectedSkills.filter((item) => item !== id)
+          : [...prev.selectedSkills, id],
+      };
+    });
+
+    if (errors.selectedSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, selectedSkills: '' }));
+    }
+  };
+
+  const toggleAllSkills = () => {
+    if (filteredSkills.length === 0) {
+      return;
+    }
+
+    const filteredIds = filteredSkills.map((skill) => skill.id);
+    setFormData((prev) => {
+      const areAllSelected = filteredIds.every((id) =>
+        prev.selectedSkills.includes(id),
+      );
+      const nextSelected = areAllSelected
+        ? prev.selectedSkills.filter((id) => !filteredIds.includes(id))
+        : Array.from(
+            new Set([...prev.selectedSkills, ...filteredIds]),
+          );
+      return { ...prev, selectedSkills: nextSelected };
+    });
+
+    if (errors.selectedSkills) {
+      setErrors((prevErrors) => ({ ...prevErrors, selectedSkills: '' }));
+    }
+  };
+
+  const handleRemoveSkill = (skillId: number) => {
     setFormData((prev) => ({
       ...prev,
-      selectedSkills: prev.selectedSkills.filter((s) => s !== skill),
+      selectedSkills: prev.selectedSkills.filter((id) => id !== skillId),
     }));
   };
 
@@ -386,8 +479,8 @@ const RegisterJob: React.FC = () => {
       if (!formData.experience) {
         newErrors.experience = 'Experience is required';
       }
-      if (!formData.majorSkill) {
-        newErrors.majorSkill = 'Major Skill is required';
+      if (formData.majorSkills.length === 0) {
+        newErrors.majorSkills = 'At least one major skill is required';
       }
       if (!formData.organization) {
         newErrors.organization = 'Organization is required';
@@ -398,7 +491,10 @@ const RegisterJob: React.FC = () => {
       if (!formData.jobCategory) {
         newErrors.jobCategory = 'Job Category is required';
       }
-      if (formData.majorSkill && formData.selectedSkills.length === 0) {
+      if (
+        formData.majorSkills.length > 0 &&
+        formData.selectedSkills.length === 0
+      ) {
         newErrors.selectedSkills = 'At least one skill is required';
       }
     } else if (step === 1) {
@@ -536,27 +632,6 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Major Skills *
-          </label>
-          <CustomSelect
-            value={formData.majorSkill}
-            onChange={(value) => {
-              handleInputChange('majorSkill', value);
-              if (errors.majorSkill) {
-                setErrors({ ...errors, majorSkill: '' });
-              }
-            }}
-            options={majorSkillsOptions}
-            placeholder="Select Major Skill"
-            className={`w-full ${errors.majorSkill ? 'border-red-500' : ''}`}
-          />
-          {errors.majorSkill && (
-            <p className="text-xs text-red-500 mt-1">{errors.majorSkill}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
             Organization *
           </label>
           <CustomSelect
@@ -573,7 +648,7 @@ const RegisterJob: React.FC = () => {
                 ? 'Loading organizations...'
                 : 'Select Organization'
             }
-            disabled={organizationsLoading && organizationOptions.length === 0}
+            emptyMessage="No organizations available"
             className={`w-full ${errors.organization ? 'border-red-500' : ''}`}
           />
           {errors.organization && (
@@ -628,10 +703,10 @@ const RegisterJob: React.FC = () => {
             options={jobCategoryOptions}
             placeholder={
               jobCategoriesLoading && jobCategoryOptions.length === 0
-                ? 'Loading categories...'
-                : 'Select Category'
+                ? 'Loading job categories...'
+                : 'Select Job Category'
             }
-            disabled={jobCategoriesLoading && jobCategoryOptions.length === 0}
+            emptyMessage="No job categories available"
             className={`w-full ${errors.jobCategory ? 'border-red-500' : ''}`}
           />
           {errors.jobCategory && (
@@ -682,77 +757,148 @@ const RegisterJob: React.FC = () => {
         </div>
       </div>
 
-      {/* Skills Multi-Select - Only show when major skill is selected */}
-      {formData.majorSkill && (
+      <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Skills *
-          </label>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">
+              Major Skills
+            </span>
+            <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input
+                type="checkbox"
+                checked={allMajorSelected}
+                onChange={toggleAllMajorSkills}
+                className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+              />
+              Select All
+            </label>
+          </div>
           <div
-            className={`border ${errors.selectedSkills ? 'border-red-500' : 'border-gray-200'} rounded-lg p-2 max-h-48 overflow-y-auto`}
+            className={`rounded-lg border ${
+              errors.majorSkills ? 'border-red-500' : 'border-gray-200'
+            } bg-white shadow-sm`}
           >
-            {availableSkills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {availableSkills.map((skill) => {
-                  const isSelected = formData.selectedSkills.includes(
-                    skill.value,
-                  );
-                  return (
-                    <button
-                      key={skill.value}
-                      type="button"
-                      onClick={() => {
-                        handleSkillToggle(skill.value);
-                        if (errors.selectedSkills) {
-                          setErrors({ ...errors, selectedSkills: '' });
-                        }
-                      }}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        isSelected
-                          ? 'bg-[#4F39F6] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {skill.label}
-                    </button>
-                  );
-                })}
+            {majorSkillsLoading && majorSkillOptions.length === 0 ? (
+              <div className="flex h-52 items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-[#4F39F6]" />
               </div>
             ) : (
-              <p className="text-sm text-gray-500">
-                No skills available for this major skill
-              </p>
+              <div className="max-h-56 overflow-y-auto">
+                {majorSkillOptions.length > 0 ? (
+                  majorSkillOptions.map((item) => {
+                    const isChecked = formData.majorSkills.includes(item.id);
+                    return (
+                      <label
+                        key={item.id}
+                        className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium ${
+                          isChecked ? 'bg-indigo-50 text-[#4F39F6]' : 'text-gray-700'
+                        } hover:bg-indigo-50`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleMajorSkill(item.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                        />
+                        <span className="flex-1 truncate">{item.name}</span>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <p className="px-3 py-4 text-sm text-gray-500">
+                    No major skills available
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          {errors.majorSkills && (
+            <p className="mt-1 text-xs text-red-500">{errors.majorSkills}</p>
+          )}
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">Skills</span>
+            <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input
+                type="checkbox"
+                checked={allSkillsSelected}
+                onChange={toggleAllSkills}
+                className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+              />
+              Select All
+            </label>
+          </div>
+          <div
+            className={`rounded-lg border ${
+              errors.selectedSkills ? 'border-red-500' : 'border-gray-200'
+            } bg-white shadow-sm`}
+          >
+            {skillsLoading && filteredSkills.length === 0 ? (
+              <div className="flex h-52 items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-[#4F39F6]" />
+              </div>
+            ) : (
+              <div className="max-h-56 overflow-y-auto">
+                {filteredSkills.length > 0 ? (
+                  filteredSkills.map((skill) => {
+                    const isChecked = formData.selectedSkills.includes(skill.id);
+                    return (
+                      <label
+                        key={skill.id}
+                        className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium ${
+                          isChecked ? 'bg-indigo-50 text-[#4F39F6]' : 'text-gray-700'
+                        } hover:bg-indigo-50`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSkill(skill.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                        />
+                        <span className="flex-1 truncate">{skill.name}</span>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <p className="px-3 py-4 text-sm text-gray-500">
+                    {formData.majorSkills.length === 0
+                      ? 'Select a major skill to view related skills'
+                      : 'No skills available for the selected major skills'}
+                  </p>
+                )}
+              </div>
             )}
           </div>
           {errors.selectedSkills && (
-            <p className="text-xs text-red-500 mt-1">{errors.selectedSkills}</p>
+            <p className="mt-1 text-xs text-red-500">{errors.selectedSkills}</p>
           )}
+        </div>
+      </div>
 
-          {/* Selected Skills */}
-          {formData.selectedSkills.length > 0 && (
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selected Skills
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {formData.selectedSkills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-primary-100 text-[#4F39F6] rounded-full text-sm font-medium"
-                  >
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="hover:bg-primary-200 rounded-full p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+      {formData.selectedSkills.length > 0 && (
+        <div className="mt-3">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Selected Skills
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {formData.selectedSkills.map((skillId) => (
+              <span
+                key={skillId}
+                className="inline-flex items-center gap-2 rounded-full bg-[#F2EEFF] px-3 py-1 text-sm font-medium text-[#4F39F6]"
+              >
+                {skillNameMap.get(skillId) ?? `Skill ${skillId}`}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSkill(skillId)}
+                  className="rounded-full p-0.5 hover:bg-[#E5DCFF]"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>
