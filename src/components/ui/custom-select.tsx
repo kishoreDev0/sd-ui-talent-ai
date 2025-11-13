@@ -12,6 +12,7 @@ interface CustomSelectProps {
   options: SelectOption[];
   placeholder?: string;
   className?: string;
+  emptyMessage?: string;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -20,6 +21,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   options,
   placeholder = 'Select an option',
   className = '',
+  emptyMessage = 'No options available',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -62,26 +64,32 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
           <div className="max-h-60 overflow-y-auto">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors duration-150 flex items-center justify-between ${
-                  value === option.value
-                    ? 'bg-primary-50 text-[#4F39F6]'
-                    : 'text-gray-900'
-                }`}
-              >
-                <span>{option.label}</span>
-                {value === option.value && (
-                  <Check className="h-4 w-4 text-[#4F39F6] animate-in fade-in duration-150" />
-                )}
-              </button>
-            ))}
+            {options.length === 0 ? (
+              <div className="px-3 py-6 text-center text-sm text-gray-500">
+                {emptyMessage}
+              </div>
+            ) : (
+              options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors duration-150 flex items-center justify-between ${
+                    value === option.value
+                      ? 'bg-primary-50 text-[#4F39F6]'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value && (
+                    <Check className="h-4 w-4 text-[#4F39F6] animate-in fade-in duration-150" />
+                  )}
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}
