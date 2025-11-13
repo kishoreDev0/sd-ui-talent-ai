@@ -1,45 +1,132 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Loader2, MoreVertical } from 'lucide-react';
+import {
+  createSkillAsync,
+  deleteSkillAsync,
+  fetchSkills,
+  updateSkillAsync,
+  useAppDispatch,
+  useAppSelector,
+  fetchMajorSkills,
+} from '@/store';
+import type { Skill } from '@/store/skill/types/skillTypes';
+import type { MajorSkill } from '@/store/majorSkill/types/majorSkillTypes';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-const Skills: React.FC = () => {
+type DialogMode = 'create' | 'edit' | 'delete';
+
+interface SkillFormState {
+  name: string;
+  description: string;
+  major_skill_id: number | '';
+  is_active: boolean;
+}
+
+const emptyForm: SkillFormState = {
+  name: '',
+  description: '',
+  major_skill_id: '',
+  is_active: true,
+};
+
+const SkillsPage: React.FC = () => {
   const role = useUserRole();
+  const dispatch = useAppDispatch();
+  const { showToast } = useToast();
+  const {
+    items: skills,
+    isLoading,
+    error,
+  } = useAppSelector((state) => state.skill);
+  const { items: majorSkills } = useAppSelector((state) => state.majorSkill);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTab, setSelectedTab] = useState('All');
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectedMajorSkill, setSelectedMajorSkill] = useState<number | 'all'>(
+    'all',
+  );
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [dialogMode, setDialogMode] = useState<DialogMode>('create');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formState, setFormState] = useState<SkillFormState>(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [rowActionId, setRowActionId] = useState<number | null>(null);
 
-  const tabs = ['All', 'Active', 'Inactive', 'Recent'];
+  useEffect(() => {
+    dispatch(fetchSkills());
+    dispatch(fetchMajorSkills());
+  }, [dispatch]);
 
-  const skills = [
-    {
-      id: 1,
-      skill: 'JavaScript',
-      description:
-        'JavaScript is a high-level, interpreted programming language that conforms to the ECMAScript specification.',
-      createdBy: 'admin',
-      active: true,
-      createdDate: '2 days ago',
-      updated: '1 day ago',
-    },
-    {
-      id: 2,
-      skill: 'React',
-      description:
-        'React is a JavaScript library for building user interfaces, particularly web applications.',
-      createdBy: 'admin',
-      active: true,
-      createdDate: '3 days ago',
-      updated: '2 days ago',
-    },
-  ];
+  useEffect(() => {
+    if (error) {
+      showToast(error, 'error');
+    }
+  }, [error, showToast]);
+
+  const filteredSkills = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return skills.filter((skill) => {
+      const matchesSearch =
+        !term ||
+        skill.name?.toLowerCase().includes(term) ||
+        skill.description?.toLowerCase().includes(term);
+      const matchesMajorSkill =
+        selectedMajorSkill === 'all' ||
+        Number(skill.major_skill_id) === Number(selectedMajorSkill);
+      return matchesSearch && matchesMajorSkill;
+    });
+  }, [skills, searchTerm, selectedMajorSkill]);
+
+  const allSelected =
+    filteredSkills.length > 0 &&
+    filteredSkills.every((skill) => selectedItems.includes(Number(skill.id)));
 
   const handleSelectAll = () => {
-    setSelectAll(!selectAll);
-    setSelectedItems(selectAll ? [] : skills.map((item) => item.id));
+    if (allSelected) {
+      setSelectedItems((prev) =>
+        prev.filter(
+          (id) =>
+            !filteredSkills.some((skill) => Number(skill.id) === Number(id)),
+        ),
+      );
+    } else {
+      setSelectedItems((prev) => [
+        ...prev,
+        ...filteredSkills
+          .map((skill) => Number(skill.id))
+          .filter((id) => !prev.includes(id)),
+      ]);
+    }
   };
 
   const handleSelectItem = (id: number) => {
@@ -48,178 +135,485 @@ const Skills: React.FC = () => {
     );
   };
 
-  const handleTabChange = (tab: string) => {
-    setSelectedTab(tab);
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return '—';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
+
+  const openDialog = (mode: DialogMode, skill: Skill | null = null) => {
+    window.setTimeout(() => {
+      setDialogMode(mode);
+      setSelectedSkill(skill);
+      if (skill) {
+        setFormState({
+          name: skill.name ?? '',
+          description: skill.description ?? '',
+          major_skill_id: Number(skill.major_skill_id),
+          is_active: skill.is_active !== false,
+        });
+      } else {
+        setFormState(emptyForm);
+      }
+      setDialogOpen(true);
+    }, 0);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setSelectedSkill(null);
+    setFormState(emptyForm);
+    setIsSubmitting(false);
+  };
+
+  const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!formState.name.trim()) {
+      showToast('Skill name is required', 'error');
+      return;
+    }
+    if (!formState.major_skill_id) {
+      showToast('Select a major skill', 'error');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      if (dialogMode === 'create') {
+        await dispatch(
+          createSkillAsync({
+            name: formState.name.trim(),
+            description: formState.description.trim() || undefined,
+            major_skill_id: Number(formState.major_skill_id),
+            is_active: formState.is_active,
+          }),
+        ).unwrap();
+        showToast('Skill created successfully', 'success');
+      } else if (dialogMode === 'edit' && selectedSkill) {
+        await dispatch(
+          updateSkillAsync({
+            id: Number(selectedSkill.id),
+            name: formState.name.trim(),
+            description: formState.description.trim() || undefined,
+            major_skill_id: Number(formState.major_skill_id),
+            is_active: formState.is_active,
+          }),
+        ).unwrap();
+        showToast('Skill updated successfully', 'success');
+      }
+      closeDialog();
+      dispatch(fetchSkills());
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Failed to save skill',
+        'error',
+      );
+      setIsSubmitting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedSkill) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await dispatch(deleteSkillAsync(Number(selectedSkill.id))).unwrap();
+      showToast('Skill deleted successfully', 'success');
+      closeDialog();
+      dispatch(fetchSkills());
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Failed to delete skill',
+        'error',
+      );
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleStatus = async (skill: Skill) => {
+    setRowActionId(Number(skill.id));
+    try {
+      await dispatch(
+        updateSkillAsync({
+          id: Number(skill.id),
+          name: skill.name ?? '',
+          description: skill.description ?? '',
+          major_skill_id: Number(skill.major_skill_id),
+          is_active: !(skill.is_active !== false),
+        }),
+      ).unwrap();
+      showToast('Skill status updated', 'success');
+      dispatch(fetchSkills());
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Failed to update status',
+        'error',
+      );
+    } finally {
+      setRowActionId(null);
+    }
+  };
+
+  const dialogTitle =
+    dialogMode === 'create'
+      ? 'Add skill'
+      : dialogMode === 'edit'
+        ? 'Edit skill'
+        : 'Delete skill';
 
   return (
     <MainLayout role={role}>
       <div className="space-y-4">
-        {/* Header */}
         <div className="px-4 py-2">
           <h1 className="text-2xl font-bold text-gray-900">Skills</h1>
           <p className="text-gray-600 text-sm">
-            Manage skills and their settings.
+            Keep individual skills aligned with your major skill taxonomy.
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 px-4">
-          <nav className="-mb-px flex space-x-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  selectedTab === tab
-                    ? 'border-[#4F39F6] text-[#4F39F6]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Search and Add Button */}
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                checked={selectAll}
+                checked={allSelected}
                 onChange={handleSelectAll}
-                className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
+                className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
               />
-              <label className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700">
                 Select All
-              </label>
+              </span>
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                type="text"
-                placeholder="Search skills..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-80"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search skills..."
+                className="w-80 pl-10"
               />
             </div>
           </div>
-          <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Skill
-          </Button>
+          <Select
+            value={String(selectedMajorSkill)}
+            onValueChange={(value) =>
+              setSelectedMajorSkill(value === 'all' ? 'all' : Number(value))
+            }
+          >
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All major skills" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All major skills</SelectItem>
+              {majorSkills.map((item: MajorSkill) => (
+                <SelectItem key={item.id} value={String(item.id)}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="ml-auto">
+            <Button
+              className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
+              onClick={() => openDialog('create')}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Skill
+            </Button>
+          </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white border-t border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    SKILL
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Skill
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    DESCRIPTION
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Description
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CREATED BY
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Major Skill
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ACTIVE
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CREATED DATE
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Updated
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    UPDATED
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {skills.map((skill) => (
-                  <tr key={skill.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(skill.id)}
-                        onChange={() => handleSelectItem(skill.id)}
-                        className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
-                      />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {skill.skill}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {skill.description}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {skill.createdBy}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={skill.active}
-                          className="h-4 w-4 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-900">
-                          {skill.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {skill.createdDate}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {skill.updated}
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-[#4F39F6]" />
+                        <span>Loading skills...</span>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : filteredSkills.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
+                      No skills found. Try adjusting your filters or add a new
+                      skill.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSkills.map((skill) => (
+                    <tr key={skill.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(Number(skill.id))}
+                          onChange={() => handleSelectItem(Number(skill.id))}
+                          className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                        />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {skill.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <p className="max-w-md line-clamp-2">
+                          {skill.description ?? '—'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {skill.major_skill?.name ||
+                          majorSkills.find(
+                            (ms) => ms.id === skill.major_skill_id,
+                          )?.name ||
+                          '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            skill.is_active !== false
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : 'bg-rose-100 text-rose-600'
+                          }`}
+                        >
+                          {skill.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {formatDate(skill.updated_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-gray-500 hover:text-gray-900"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => openDialog('edit', skill)}
+                            >
+                              Edit skill
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => toggleStatus(skill)}
+                              disabled={rowActionId === Number(skill.id)}
+                            >
+                              {rowActionId === Number(skill.id)
+                                ? 'Updating...'
+                                : skill.is_active !== false
+                                  ? 'Mark inactive'
+                                  : 'Mark active'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-600"
+                              onClick={() => openDialog('delete', skill)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200">
-          <div className="text-sm text-gray-700">
-            Showing 1 to 2 of 2 skills.
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" disabled className="text-gray-400">
-              Previous
-            </Button>
-            <Button className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white">
-              1
-            </Button>
-            <Button variant="outline" disabled className="text-gray-400">
-              Next
-            </Button>
-          </div>
-        </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>
+              {dialogMode === 'delete'
+                ? 'Deleting a skill cannot be undone.'
+                : 'Provide the details below to manage skills.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dialogMode === 'delete' ? (
+            <>
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete{' '}
+                <span className="font-semibold">
+                  {selectedSkill?.name ?? 'this skill'}
+                </span>
+                ?
+              </p>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDelete}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2 text-white" />
+                  )}
+                  Delete
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <form onSubmit={submitForm} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="skill-name">Name</Label>
+                <Input
+                  id="skill-name"
+                  placeholder="Enter skill name"
+                  value={formState.name}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skill-major-skill">Major skill</Label>
+                <Select
+                  value={
+                    formState.major_skill_id === ''
+                      ? ''
+                      : String(formState.major_skill_id)
+                  }
+                  onValueChange={(value) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      major_skill_id: value ? Number(value) : '',
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select major skill" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {majorSkills.map((item: MajorSkill) => (
+                      <SelectItem key={item.id} value={String(item.id)}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skill-description">Description</Label>
+                <Textarea
+                  id="skill-description"
+                  placeholder="Describe the skill..."
+                  value={formState.description}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <div className="space-y-1">
+                  <Label htmlFor="skill-active" className="text-sm font-medium">
+                    Active
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Toggle to control whether the skill can be assigned.
+                  </p>
+                </div>
+                <Switch
+                  id="skill-active"
+                  checked={formState.is_active}
+                  onCheckedChange={(checked) =>
+                    setFormState((prev) => ({ ...prev, is_active: checked }))
+                  }
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2 text-white" />
+                  )}
+                  {dialogMode === 'create' ? 'Create' : 'Save changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
 
-export default Skills;
+export default SkillsPage;

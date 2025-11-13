@@ -86,18 +86,6 @@ const navItems: NavItem[] = [
         roles: ['ta_executive'],
       },
       {
-        path: '/job-requirements',
-        icon: <FileText className="h-4 w-4" />,
-        label: 'Job Requirements',
-        roles: ['ta_executive'],
-      },
-      {
-        path: '/organizations',
-        icon: <Building2 className="h-4 w-4" />,
-        label: 'Organizations',
-        roles: ['ta_executive'],
-      },
-      {
         path: '/skills',
         icon: <Lightbulb className="h-4 w-4" />,
         label: 'Skills',

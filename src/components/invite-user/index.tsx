@@ -21,9 +21,12 @@ import { Label } from '@/components/ui/label';
 import { ChevronsUpDown, Search, X, CheckSquare2, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GetCountries } from 'react-country-state-city';
-import PhoneInput, { getCountryCallingCode } from 'react-phone-number-input';
+import PhoneInput, {
+  getCountryCallingCode,
+  parsePhoneNumber,
+} from 'react-phone-number-input';
+import type { Country as PhoneCountry } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { parsePhoneNumber } from 'react-phone-number-input';
 import { Combobox } from '@/components/ui/combobox';
 import {
   Select,
@@ -262,9 +265,11 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
         if (phoneNumberObj) {
           const nationalNumber = phoneNumberObj.nationalNumber;
           // Get country calling code for selected country
-          const countryCode = getCountryCallingCode(
-            selectedCountry.iso2.toUpperCase() as any,
-          );
+          const iso2Upper = selectedCountry.iso2?.toUpperCase();
+          const countryCode =
+            iso2Upper && isCountryCode(iso2Upper)
+              ? getCountryCallingCode(iso2Upper)
+              : undefined;
           if (countryCode && nationalNumber) {
             const currentCountryCode = phoneNumberObj.countryCallingCode;
             // Only update if country code is different
@@ -276,7 +281,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
             }
           }
         }
-      } catch (error) {
+      } catch {
         // If parsing fails, continue with current value
       }
     }
@@ -334,7 +339,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
             mobileCountryCode = `+${phoneNumberObj.countryCallingCode}`;
             mobileNumber = phoneNumberObj.nationalNumber;
           }
-        } catch (error) {
+        } catch {
           // If parsing fails, use the phone number as is
           mobileNumber = phoneNumber;
         }
@@ -647,8 +652,9 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
                 <PhoneInput
                   international
                   defaultCountry={
-                    selectedCountry?.iso2
-                      ? (selectedCountry.iso2.toUpperCase() as any)
+                    selectedCountry?.iso2 &&
+                    isCountryCode(selectedCountry.iso2.toUpperCase())
+                      ? (selectedCountry.iso2.toUpperCase() as PhoneCountry)
                       : 'US'
                   }
                   value={phoneNumber}
@@ -754,7 +760,10 @@ interface MultiSelectComboboxProps {
   error?: boolean;
 }
 
-function MultiSelectCombobox({
+const isCountryCode = (value: string): value is PhoneCountry =>
+  /^[A-Z]{2}$/.test(value);
+
+const MultiSelectCombobox: React.FC<MultiSelectComboboxProps> = ({
   options,
   selectedValues,
   onSelectionChange,
@@ -765,7 +774,7 @@ function MultiSelectCombobox({
   className,
   loading = false,
   error = false,
-}: MultiSelectComboboxProps) {
+}: MultiSelectComboboxProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -977,6 +986,6 @@ function MultiSelectCombobox({
       )}
     </div>
   );
-}
+};
 
 export default InviteUserForm;

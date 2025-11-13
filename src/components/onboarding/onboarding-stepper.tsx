@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Check,
-  ChevronDown,
-  FileText,
-  Upload,
-  ArrowRight,
-  ArrowLeft,
-} from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { GetCountries, GetState, GetCity } from 'react-country-state-city';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
@@ -89,6 +82,42 @@ interface OnboardingStepperProps {
   onComplete: () => void;
 }
 
+const toErrorMessage = (error: unknown, fallback: string): string => {
+  if (!error) {
+    return fallback;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const direct = record.error;
+    const message = record.message;
+
+    if (typeof direct === 'string') {
+      return direct;
+    }
+
+    if (Array.isArray(direct) && direct.length > 0) {
+      return direct
+        .filter((item): item is string => typeof item === 'string')
+        .join(', ');
+    }
+
+    if (typeof message === 'string') {
+      return message;
+    }
+  }
+
+  return fallback;
+};
+
 const steps = [
   {
     id: 1,
@@ -163,7 +192,7 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       }
     };
     loadCountries();
-  }, []);
+  }, [showToast]);
 
   // Load states when country changes
   useEffect(() => {
@@ -184,7 +213,7 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       };
       loadStates();
     }
-  }, [selectedCountry]);
+  }, [selectedCountry, showToast]);
 
   // Load cities when state changes
   useEffect(() => {
@@ -207,7 +236,7 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
       };
       loadCities();
     }
-  }, [selectedState, selectedCountry]);
+  }, [selectedState, selectedCountry, showToast]);
 
   // Update form values when selections change
   useEffect(() => {
@@ -265,10 +294,9 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 
       showToast('Onboarding completed successfully!', 'success');
       onComplete();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Onboarding failed:', err);
-      const errorMessage =
-        err?.message || err?.error || 'Failed to complete onboarding';
+      const errorMessage = toErrorMessage(err, 'Failed to complete onboarding');
       showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);

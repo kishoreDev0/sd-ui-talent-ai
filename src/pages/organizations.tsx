@@ -27,7 +27,6 @@ import {
   getAllOrganizations,
   createOrganization,
   updateOrganization,
-  deleteOrganization,
 } from '@/store/organization/actions/organizationActions';
 import type { Organization } from '@/store/types/organization/organizationTypes';
 
@@ -331,52 +330,6 @@ const OrganizationsPage: React.FC = () => {
     setSelectedState(null);
     setSelectedCity(null);
     setIsEditMode(false);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this organization?')) {
-      try {
-        await dispatch(deleteOrganization(id)).unwrap();
-        showToast('Organization deleted successfully', 'success');
-        // Refresh the list
-        await handleRefresh();
-        setSelectedItems((prev) => prev.filter((item) => item !== id));
-      } catch (error) {
-        console.error('Failed to delete organization:', error);
-        showToast('Failed to delete organization', 'error');
-      }
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedItems.length === 0) {
-      showToast('Please select at least one organization to delete', 'warning');
-      return;
-    }
-
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedItems.length} organization(s)?`,
-      )
-    ) {
-      try {
-        // Delete all selected organizations
-        await Promise.all(
-          selectedItems.map((id) => dispatch(deleteOrganization(id)).unwrap()),
-        );
-        showToast(
-          `${selectedItems.length} organization(s) deleted successfully`,
-          'success',
-        );
-        // Refresh the list
-        await handleRefresh();
-        setSelectedItems([]);
-        setSelectAll(false);
-      } catch (error) {
-        console.error('Failed to delete organizations:', error);
-        showToast('Failed to delete some organizations', 'error');
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -40,12 +40,49 @@ interface UserRow {
   country?: string;
 }
 
+const toErrorMessage = (error: unknown, fallback: string): string => {
+  if (!error) {
+    return fallback;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const direct = record.error;
+    const message = record.message;
+
+    if (typeof direct === 'string') {
+      return direct;
+    }
+
+    if (Array.isArray(direct) && direct.length > 0) {
+      return direct
+        .filter((item): item is string => typeof item === 'string')
+        .join(', ');
+    }
+
+    if (typeof message === 'string') {
+      return message;
+    }
+  }
+
+  return fallback;
+};
+
 const UsersPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const role = useUserRole();
   const { user } = useAppSelector((state) => state.auth);
-  const { users, loading, error, total, page, pageSize, totalPages } =
-    useAppSelector((state) => state.user);
+  const { users, loading, error, total, totalPages } = useAppSelector(
+    (state) => state.user,
+  );
   const { roles, loading: rolesLoading } = useAppSelector(
     (state) => state.role,
   );
@@ -328,12 +365,8 @@ const UsersPage: React.FC = () => {
 
       showToast('User details updated successfully', 'success');
       setIsEditMode(false);
-    } catch (err: any) {
-      const message =
-        err?.message ||
-        err?.payload?.message ||
-        err?.error ||
-        'Failed to update user';
+    } catch (err) {
+      const message = toErrorMessage(err, 'Failed to update user');
       showToast(message, 'error');
     } finally {
       setIsSaving(false);

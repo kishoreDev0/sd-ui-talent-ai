@@ -52,6 +52,64 @@ type City = {
   name: string;
 };
 
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+  if (!error) {
+    return fallback;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const direct = record.error;
+    const message = record.message;
+    const responseData = (record.response as Record<string, unknown>)?.data as
+      | Record<string, unknown>
+      | undefined;
+
+    if (typeof direct === 'string') {
+      return direct;
+    }
+
+    if (Array.isArray(direct) && direct.length > 0) {
+      return direct
+        .filter((item): item is string => typeof item === 'string')
+        .join(', ');
+    }
+
+    if (typeof message === 'string') {
+      return message;
+    }
+
+    if (responseData) {
+      const responseError = responseData.error;
+      const responseMessage = responseData.message;
+
+      if (typeof responseError === 'string') {
+        return responseError;
+      }
+
+      if (Array.isArray(responseError) && responseError.length > 0) {
+        return responseError
+          .filter((item): item is string => typeof item === 'string')
+          .join(', ');
+      }
+
+      if (typeof responseMessage === 'string') {
+        return responseMessage;
+      }
+    }
+  }
+
+  return fallback;
+};
+
 const SettingsPage: React.FC = () => {
   const role = useUserRole();
   const navigate = useNavigate();
@@ -175,12 +233,11 @@ const SettingsPage: React.FC = () => {
         'Password reset email sent successfully. Please check your inbox.',
         'success',
       );
-    } catch (error: any) {
-      const message =
-        error?.error ||
-        error?.message ||
-        error?.response?.data?.message ||
-        'Failed to send password reset email.';
+    } catch (error) {
+      const message = extractErrorMessage(
+        error,
+        'Failed to send password reset email.',
+      );
       showToast(message, 'error');
     }
   };
