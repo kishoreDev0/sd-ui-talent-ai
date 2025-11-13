@@ -224,10 +224,32 @@ const AdminAccessPage: React.FC = () => {
     }));
   };
 
-  const handleScanPermissions = () => {
+  const handleScanPermissions = async () => {
     // Reset the ref to allow re-scanning
     permissionsLoadedRef.current = false;
-    dispatch(syncPermissions());
+    try {
+      await dispatch(syncPermissions()).unwrap();
+      // Refresh roles so newly discovered permissions appear in matrices
+      rolesLoadedRef.current = false;
+      await dispatch(
+        getAllRole({
+          page,
+          page_size: pageSize,
+          active_only: activeOnly,
+        }),
+      ).unwrap();
+      setToast({
+        message: 'Permissions synced successfully',
+        type: 'success',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to sync permissions';
+      setToast({
+        message,
+        type: 'error',
+      });
+    }
   };
 
   return (

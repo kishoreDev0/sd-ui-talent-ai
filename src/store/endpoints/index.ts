@@ -66,6 +66,24 @@ export const JOB_CATEGORIES = {
   DELETE: (id: number | string) => `/api/v1/job-category/${id}`,
 } as const;
 
+// Major skills endpoints
+export const MAJOR_SKILLS = {
+  LIST: '/api/v1/major-skills',
+  GET_BY_ID: (id: number | string) => `/api/v1/major-skill/${id}`,
+  CREATE: '/api/v1/major-skill',
+  UPDATE: (id: number | string) => `/api/v1/major-skill/${id}`,
+  DELETE: (id: number | string) => `/api/v1/major-skill/${id}`,
+} as const;
+
+// Skills endpoints
+export const SKILLS = {
+  LIST: '/api/v1/skills',
+  GET_BY_ID: (id: number | string) => `/api/v1/skill/${id}`,
+  CREATE: '/api/v1/skill',
+  UPDATE: (id: number | string) => `/api/v1/skill/${id}`,
+  DELETE: (id: number | string) => `/api/v1/skill/${id}`,
+} as const;
+
 // Candidates endpoints
 export const CANDIDATES = {
   LIST: '/api/v1/candidates',

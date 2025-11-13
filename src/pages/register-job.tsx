@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -20,6 +20,9 @@ import {
   Redo,
   Check,
 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { getAllOrganizations } from '@/store/organization/actions/organizationActions';
+import { fetchJobCategories } from '@/store/jobCategory/actions/jobCategoryActions';
 
 interface JobFormData {
   jobTitle: string;
@@ -38,9 +41,30 @@ interface JobFormData {
   jobResponsibilities: string;
 }
 
+const FALLBACK_ORGANIZATIONS = [
+  { value: 'Tech Corp', label: 'Tech Corp' },
+  { value: 'Design Studio', label: 'Design Studio' },
+  { value: 'Startup Inc', label: 'Startup Inc' },
+  { value: 'Global Solutions', label: 'Global Solutions' },
+  { value: 'Creative Agency', label: 'Creative Agency' },
+];
+
+const FALLBACK_JOB_CATEGORIES = [
+  { value: 'Technology', label: 'Technology' },
+  { value: 'Design', label: 'Design' },
+  { value: 'Marketing', label: 'Marketing' },
+  { value: 'Sales', label: 'Sales' },
+  { value: 'Operations', label: 'Operations' },
+];
+
 const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
   const role = useUserRole();
+  const dispatch = useAppDispatch();
+  const { organizations: organizationList, loading: organizationsLoading } =
+    useAppSelector((state) => state.organization);
+  const { items: jobCategoryList, isLoading: jobCategoriesLoading } =
+    useAppSelector((state) => state.jobCategory);
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<JobFormData>({
@@ -59,6 +83,42 @@ const RegisterJob: React.FC = () => {
     jobDescription: '',
     jobResponsibilities: '',
   });
+
+  useEffect(() => {
+    if (organizationList.length === 0) {
+      dispatch(getAllOrganizations({ page: 1, page_size: 100 }));
+    }
+  }, [dispatch, organizationList.length]);
+
+  useEffect(() => {
+    if (jobCategoryList.length === 0) {
+      dispatch(fetchJobCategories());
+    }
+  }, [dispatch, jobCategoryList.length]);
+
+  const organizationOptions = useMemo(() => {
+    if (organizationList.length > 0) {
+      return organizationList
+        .filter((org) => org.name)
+        .map((org) => ({
+          value: org.name ?? `Organization ${org.id ?? ''}`,
+          label: org.name ?? `Organization ${org.id ?? ''}`,
+        }));
+    }
+    return FALLBACK_ORGANIZATIONS;
+  }, [organizationList]);
+
+  const jobCategoryOptions = useMemo(() => {
+    if (jobCategoryList.length > 0) {
+      return jobCategoryList
+        .filter((category) => category.name)
+        .map((category) => ({
+          value: category.name ?? `Category ${category.id ?? ''}`,
+          label: category.name ?? `Category ${category.id ?? ''}`,
+        }));
+    }
+    return FALLBACK_JOB_CATEGORIES;
+  }, [jobCategoryList]);
 
   // Mock skills database filtered by major skill
   const getSkillsByMajorSkill = (
@@ -262,14 +322,6 @@ const RegisterJob: React.FC = () => {
     { value: 'Machine Learning', label: 'Machine Learning' },
   ];
 
-  const organizations = [
-    { value: 'Tech Corp', label: 'Tech Corp' },
-    { value: 'Design Studio', label: 'Design Studio' },
-    { value: 'Startup Inc', label: 'Startup Inc' },
-    { value: 'Global Solutions', label: 'Global Solutions' },
-    { value: 'Creative Agency', label: 'Creative Agency' },
-  ];
-
   const priorities = [
     { value: 'High', label: 'High' },
     { value: 'Medium', label: 'Medium' },
@@ -281,14 +333,6 @@ const RegisterJob: React.FC = () => {
     { value: 'EUR', label: 'EUR' },
     { value: 'GBP', label: 'GBP' },
     { value: 'INR', label: 'INR' },
-  ];
-
-  const jobCategories = [
-    { value: 'Technology', label: 'Technology' },
-    { value: 'Design', label: 'Design' },
-    { value: 'Marketing', label: 'Marketing' },
-    { value: 'Sales', label: 'Sales' },
-    { value: 'Operations', label: 'Operations' },
   ];
 
   const levels = [
@@ -523,8 +567,13 @@ const RegisterJob: React.FC = () => {
                 setErrors({ ...errors, organization: '' });
               }
             }}
-            options={organizations}
-            placeholder="Select Organization"
+            options={organizationOptions}
+            placeholder={
+              organizationsLoading && organizationOptions.length === 0
+                ? 'Loading organizations...'
+                : 'Select Organization'
+            }
+            disabled={organizationsLoading && organizationOptions.length === 0}
             className={`w-full ${errors.organization ? 'border-red-500' : ''}`}
           />
           {errors.organization && (
@@ -576,8 +625,13 @@ const RegisterJob: React.FC = () => {
                 setErrors({ ...errors, jobCategory: '' });
               }
             }}
-            options={jobCategories}
-            placeholder="Select Category"
+            options={jobCategoryOptions}
+            placeholder={
+              jobCategoriesLoading && jobCategoryOptions.length === 0
+                ? 'Loading categories...'
+                : 'Select Category'
+            }
+            disabled={jobCategoriesLoading && jobCategoryOptions.length === 0}
             className={`w-full ${errors.jobCategory ? 'border-red-500' : ''}`}
           />
           {errors.jobCategory && (
