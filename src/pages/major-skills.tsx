@@ -46,16 +46,19 @@ const MajorSkills: React.FC = () => {
   const role = useUserRole();
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
-  const { items, isLoading, error } = useAppSelector((state) => state.majorSkill);
+  const { items, isLoading, error } = useAppSelector(
+    (state) => state.majorSkill,
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMajorSkill, setSelectedMajorSkill] = useState<MajorSkill | null>(null);
+  const [selectedMajorSkill, setSelectedMajorSkill] =
+    useState<MajorSkill | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>('create');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formState, setFormState] = useState(emptyFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
-       const [selectedItems, setSelectedItems] = useState<number[]>([]);
-       const [rowActionId, setRowActionId] = useState<number | null>(null);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [rowActionId, setRowActionId] = useState<number | null>(null);
 
   useEffect(() => {
     dispatch(fetchMajorSkills());
@@ -76,55 +79,59 @@ const MajorSkills: React.FC = () => {
       return (
         item.name?.toLowerCase().includes(term) ||
         item.description?.toLowerCase().includes(term) ||
-        String(item.created_by ?? '').toLowerCase().includes(term)
+        String(item.created_by ?? '')
+          .toLowerCase()
+          .includes(term)
       );
     });
   }, [items, searchTerm]);
 
-       const selectAll =
-         filteredItems.length > 0 &&
-         filteredItems.every((item) => selectedItems.includes(Number(item.id)));
+  const selectAll =
+    filteredItems.length > 0 &&
+    filteredItems.every((item) => selectedItems.includes(Number(item.id)));
 
-       const handleSelectAll = () => {
-         if (selectAll) {
-           setSelectedItems((prev) =>
-             prev.filter(
-               (id) =>
-                 !filteredItems.some((item) => Number(item.id) === Number(id)),
-             ),
-           );
-         } else {
-           setSelectedItems((prev) => [
-             ...prev,
-             ...filteredItems
-               .map((item) => Number(item.id))
-               .filter((id) => !prev.includes(id)),
-           ]);
-         }
-       };
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems((prev) =>
+        prev.filter(
+          (id) => !filteredItems.some((item) => Number(item.id) === Number(id)),
+        ),
+      );
+    } else {
+      setSelectedItems((prev) => [
+        ...prev,
+        ...filteredItems
+          .map((item) => Number(item.id))
+          .filter((id) => !prev.includes(id)),
+      ]);
+    }
+  };
 
-       const handleSelectItem = (id: number) => {
-         setSelectedItems((prev) =>
-           prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-         );
-       };
+  const handleSelectItem = (id: number) => {
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
 
-       const openDialog = (mode: DialogMode, majorSkill: MajorSkill | null = null) => {
-         window.setTimeout(() => {
-           setDialogMode(mode);
-           setSelectedMajorSkill(majorSkill);
-           if (majorSkill) {
-             setFormState({
-               name: majorSkill.name ?? '',
-               description: majorSkill.description ?? '',
-               is_active: majorSkill.is_active !== false,
-             });
-           } else {
-             setFormState(emptyFormState);
-           }
-           setDialogOpen(true);
-         }, 0);
-       };
+  const openDialog = (
+    mode: DialogMode,
+    majorSkill: MajorSkill | null = null,
+  ) => {
+    window.setTimeout(() => {
+      setDialogMode(mode);
+      setSelectedMajorSkill(majorSkill);
+      if (majorSkill) {
+        setFormState({
+          name: majorSkill.name ?? '',
+          description: majorSkill.description ?? '',
+          is_active: majorSkill.is_active !== false,
+        });
+      } else {
+        setFormState(emptyFormState);
+      }
+      setDialogOpen(true);
+    }, 0);
+  };
 
   const closeDialog = () => {
     setDialogOpen(false);
@@ -178,7 +185,9 @@ const MajorSkills: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      await dispatch(deleteMajorSkillAsync(Number(selectedMajorSkill.id))).unwrap();
+      await dispatch(
+        deleteMajorSkillAsync(Number(selectedMajorSkill.id)),
+      ).unwrap();
       showToast('Major skill deleted successfully', 'success');
       closeDialog();
       dispatch(fetchMajorSkills());
@@ -192,7 +201,7 @@ const MajorSkills: React.FC = () => {
   };
 
   const toggleStatus = async (majorSkill: MajorSkill) => {
-         setRowActionId(Number(majorSkill.id));
+    setRowActionId(Number(majorSkill.id));
     try {
       await dispatch(
         updateMajorSkillAsync({
@@ -209,25 +218,25 @@ const MajorSkills: React.FC = () => {
         err instanceof Error ? err.message : 'Failed to update status',
         'error',
       );
-         } finally {
-           setRowActionId(null);
+    } finally {
+      setRowActionId(null);
     }
   };
 
-       const formatDate = (iso?: string | null) => {
-         if (!iso) {
-           return '—';
-         }
-         const date = new Date(iso);
-         if (Number.isNaN(date.getTime())) {
-           return '—';
-         }
-         return date.toLocaleDateString('en-US', {
-           month: 'short',
-           day: 'numeric',
-           year: 'numeric',
-         });
-       };
+  const formatDate = (iso?: string | null) => {
+    if (!iso) {
+      return '—';
+    }
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return '—';
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
 
   return (
     <MainLayout role={role}>
@@ -239,27 +248,29 @@ const MajorSkills: React.FC = () => {
           </p>
         </div>
 
-             <div className="flex items-center justify-between px-4 py-2">
-               <div className="flex items-center space-x-4">
-                 <div className="flex items-center space-x-2">
-                   <input
-                     type="checkbox"
-                     checked={selectAll}
-                     onChange={handleSelectAll}
-                     className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
-                   />
-                   <span className="text-sm font-medium text-gray-700">Select All</span>
-                 </div>
-                 <div className="relative">
-                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-                   <Input
-                     value={searchTerm}
-                     onChange={(event) => setSearchTerm(event.target.value)}
-                     placeholder="Search major skills..."
-                     className="w-80 pl-10"
-                   />
-                 </div>
-               </div>
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Select All
+              </span>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search major skills..."
+                className="w-80 pl-10"
+              />
+            </div>
+          </div>
           <Button
             className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
             onClick={() => openDialog('create')}
@@ -269,40 +280,43 @@ const MajorSkills: React.FC = () => {
           </Button>
         </div>
 
-             <div className="border-t border-gray-200 bg-white">
+        <div className="border-t border-gray-200 bg-white">
           <div className="overflow-x-auto">
-                 <table className="min-w-full divide-y divide-gray-200">
-                   <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                         <input
-                           type="checkbox"
-                           checked={selectAll}
-                           onChange={handleSelectAll}
-                           className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
-                         />
-                       </th>
-                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                         Major Skill
-                       </th>
-                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                         Description
-                       </th>
-                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                         Status
-                       </th>
-                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                         Created
-                       </th>
-                       <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                         Actions
-                       </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Major Skill
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Created
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-                   <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {isLoading ? (
                   <tr>
-                         <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td
+                      colSpan={6}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
                       <div className="flex items-center justify-center space-x-2">
                         <Loader2 className="h-4 w-4 animate-spin text-[#4F39F6]" />
                         <span>Loading major skills...</span>
@@ -311,84 +325,88 @@ const MajorSkills: React.FC = () => {
                   </tr>
                 ) : filteredItems.length === 0 ? (
                   <tr>
-                         <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
-                      No major skills found. Try adjusting your search or add a new one.
+                    <td
+                      colSpan={6}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
+                      No major skills found. Try adjusting your search or add a
+                      new one.
                     </td>
                   </tr>
                 ) : (
                   filteredItems.map((item) => (
-                         <tr key={item.id} className="hover:bg-gray-50">
-                           <td className="px-4 py-3">
-                             <input
-                               type="checkbox"
-                               checked={selectedItems.includes(Number(item.id))}
-                               onChange={() => handleSelectItem(Number(item.id))}
-                               className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
-                             />
-                           </td>
-                           <td className="px-4 py-3 whitespace-nowrap">
-                             <span className="text-sm font-medium text-gray-900">
-                               {item.name}
-                             </span>
-                           </td>
-                           <td className="px-4 py-3">
-                             <p className="max-w-md text-sm text-gray-700 line-clamp-2">
-                               {item.description ?? '—'}
-                             </p>
-                           </td>
-                           <td className="px-4 py-3 whitespace-nowrap">
-                             <span
-                               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                 item.is_active !== false
-                                   ? 'bg-emerald-100 text-emerald-600'
-                                   : 'bg-rose-100 text-rose-600'
-                               }`}
-                             >
-                               {item.is_active !== false ? 'Active' : 'Inactive'}
-                             </span>
-                           </td>
-                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                             {formatDate(item.created_at)}
-                           </td>
-                           <td className="px-4 py-3 text-right">
-                             <DropdownMenu>
-                               <DropdownMenuTrigger asChild>
-                                 <Button
-                                   variant="ghost"
-                                   size="icon"
-                                   className="h-8 w-8 text-gray-500 hover:text-gray-900"
-                                 >
-                                   <MoreVertical className="h-4 w-4" />
-                                 </Button>
-                               </DropdownMenuTrigger>
-                               <DropdownMenuContent align="end" className="w-44">
-                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                 <DropdownMenuSeparator />
-                                 <DropdownMenuItem
-                                   onClick={() => openDialog('edit', item)}
-                                 >
-                                   Edit skill
-                                 </DropdownMenuItem>
-                                 <DropdownMenuItem
-                                   onClick={() => toggleStatus(item)}
-                                   disabled={rowActionId === Number(item.id)}
-                                 >
-                                   {rowActionId === Number(item.id)
-                                     ? 'Updating...'
-                                     : item.is_active !== false
-                                       ? 'Mark inactive'
-                                       : 'Mark active'}
-                                 </DropdownMenuItem>
-                                 <DropdownMenuSeparator />
-                                 <DropdownMenuItem
-                                   className="text-red-600 focus:text-red-600"
-                                   onClick={() => openDialog('delete', item)}
-                                 >
-                                   Delete
-                                 </DropdownMenuItem>
-                               </DropdownMenuContent>
-                             </DropdownMenu>
-                           </td>
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(Number(item.id))}
+                          onChange={() => handleSelectItem(Number(item.id))}
+                          className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                        />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm font-medium text-gray-900">
+                          {item.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="max-w-md text-sm text-gray-700 line-clamp-2">
+                          {item.description ?? '—'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            item.is_active !== false
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : 'bg-rose-100 text-rose-600'
+                          }`}
+                        >
+                          {item.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                        {formatDate(item.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-gray-500 hover:text-gray-900"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => openDialog('edit', item)}
+                            >
+                              Edit skill
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => toggleStatus(item)}
+                              disabled={rowActionId === Number(item.id)}
+                            >
+                              {rowActionId === Number(item.id)
+                                ? 'Updating...'
+                                : item.is_active !== false
+                                  ? 'Mark inactive'
+                                  : 'Mark active'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-600"
+                              onClick={() => openDialog('delete', item)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -425,7 +443,11 @@ const MajorSkills: React.FC = () => {
                 ?
               </p>
               <DialogFooter>
-                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting}>
+                <Button
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button
@@ -449,7 +471,10 @@ const MajorSkills: React.FC = () => {
                   placeholder="Enter major skill name"
                   value={formState.name}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, name: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
                   }
                   required
                 />
@@ -473,11 +498,15 @@ const MajorSkills: React.FC = () => {
 
               <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                 <div className="space-y-1">
-                  <Label htmlFor="major-skill-active" className="text-sm font-medium">
+                  <Label
+                    htmlFor="major-skill-active"
+                    className="text-sm font-medium"
+                  >
                     Active
                   </Label>
                   <p className="text-xs text-gray-500">
-                    Toggle to control whether this major skill is available for use.
+                    Toggle to control whether this major skill is available for
+                    use.
                   </p>
                 </div>
                 <Switch
@@ -490,7 +519,12 @@ const MajorSkills: React.FC = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={closeDialog} disabled={isSubmitting}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
@@ -509,4 +543,3 @@ const MajorSkills: React.FC = () => {
 };
 
 export default MajorSkills;
-

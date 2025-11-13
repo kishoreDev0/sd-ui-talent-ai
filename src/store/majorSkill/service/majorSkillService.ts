@@ -230,9 +230,10 @@ export const createMajorSkill = async (
   payload: CreateMajorSkillRequest,
 ): Promise<MajorSkill> => {
   try {
-    const response = await axiosInstance.post<
-      MajorSkillResponse | MajorSkill
-    >(MAJOR_SKILLS.CREATE, payload);
+    const response = await axiosInstance.post<MajorSkillResponse | MajorSkill>(
+      MAJOR_SKILLS.CREATE,
+      payload,
+    );
     const majorSkill = extractMajorSkill(response.data);
     if (!majorSkill) {
       throw new Error('Invalid major skill response');
@@ -249,9 +250,10 @@ export const updateMajorSkill = async (
 ): Promise<MajorSkill> => {
   try {
     const { id, ...body } = payload;
-    const response = await axiosInstance.patch<
-      MajorSkillResponse | MajorSkill
-    >(MAJOR_SKILLS.UPDATE(id), body);
+    const response = await axiosInstance.patch<MajorSkillResponse | MajorSkill>(
+      MAJOR_SKILLS.UPDATE(id),
+      body,
+    );
     const majorSkill = extractMajorSkill(response.data);
     if (!majorSkill) {
       throw new Error('Invalid major skill response');
@@ -274,5 +276,3 @@ export const deleteMajorSkill = async (
     throw error;
   }
 };
-
-

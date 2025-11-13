@@ -54,5 +54,3 @@ export interface SkillState {
   error: string | null;
   selectedSkill: Skill | null;
 }
-
-

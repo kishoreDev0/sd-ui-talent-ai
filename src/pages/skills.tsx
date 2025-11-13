@@ -63,11 +63,17 @@ const SkillsPage: React.FC = () => {
   const role = useUserRole();
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
-  const { items: skills, isLoading, error } = useAppSelector((state) => state.skill);
+  const {
+    items: skills,
+    isLoading,
+    error,
+  } = useAppSelector((state) => state.skill);
   const { items: majorSkills } = useAppSelector((state) => state.majorSkill);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMajorSkill, setSelectedMajorSkill] = useState<number | 'all'>('all');
+  const [selectedMajorSkill, setSelectedMajorSkill] = useState<number | 'all'>(
+    'all',
+  );
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>('create');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -279,7 +285,9 @@ const SkillsPage: React.FC = () => {
                 onChange={handleSelectAll}
                 className="h-4 w-4 rounded border-gray-300 text-[#4F39F6] focus:ring-[#4F39F6]"
               />
-              <span className="text-sm font-medium text-gray-700">Select All</span>
+              <span className="text-sm font-medium text-gray-700">
+                Select All
+              </span>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -356,7 +364,10 @@ const SkillsPage: React.FC = () => {
               <tbody className="divide-y divide-gray-200 bg-white">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
                       <div className="flex items-center justify-center space-x-2">
                         <Loader2 className="h-4 w-4 animate-spin text-[#4F39F6]" />
                         <span>Loading skills...</span>
@@ -365,8 +376,12 @@ const SkillsPage: React.FC = () => {
                   </tr>
                 ) : filteredSkills.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
-                      No skills found. Try adjusting your filters or add a new skill.
+                    <td
+                      colSpan={7}
+                      className="px-4 py-6 text-center text-sm text-gray-500"
+                    >
+                      No skills found. Try adjusting your filters or add a new
+                      skill.
                     </td>
                   </tr>
                 ) : (
@@ -390,7 +405,9 @@ const SkillsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {skill.major_skill?.name ||
-                          majorSkills.find((ms) => ms.id === skill.major_skill_id)?.name ||
+                          majorSkills.find(
+                            (ms) => ms.id === skill.major_skill_id,
+                          )?.name ||
                           '—'}
                       </td>
                       <td className="px-4 py-3 text-sm">
@@ -476,7 +493,11 @@ const SkillsPage: React.FC = () => {
                 ?
               </p>
               <DialogFooter>
-                <Button variant="outline" onClick={closeDialog} disabled={isSubmitting}>
+                <Button
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button
@@ -500,7 +521,10 @@ const SkillsPage: React.FC = () => {
                   placeholder="Enter skill name"
                   value={formState.name}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, name: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
                   }
                   required
                 />
@@ -569,7 +593,12 @@ const SkillsPage: React.FC = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={closeDialog} disabled={isSubmitting}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
@@ -588,4 +617,3 @@ const SkillsPage: React.FC = () => {
 };
 
 export default SkillsPage;
-

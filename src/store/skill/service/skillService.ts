@@ -166,7 +166,9 @@ const extractSkillArray = (
   return match ?? [];
 };
 
-const extractSkill = (payload: SkillResponse | Skill | undefined): Skill | null => {
+const extractSkill = (
+  payload: SkillResponse | Skill | undefined,
+): Skill | null => {
   if (!payload) {
     return null;
   }
@@ -180,7 +182,11 @@ const extractSkill = (payload: SkillResponse | Skill | undefined): Skill | null 
     return null;
   }
 
-  const candidates = [recordPayload.data, recordPayload.skill, recordPayload.result];
+  const candidates = [
+    recordPayload.data,
+    recordPayload.skill,
+    recordPayload.result,
+  ];
 
   for (const candidate of candidates) {
     if (!candidate) {
@@ -273,5 +279,3 @@ export const deleteSkill = async (
     throw error;
   }
 };
-
-

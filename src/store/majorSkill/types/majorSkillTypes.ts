@@ -49,5 +49,3 @@ export interface MajorSkillState {
   error: string | null;
   selectedMajorSkill: MajorSkill | null;
 }
-
-

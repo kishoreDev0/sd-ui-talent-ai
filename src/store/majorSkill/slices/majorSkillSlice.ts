@@ -115,5 +115,3 @@ export const { clearMajorSkillError, setSelectedMajorSkill } =
   majorSkillSlice.actions;
 
 export default majorSkillSlice.reducer;
-
-

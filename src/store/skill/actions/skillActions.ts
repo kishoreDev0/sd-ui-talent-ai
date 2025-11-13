@@ -92,5 +92,3 @@ export const deleteSkillAsync = createAsyncThunk(
     }
   },
 );
-
-

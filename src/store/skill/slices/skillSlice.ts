@@ -47,7 +47,9 @@ const skillSlice = createSlice({
       .addCase(fetchSkillById.fulfilled, (state, action) => {
         state.isLoading = false;
         state.selectedSkill = action.payload;
-        const exists = state.items.some((item) => item.id === action.payload.id);
+        const exists = state.items.some(
+          (item) => item.id === action.payload.id,
+        );
         if (!exists) {
           state.items.push(action.payload);
         }
@@ -77,7 +79,10 @@ const skillSlice = createSlice({
         state.items = state.items.map((item) =>
           item.id === action.payload.id ? action.payload : item,
         );
-        if (state.selectedSkill && state.selectedSkill.id === action.payload.id) {
+        if (
+          state.selectedSkill &&
+          state.selectedSkill.id === action.payload.id
+        ) {
           state.selectedSkill = action.payload;
         }
       })
@@ -109,5 +114,3 @@ const skillSlice = createSlice({
 export const { clearSkillError, setSelectedSkill } = skillSlice.actions;
 
 export default skillSlice.reducer;
-
-
