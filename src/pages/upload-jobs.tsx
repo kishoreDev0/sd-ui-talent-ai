@@ -81,7 +81,10 @@ const UploadJobs: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const summaries: Array<{ fileName: string; summary: JobBulkUploadSummary }> = [];
+    const summaries: Array<{
+      fileName: string;
+      summary: JobBulkUploadSummary;
+    }> = [];
 
     try {
       for (const file of uploadFiles) {
@@ -108,7 +111,10 @@ const UploadJobs: React.FC = () => {
         totalFailed > 0 ? 'warning' : 'success',
       );
     } catch (error) {
-      const message = getErrorMessage(error, 'Upload failed. Please try again.');
+      const message = getErrorMessage(
+        error,
+        'Upload failed. Please try again.',
+      );
       showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
@@ -212,11 +218,17 @@ const UploadJobs: React.FC = () => {
               <p className="font-semibold text-slate-800">Upload summary</p>
               <div className="space-y-3">
                 {results.map((item) => (
-                  <div key={item.fileName} className="rounded-lg bg-white p-3 shadow-sm">
+                  <div
+                    key={item.fileName}
+                    className="rounded-lg bg-white p-3 shadow-sm"
+                  >
                     <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{item.fileName}</span>
+                      <span className="font-medium text-slate-700">
+                        {item.fileName}
+                      </span>
                       <span>
-                        {item.summary.created} created • {item.summary.failed} failed
+                        {item.summary.created} created • {item.summary.failed}{' '}
+                        failed
                       </span>
                     </div>
                     {item.summary.failures.length > 0 && (

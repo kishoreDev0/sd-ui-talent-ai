@@ -113,4 +113,6 @@ export interface JobBulkUploadSummary {
   failed: number;
   failures: Array<{ row: number; error: string }>;
 }
-export type JobBulkUploadResponse = CommonJobResponse<{ result: JobBulkUploadSummary }>;
+export type JobBulkUploadResponse = CommonJobResponse<{
+  result: JobBulkUploadSummary;
+}>;

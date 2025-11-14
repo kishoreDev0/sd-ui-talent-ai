@@ -80,7 +80,9 @@ export const deleteJob = async (id: number): Promise<void> => {
   await axiosInstance.delete(JOBS.DELETE(id));
 };
 
-export const bulkUploadJobs = async (file: File): Promise<JobBulkUploadSummary> => {
+export const bulkUploadJobs = async (
+  file: File,
+): Promise<JobBulkUploadSummary> => {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -92,10 +94,12 @@ export const bulkUploadJobs = async (file: File): Promise<JobBulkUploadSummary> 
     },
   );
 
-  return response.data?.data?.result ?? {
-    processed: 0,
-    created: 0,
-    failed: 0,
-    failures: [],
-  };
+  return (
+    response.data?.data?.result ?? {
+      processed: 0,
+      created: 0,
+      failed: 0,
+      failures: [],
+    }
+  );
 };
