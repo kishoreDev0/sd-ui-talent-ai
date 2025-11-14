@@ -49,12 +49,11 @@ export const PERMISSIONS = {
 // Jobs endpoints (keeping structure from jobEndpoints.ts)
 export const JOBS = {
   LIST: '/api/v1/jobs',
-  GET_BY_ID: (id: number | string) => `/api/v1/jobs/${id}`,
-  CREATE: '/api/v1/jobs',
-  UPDATE: (id: number | string) => `/api/v1/jobs/${id}`,
-  DELETE: (id: number | string) => `/api/v1/jobs/${id}`,
-  UPLOAD: '/api/v1/jobs/upload',
-  SEARCH: '/api/v1/jobs/search',
+  GET_BY_ID: (id: number | string) => `/api/v1/job/${id}`,
+  CREATE: '/api/v1/job',
+  UPDATE: (id: number | string) => `/api/v1/job/${id}`,
+  DELETE: (id: number | string) => `/api/v1/job/${id}`,
+  BULK_UPLOAD: '/api/v1/jobs/bulk-upload',
 } as const;
 
 // Job categories endpoints

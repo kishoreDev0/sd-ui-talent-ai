@@ -1,126 +1,118 @@
-export interface Job {
+export interface JobMajorSkill {
   id: number;
-  company: string;
-  companyIcon?: string;
-  title: string;
-  paymentVerified?: boolean;
-  location: string;
-  applicants?: number;
-  description: string;
-  tags?: string[];
-  hourlyRate?: string;
-  proposals?: number;
-  priority?: 'high' | 'medium' | 'low';
-  creator?: string;
-  organization?: string;
-  majorSkills?: string[];
-  skills?: string[];
-  jobCategory?: string;
-  employmentType?: string;
-  experience?: string;
-  minCompensation?: string;
-  maxCompensation?: string;
-  currency?: string;
-  noticePeriod?: string;
-  source?: string;
-  attachments?: Array<{ name: string; url: string }>;
-  createdAt?: string;
-  updatedAt?: string;
+  name: string;
 }
 
-export interface JobState {
-  jobs: Job[];
-  currentJob: Job | null;
-  loading: boolean;
-  error: string | null;
-  filters: JobFilters;
+export interface JobSkill {
+  id: number;
+  name: string;
+  major_skill_id: number;
+}
+
+export interface Job {
+  id: number;
+  job_title: string;
+  organization: string;
+  job_category: string;
+  employment_type?: string | null;
+  priority?: string | null;
+  level?: string | null;
+  experience_years: number;
+  currency?: string | null;
+  compensation_from?: number | null;
+  compensation_to?: number | null;
+  no_of_vacancy: number;
+  job_description: string;
+  job_responsibilities?: string | null;
+  major_skills: JobMajorSkill[];
+  skills: JobSkill[];
+  created_by?: number | null;
+  updated_by?: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface JobFilters {
-  searchTerm?: string;
-  location?: string;
-  jobTitle?: string;
-  majorSkills?: string;
-  minCompensation?: string;
-  maxCompensation?: string;
+  search?: string;
   organization?: string;
-  priority?: ('high' | 'medium' | 'low')[];
-  creator?: string;
-  jobCategory?: string;
-  employmentType?: string;
-  experience?: string;
+  job_category?: string;
+  level?: string;
+  employment_type?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface JobCategoryBucket {
+  name: string;
+  count: number;
+}
+
+export interface JobTypeBucket {
+  name: string;
+  count: number;
+}
+
+export interface JobState {
+  items: Job[];
+  current: Job | null;
+  isLoading: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  filters: JobFilters;
+  categories: JobCategoryBucket[];
+  jobTypes: JobTypeBucket[];
 }
 
 export interface CreateJobRequest {
-  title: string;
-  company: string;
-  description: string;
-  location: string;
-  majorSkills?: string[];
-  skills?: string[];
-  jobCategory?: string;
-  organization?: string;
-  priority?: 'high' | 'medium' | 'low';
-  employmentType?: string;
-  experience?: string;
-  minCompensation?: string;
-  maxCompensation?: string;
-  currency?: string;
-  noticePeriod?: string;
-  responsibilities?: string;
-  qualifications?: string;
-  attachments?: File[];
-  [key: string]: unknown;
+  job_title: string;
+  organization: string;
+  job_category: string;
+  employment_type?: string | null;
+  priority?: string | null;
+  level?: string | null;
+  experience_years: number;
+  currency?: string | null;
+  compensation_from?: number | null;
+  compensation_to?: number | null;
+  no_of_vacancy: number;
+  major_skills: string[];
+  skills: string[];
+  job_description: string;
+  job_responsibilities?: string | null;
 }
 
-export interface UpdateJobRequest extends Partial<CreateJobRequest> {
+export interface UpdateJobRequest extends CreateJobRequest {
   id: number;
 }
 
-export interface ListJobsResponse {
-  status: string;
-  message?: string;
-  data?: Job[];
-  jobs?: Job[];
+export interface JobListPayload {
+  result: Job[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  categories: JobCategoryBucket[];
+  job_types: JobTypeBucket[];
 }
 
-export interface GetJobByIdResponse {
-  status: string;
-  message?: string;
-  data?: Job;
-  job?: Job;
+export interface CommonJobResponse<T> {
+  success: boolean;
+  status_code: number;
+  timestamp: string;
+  error: string | null;
+  data: T;
 }
 
-export interface CreateJobResponse {
-  status: string;
-  message?: string;
-  data?: Job;
-  job?: Job;
-  id?: number;
+export type ListJobsResponse = CommonJobResponse<JobListPayload>;
+export type JobItemResponse = CommonJobResponse<{ result: Job }>;
+export interface JobBulkUploadSummary {
+  processed: number;
+  created: number;
+  failed: number;
+  failures: Array<{ row: number; error: string }>;
 }
-
-export interface UpdateJobResponse {
-  status: string;
-  message?: string;
-  data?: Job;
-  job?: Job;
-}
-
-export interface DeleteJobResponse {
-  status: string;
-  message?: string;
-}
-
-export interface UploadJobsRequest {
-  file: File;
-}
-
-export interface UploadJobsResponse {
-  status: string;
-  message?: string;
-  data?: {
-    created: number;
-    failed: number;
-    errors?: string[];
-  };
-}
+export type JobBulkUploadResponse = CommonJobResponse<{
+  result: JobBulkUploadSummary;
+}>;

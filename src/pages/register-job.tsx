@@ -21,7 +21,13 @@ import {
   Check,
   Loader2,
 } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '@/store';
+import {
+  useAppDispatch,
+  useAppSelector,
+  createJobAsync,
+  fetchJobsAsync,
+} from '@/store';
+import { useToast } from '@/components/ui/toast';
 import { getAllOrganizations } from '@/store/organization/actions/organizationActions';
 import { fetchJobCategories } from '@/store/jobCategory/actions/jobCategoryActions';
 import { fetchMajorSkills } from '@/store/majorSkill/actions/majorSkillActions';
@@ -48,6 +54,7 @@ const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
   const role = useUserRole();
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
   const { organizations: organizationList, loading: organizationsLoading } =
     useAppSelector((state) => state.organization);
   const { items: jobCategoryList, isLoading: jobCategoriesLoading } =
@@ -59,6 +66,7 @@ const RegisterJob: React.FC = () => {
   );
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<JobFormData>({
     jobTitle: '',
     employmentType: '',
@@ -286,9 +294,7 @@ const RegisterJob: React.FC = () => {
           }
           return { id, name };
         })
-        .filter(
-          (item): item is { id: number; name: string } => Boolean(item),
-        ),
+        .filter((item): item is { id: number; name: string } => Boolean(item)),
     [majorSkillItems],
   );
 
@@ -299,19 +305,13 @@ const RegisterJob: React.FC = () => {
           const id = Number(item.id);
           const name = item.name?.trim();
           const majorSkillId = Number(item.major_skill_id);
-          if (
-            !Number.isFinite(id) ||
-            !name ||
-            !Number.isFinite(majorSkillId)
-          ) {
+          if (!Number.isFinite(id) || !name || !Number.isFinite(majorSkillId)) {
             return null;
           }
           return { id, name, majorSkillId };
         })
         .filter(
-          (
-            item,
-          ): item is { id: number; name: string; majorSkillId: number } =>
+          (item): item is { id: number; name: string; majorSkillId: number } =>
             Boolean(item),
         ),
     [skillItems],
@@ -335,15 +335,11 @@ const RegisterJob: React.FC = () => {
 
   const allMajorSelected =
     majorSkillOptions.length > 0 &&
-    majorSkillOptions.every((item) =>
-      formData.majorSkills.includes(item.id),
-    );
+    majorSkillOptions.every((item) => formData.majorSkills.includes(item.id));
 
   const allSkillsSelected =
     filteredSkills.length > 0 &&
-    filteredSkills.every((item) =>
-      formData.selectedSkills.includes(item.id),
-    );
+    filteredSkills.every((item) => formData.selectedSkills.includes(item.id));
 
   const handleInputChange = <K extends keyof JobFormData>(
     field: K,
@@ -404,8 +400,7 @@ const RegisterJob: React.FC = () => {
         selectedSkills: prev.selectedSkills.filter((skillId) =>
           skillOptions.some(
             (skill) =>
-              skill.id === skillId &&
-              allIds.includes(skill.majorSkillId),
+              skill.id === skillId && allIds.includes(skill.majorSkillId),
           ),
         ),
       };
@@ -447,9 +442,7 @@ const RegisterJob: React.FC = () => {
       );
       const nextSelected = areAllSelected
         ? prev.selectedSkills.filter((id) => !filteredIds.includes(id))
-        : Array.from(
-            new Set([...prev.selectedSkills, ...filteredIds]),
-          );
+        : Array.from(new Set([...prev.selectedSkills, ...filteredIds]));
       return { ...prev, selectedSkills: nextSelected };
     });
 
@@ -555,12 +548,95 @@ const RegisterJob: React.FC = () => {
     // If validation fails, errors are already set and user stays on current step
   };
 
-  const handleSubmit = () => {
-    // Validate final step before submitting
-    if (validateStep(currentStep)) {
-      console.log('Job Registration Data:', formData);
-      // Here you would typically send the data to your backend
-      navigate('/job-board');
+  const parseExperienceYears = (value: string) => {
+    const matches = value.match(/\d+/g);
+    if (!matches || matches.length === 0) {
+      return 0;
+    }
+    return Math.max(...matches.map((match) => Number(match)));
+  };
+
+  const parseCompensationRange = (
+    value: string,
+  ): [number | null, number | null] => {
+    if (!value) {
+      return [null, null];
+    }
+    const matches = value
+      .match(/[\d,.]+/g)
+      ?.map((match) => Number(match.replace(/,/g, '')))
+      .filter((num) => !Number.isNaN(num));
+
+    if (!matches || matches.length === 0) {
+      return [null, null];
+    }
+
+    if (matches.length === 1) {
+      return [matches[0], null];
+    }
+
+    return [matches[0], matches[1]];
+  };
+
+  const parseVacancies = (value: string) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return 1;
+    }
+    return parsed;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep(currentStep)) {
+      return;
+    }
+
+    const majorSkillNames = formData.majorSkills
+      .map((id) => majorSkillOptions.find((item) => item.id === id)?.name)
+      .filter((name): name is string => Boolean(name));
+
+    const skillNames = formData.selectedSkills
+      .map((id) => skillNameMap.get(id))
+      .filter((name): name is string => Boolean(name));
+
+    const [compFrom, compTo] = parseCompensationRange(
+      formData.compensationRange,
+    );
+
+    const payload = {
+      job_title: formData.jobTitle.trim(),
+      organization: formData.organization,
+      job_category: formData.jobCategory,
+      employment_type: formData.employmentType || null,
+      priority: formData.priority || null,
+      level: formData.level || null,
+      experience_years: parseExperienceYears(formData.experience),
+      currency: formData.currency || null,
+      compensation_from: compFrom,
+      compensation_to: compTo,
+      no_of_vacancy: parseVacancies(formData.numberOfVacancies),
+      major_skills: majorSkillNames,
+      skills: skillNames,
+      job_description: formData.jobDescription,
+      job_responsibilities: formData.jobResponsibilities || null,
+    };
+
+    setIsSubmitting(true);
+    try {
+      await dispatch(createJobAsync(payload)).unwrap();
+      showToast('Job created successfully', 'success');
+      await dispatch(fetchJobsAsync(undefined));
+      navigate('/jobs');
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : 'Failed to create job';
+      showToast(message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -791,7 +867,9 @@ const RegisterJob: React.FC = () => {
                       <label
                         key={item.id}
                         className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium ${
-                          isChecked ? 'bg-indigo-50 text-[#4F39F6]' : 'text-gray-700'
+                          isChecked
+                            ? 'bg-indigo-50 text-[#4F39F6]'
+                            : 'text-gray-700'
                         } hover:bg-indigo-50`}
                       >
                         <input
@@ -843,12 +921,16 @@ const RegisterJob: React.FC = () => {
               <div className="max-h-56 overflow-y-auto">
                 {filteredSkills.length > 0 ? (
                   filteredSkills.map((skill) => {
-                    const isChecked = formData.selectedSkills.includes(skill.id);
+                    const isChecked = formData.selectedSkills.includes(
+                      skill.id,
+                    );
                     return (
                       <label
                         key={skill.id}
                         className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium ${
-                          isChecked ? 'bg-indigo-50 text-[#4F39F6]' : 'text-gray-700'
+                          isChecked
+                            ? 'bg-indigo-50 text-[#4F39F6]'
+                            : 'text-gray-700'
                         } hover:bg-indigo-50`}
                       >
                         <input

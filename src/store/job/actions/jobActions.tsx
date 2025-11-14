@@ -8,21 +8,19 @@ import type {
 } from '../types/jobTypes';
 
 /**
- * Fetch all jobs
+ * Fetch all jobs with optional filters
  */
-export const getAllJobsAsync = createAsyncThunk(
-  'job/getAllJobs',
-  async (_, { rejectWithValue }) => {
+export const fetchJobsAsync = createAsyncThunk(
+  'job/fetchAll',
+  async (filters: JobFilters | undefined, { rejectWithValue }) => {
     try {
-      const jobs = await jobService.getAllJobs();
-      return jobs;
+      const payload = await jobService.getAllJobs(filters ?? {});
+      return payload;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to load jobs',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
+        return rejectWithValue(
+          error.response?.data?.message || 'Failed to load jobs',
+        );
       }
       return rejectWithValue('Failed to load jobs');
     }
@@ -32,19 +30,16 @@ export const getAllJobsAsync = createAsyncThunk(
 /**
  * Fetch job by ID
  */
-export const getJobByIdAsync = createAsyncThunk(
-  'job/getJobById',
+export const fetchJobByIdAsync = createAsyncThunk(
+  'job/fetchById',
   async (id: number, { rejectWithValue }) => {
     try {
-      const job = await jobService.getJobById(id);
-      return job;
+      return await jobService.getJobById(id);
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to fetch job',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
+        return rejectWithValue(
+          error.response?.data?.message || 'Failed to fetch job',
+        );
       }
       return rejectWithValue('Failed to fetch job');
     }
@@ -55,18 +50,15 @@ export const getJobByIdAsync = createAsyncThunk(
  * Create a new job
  */
 export const createJobAsync = createAsyncThunk(
-  'job/createJob',
-  async (jobData: CreateJobRequest, { rejectWithValue }) => {
+  'job/create',
+  async (payload: CreateJobRequest, { rejectWithValue }) => {
     try {
-      const response = await jobService.createJob(jobData);
-      return response.data || response.job || response;
+      return await jobService.createJob(payload);
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to create job',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
+        return rejectWithValue(
+          error.response?.data?.message || 'Failed to create job',
+        );
       }
       return rejectWithValue('Failed to create job');
     }
@@ -77,18 +69,15 @@ export const createJobAsync = createAsyncThunk(
  * Update an existing job
  */
 export const updateJobAsync = createAsyncThunk(
-  'job/updateJob',
-  async (jobData: UpdateJobRequest, { rejectWithValue }) => {
+  'job/update',
+  async (payload: UpdateJobRequest, { rejectWithValue }) => {
     try {
-      const response = await jobService.updateJob(jobData);
-      return response.data || response.job || response;
+      return await jobService.updateJob(payload);
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to update job',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
+        return rejectWithValue(
+          error.response?.data?.message || 'Failed to update job',
+        );
       }
       return rejectWithValue('Failed to update job');
     }
@@ -99,64 +88,18 @@ export const updateJobAsync = createAsyncThunk(
  * Delete a job
  */
 export const deleteJobAsync = createAsyncThunk(
-  'job/deleteJob',
+  'job/delete',
   async (id: number, { rejectWithValue }) => {
     try {
       await jobService.deleteJob(id);
       return id;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to delete job',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
+        return rejectWithValue(
+          error.response?.data?.message || 'Failed to delete job',
+        );
       }
       return rejectWithValue('Failed to delete job');
-    }
-  },
-);
-
-/**
- * Upload jobs from file
- */
-export const uploadJobsAsync = createAsyncThunk(
-  'job/uploadJobs',
-  async (file: File, { rejectWithValue }) => {
-    try {
-      const response = await jobService.uploadJobs(file);
-      return response;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to upload jobs',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
-      }
-      return rejectWithValue('Failed to upload jobs');
-    }
-  },
-);
-
-/**
- * Search/filter jobs
- */
-export const searchJobsAsync = createAsyncThunk(
-  'job/searchJobs',
-  async (filters: JobFilters, { rejectWithValue }) => {
-    try {
-      const jobs = await jobService.searchJobs(filters);
-      return jobs;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return rejectWithValue({
-          message: error.response?.data?.message || 'Failed to search jobs',
-          status: error.response?.status,
-          error: error.response?.data,
-        });
-      }
-      return rejectWithValue('Failed to search jobs');
     }
   },
 );
