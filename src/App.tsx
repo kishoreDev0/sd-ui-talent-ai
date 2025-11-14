@@ -21,6 +21,7 @@ import SettingsPage from './pages/settings';
 import JobBoard from './pages/job-board';
 import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
+import UploadJobs from './pages/upload-jobs';
 import AdminAccessPage from './pages/admin-access';
 import InterviewDetailPage from './pages/interview-detail';
 import CandidateTrackingPage from './pages/candidate-tracking';
@@ -130,6 +131,10 @@ const App = () => {
                 <Route
                   path="/register-job"
                   element={<PrivateRoute element={<RegisterJob />} />}
+                />
+                <Route
+                  path="/upload-jobs"
+                  element={<PrivateRoute element={<UploadJobs />} />}
                 />
                 <Route
                   path="/cards-demo"

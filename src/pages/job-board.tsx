@@ -1,839 +1,1019 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CustomSelect from '@/components/ui/custom-select';
 import {
+  Plus,
   Search,
   MapPin,
-  X,
   CheckCircle,
   DollarSign,
-  FileText,
-  EllipsisVertical,
-  Filter,
-  Briefcase,
-  Building2,
-  User,
-  DollarSign as DollarSignIcon,
   Upload,
   Download,
+  Loader2,
+  Bookmark,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import CustomSelect from '@/components/ui/custom-select';
+import { useToast } from '@/components/ui/toast';
+import { useAppDispatch, useAppSelector, fetchJobsAsync } from '@/store';
 
-interface Job {
-  id: number;
-  company: string;
-  companyIcon: string;
-  title: string;
-  paymentVerified: boolean;
-  location: string;
-  applicants: number;
-  description: string;
-  tags: string[];
-  hourlyRate: string;
-  proposals: number;
-  priority: 'high' | 'medium' | 'low';
-  creator: string;
-}
+const stripHtml = (value?: string | null) =>
+  value ? value.replace(/<[^>]+>/g, '') : '';
+
+const getCreatorLabel = (createdBy?: number | null) =>
+  createdBy ? `User #${createdBy}` : 'System';
+
+const getPriorityTheme = (
+  priority?: string | null,
+): { chip: string; badge: string; accent: string } => {
+  const normalized = priority?.toLowerCase();
+  switch (normalized) {
+    case 'high':
+      return {
+        chip: 'bg-orange-50 text-orange-600',
+        badge: 'text-orange-600',
+        accent: 'ring-1 ring-orange-100',
+      };
+    case 'medium':
+      return {
+        chip: 'bg-amber-50 text-amber-600',
+        badge: 'text-amber-600',
+        accent: 'ring-1 ring-amber-100',
+      };
+    case 'low':
+      return {
+        chip: 'bg-emerald-50 text-emerald-600',
+        badge: 'text-emerald-600',
+        accent: 'ring-1 ring-emerald-100',
+      };
+    default:
+      return {
+        chip: 'bg-slate-100 text-slate-600',
+        badge: 'text-slate-500',
+        accent: 'ring-1 ring-transparent',
+      };
+  }
+};
+
+const getDaysLeftLabel = (iso?: string | null) => {
+  if (!iso) {
+    return '30 days left to apply';
+  }
+  const created = new Date(iso);
+  if (Number.isNaN(created.getTime())) {
+    return '30 days left to apply';
+  }
+  const now = new Date();
+  const diffMs = created.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) {
+    return 'Apply now';
+  }
+  if (diffDays === 1) {
+    return '1 day left';
+  }
+  return `${diffDays} days left`;
+};
+
+const formatSalary = (
+  currency?: string | null,
+  from?: number | null,
+  to?: number | null,
+) => {
+  if (from == null && to == null) {
+    return 'Salary not disclosed';
+  }
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+    maximumFractionDigits: 0,
+  });
+  if (from != null && to != null) {
+    return `${formatter.format(from)} - ${formatter.format(to)} / month`;
+  }
+  if (from != null) {
+    return `Starts at ${formatter.format(from)} / month`;
+  }
+  return `Up to ${formatter.format(to as number)} / month`;
+};
+
+const getAvatarSource = (name?: string | null) => {
+  if (!name) {
+    return {
+      initials: '?',
+      color: 'bg-amber-100 text-amber-700',
+    };
+  }
+  const colors = [
+    { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+    { bg: 'bg-sky-100', text: 'text-sky-700' },
+    { bg: 'bg-orange-100', text: 'text-orange-700' },
+    { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700' },
+    { bg: 'bg-amber-100', text: 'text-amber-700' },
+  ];
+  const index =
+    name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    colors.length;
+  const parts = name.split(' ');
+  const initials =
+    parts.length === 1
+      ? parts[0].charAt(0).toUpperCase()
+      : `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+  return {
+    initials,
+    color: `${colors[index].bg} ${colors[index].text}`,
+  };
+};
 
 const JobBoard: React.FC = () => {
-  const navigate = useNavigate();
   const role = useUserRole();
-  const [searchTerm, setSearchTerm] = useState('Product/UIUX designer');
-  const [locationTerm, setLocationTerm] = useState('Country or timezone');
-  const [sortBy, setSortBy] = useState('Newest');
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { showToast } = useToast();
+  const {
+    items: jobItems,
+    isLoading,
+    error,
+    categories,
+    jobTypes,
+  } = useAppSelector((state) => state.job);
 
-  // New filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('Newest');
   const [jobTitle, setJobTitle] = useState('');
   const [majorSkills, setMajorSkills] = useState('');
   const [minCompensation, setMinCompensation] = useState('');
   const [maxCompensation, setMaxCompensation] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
-  const [priority, setPriority] = useState<{
-    high: boolean;
-    medium: boolean;
-    low: boolean;
-  }>({
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [experienceFilters, setExperienceFilters] = useState({
+    entry: false,
+    intermediate: false,
+    expert: false,
+  });
+  const [jobTypeFilters, setJobTypeFilters] = useState({
+    full_time: false,
+    part_time: false,
+    remote: false,
+    freelance: false,
+  });
+  const [companyLevelFilters, setCompanyLevelFilters] = useState({
+    c_level: false,
+    senior: false,
+    manager: false,
+    director: false,
+  });
+  const [priority, setPriority] = useState({
     high: false,
     medium: false,
     low: false,
   });
   const [selectedCreator, setSelectedCreator] = useState('');
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
 
-  const organizations = [
-    { value: 'Plus AI', label: 'Plus AI' },
-    { value: 'Apollo.io', label: 'Apollo.io' },
-    { value: 'Tech Corp', label: 'Tech Corp' },
-    { value: 'Design Studio', label: 'Design Studio' },
-    { value: 'Startup Inc', label: 'Startup Inc' },
-    { value: 'Global Solutions', label: 'Global Solutions' },
-    { value: 'Creative Agency', label: 'Creative Agency' },
-  ];
+  useEffect(() => {
+    dispatch(fetchJobsAsync(undefined));
+  }, [dispatch]);
 
-  const creators = [
-    { value: 'John Doe', label: 'John Doe' },
-    { value: 'Jane Smith', label: 'Jane Smith' },
-    { value: 'Mike Johnson', label: 'Mike Johnson' },
-    { value: 'Sarah Wilson', label: 'Sarah Wilson' },
-    { value: 'David Brown', label: 'David Brown' },
-  ];
+  useEffect(() => {
+    if (error) {
+      showToast(error, 'error');
+    }
+  }, [error, showToast]);
 
-  const handlePriorityChange = (priorityType: 'high' | 'medium' | 'low') => {
-    setPriority((prev) => ({
-      ...prev,
-      [priorityType]: !prev[priorityType],
+  const organizationOptions = useMemo(() => {
+    const unique = new Set<string>();
+    jobItems.forEach((job) => {
+      if (job.organization) {
+        unique.add(job.organization);
+      }
+    });
+    return Array.from(unique);
+  }, [jobItems]);
+
+  const categoryBuckets = useMemo(() => {
+    if (categories.length > 0) {
+      return categories.map((bucket) => ({
+        name: bucket.name,
+        count: bucket.count,
+      }));
+    }
+    const counts = new Map<string, number>();
+    jobItems.forEach((job) => {
+      if (job.job_category) {
+        const current = counts.get(job.job_category) ?? 0;
+        counts.set(job.job_category, current + 1);
+      }
+    });
+    return Array.from(counts.entries()).map(([name, count]) => ({
+      name,
+      count,
     }));
+  }, [categories, jobItems]);
+
+  const jobTypeBuckets = useMemo<
+    Array<{
+      key: keyof typeof jobTypeFilters;
+      label: string;
+      count: number | null;
+    }>
+  >(() => {
+    const normalizeKey = (
+      value: string,
+    ): 'full_time' | 'part_time' | 'remote' | 'freelance' => {
+      const lower = value.toLowerCase();
+      if (lower.includes('part')) return 'part_time';
+      if (lower.includes('contract') || lower.includes('freelance'))
+        return 'freelance';
+      if (lower.includes('remote') || lower.includes('temp')) return 'remote';
+      return 'full_time';
+    };
+
+    if (jobTypes.length > 0) {
+      return jobTypes.map((bucket) => ({
+        key: normalizeKey(bucket.name),
+        label: bucket.name,
+        count: bucket.count ?? null,
+      }));
+    }
+
+    const counts: Record<
+      'full_time' | 'part_time' | 'remote' | 'freelance',
+      number
+    > = {
+      full_time: 0,
+      part_time: 0,
+      remote: 0,
+      freelance: 0,
+    };
+
+    jobItems.forEach((job) => {
+      if (job.employment_type) {
+        const key = normalizeKey(job.employment_type);
+        counts[key] += 1;
+      }
+    });
+
+    return [
+      { key: 'full_time', label: 'Full Time', count: counts.full_time },
+      { key: 'part_time', label: 'Part Time', count: counts.part_time },
+      { key: 'remote', label: 'Temporary', count: counts.remote },
+      { key: 'freelance', label: 'Contractor', count: counts.freelance },
+    ];
+  }, [jobTypes, jobItems]);
+
+  const experienceCounts = useMemo(() => {
+    const counts = { entry: 0, intermediate: 0, expert: 0 };
+    jobItems.forEach((job) => {
+      const level = (job.level ?? '').toLowerCase();
+      if (level.includes('entry') || level.includes('junior')) {
+        counts.entry += 1;
+      } else if (level.includes('senior') || level.includes('lead')) {
+        counts.expert += 1;
+      } else if (level.includes('mid') || level.includes('intermediate')) {
+        counts.intermediate += 1;
+      }
+    });
+    return counts;
+  }, [jobItems]);
+
+  const companyLevelCounts = useMemo(() => {
+    const counts = { c_level: 0, senior: 0, manager: 0, director: 0 };
+    jobItems.forEach((job) => {
+      const level = (job.level ?? '').toLowerCase();
+      if (level.includes('c-level') || level.includes('executive')) {
+        counts.c_level += 1;
+      }
+      if (level.includes('senior')) {
+        counts.senior += 1;
+      }
+      if (level.includes('manager')) {
+        counts.manager += 1;
+      }
+      if (level.includes('director')) {
+        counts.director += 1;
+      }
+    });
+    return counts;
+  }, [jobItems]);
+
+  const creatorOptions = useMemo(() => {
+    const unique = new Set<string>();
+    jobItems.forEach((job) => {
+      unique.add(getCreatorLabel(job.created_by));
+    });
+    return Array.from(unique);
+  }, [jobItems]);
+
+  const handlePriorityToggle = (level: 'high' | 'medium' | 'low') => {
+    setPriority((prev) => ({ ...prev, [level]: !prev[level] }));
   };
 
-  const handleClear = () => {
+  const handleExperienceToggle = (
+    level: 'entry' | 'intermediate' | 'expert',
+  ) => {
+    setExperienceFilters((prev) => ({ ...prev, [level]: !prev[level] }));
+  };
+
+  const handleJobTypeToggle = (
+    type: 'full_time' | 'part_time' | 'remote' | 'freelance',
+  ) => {
+    setJobTypeFilters((prev) => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  const handleCompanyLevelToggle = (
+    level: 'c_level' | 'senior' | 'manager' | 'director',
+  ) => {
+    setCompanyLevelFilters((prev) => ({ ...prev, [level]: !prev[level] }));
+  };
+
+  const handleCategoryToggle = (name: string) => {
+    setSelectedCategory((prev) => (prev === name ? '' : name));
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSortBy('Newest');
     setJobTitle('');
     setMajorSkills('');
     setMinCompensation('');
     setMaxCompensation('');
     setSelectedOrganization('');
-    setPriority({ high: false, medium: false, low: false });
+    setSelectedCategory('');
+    setExperienceFilters({
+      entry: false,
+      intermediate: false,
+      expert: false,
+    });
+    setJobTypeFilters({
+      full_time: false,
+      part_time: false,
+      remote: false,
+      freelance: false,
+    });
+    setCompanyLevelFilters({
+      c_level: false,
+      senior: false,
+      manager: false,
+      director: false,
+    });
+    setPriority({
+      high: false,
+      medium: false,
+      low: false,
+    });
     setSelectedCreator('');
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setUploadFiles(Array.from(files));
+  const toNumberSafe = (value: string) => {
+    if (!value || value.trim() === '') {
+      return null;
     }
+    const sanitized = value.replace(/[^0-9.]/g, '');
+    if (sanitized.trim() === '') {
+      return null;
+    }
+    const parsed = Number(sanitized);
+    return Number.isNaN(parsed) ? null : parsed;
   };
 
-  const handleDownloadTemplate = async () => {
-    try {
-      // Fetch the template file
-      const response = await fetch(
-        '/src/../template/jobImportTemplate.55fa75b25009a9a5d85bc4e765a97479.xlsx',
+  const filteredJobs = useMemo(() => {
+    let result = [...jobItems];
+
+    const search = searchTerm.trim().toLowerCase();
+    if (search) {
+      result = result.filter((job) => {
+        const combined = [
+          job.job_title,
+          job.organization,
+          job.job_category,
+          stripHtml(job.job_description),
+        ]
+          .join(' ')
+          .toLowerCase();
+        return combined.includes(search);
+      });
+    }
+
+    if (jobTitle.trim()) {
+      const term = jobTitle.trim().toLowerCase();
+      result = result.filter(
+        (job) =>
+          job.job_title.toLowerCase().includes(term) ||
+          stripHtml(job.job_description).toLowerCase().includes(term),
       );
-      if (!response.ok) {
-        throw new Error('Failed to download template');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'jobImportTemplate.xlsx';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading template:', error);
-      alert('Failed to download template. Please contact support.');
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setUploadFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUploadSubmit = () => {
-    // Handle file upload logic here
-    console.log('Uploading files:', uploadFiles);
-    // Close modal and reset
-    setIsUploadModalOpen(false);
-    setUploadFiles([]);
-  };
-
-  const renderFilterForm = () => (
-    <div className="space-y-5">
-      {/* Job Information Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Briefcase className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Job Information
-          </h4>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Job Title
-          </label>
-          <Input
-            type="text"
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
-            placeholder="Enter job title"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Major Skills or Skills
-          </label>
-          <Input
-            type="text"
-            value={majorSkills}
-            onChange={(e) => setMajorSkills(e.target.value)}
-            className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
-            placeholder="Enter skills"
-          />
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-gray-100"></div>
-
-      {/* Compensation Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <DollarSignIcon className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Compensation
-          </h4>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Min
-            </label>
-            <Input
-              type="text"
-              value={minCompensation}
-              onChange={(e) => setMinCompensation(e.target.value)}
-              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
-              placeholder="$0"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Max
-            </label>
-            <Input
-              type="text"
-              value={maxCompensation}
-              onChange={(e) => setMaxCompensation(e.target.value)}
-              className="w-full h-9 text-sm border-gray-200 rounded-md focus:ring-1 focus:ring-[#4F39F6] focus:border-[#4F39F6]"
-              placeholder="$100k+"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-gray-100"></div>
-
-      {/* Organization & Priority Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Organization
-          </h4>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Organization
-          </label>
-          <CustomSelect
-            value={selectedOrganization}
-            onChange={setSelectedOrganization}
-            options={organizations}
-            placeholder="Select organization"
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Priority
-          </label>
-          <div className="space-y-2 bg-gray-50 rounded-md p-2">
-            {[
-              {
-                key: 'high',
-                label: 'High',
-                color: 'bg-red-100 text-red-700 border-red-200',
-              },
-              {
-                key: 'medium',
-                label: 'Medium',
-                color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-              },
-              {
-                key: 'low',
-                label: 'Low',
-                color: 'bg-green-100 text-green-700 border-green-200',
-              },
-            ].map((item) => (
-              <label
-                key={item.key}
-                className={`flex items-center gap-2 cursor-pointer p-2 rounded-md border transition-colors ${
-                  priority[item.key as keyof typeof priority]
-                    ? item.color
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={priority[item.key as keyof typeof priority]}
-                  onChange={() =>
-                    handlePriorityChange(item.key as 'high' | 'medium' | 'low')
-                  }
-                  className="h-3.5 w-3.5 text-[#4F39F6] focus:ring-[#4F39F6] border-gray-300 rounded cursor-pointer"
-                />
-                <span className="text-xs font-medium">{item.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-gray-100"></div>
-
-      {/* Creator Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <User className="h-4 w-4 text-gray-600" />
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Creator
-          </h4>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Select Creator
-          </label>
-          <CustomSelect
-            value={selectedCreator}
-            onChange={setSelectedCreator}
-            options={creators}
-            placeholder="Select creator"
-            className="w-full"
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const jobs: Job[] = [
-    {
-      id: 1,
-      company: 'Plus AI',
-      companyIcon: '🔵',
-      title: 'Experienced web designer needed for B2B business redesign',
-      paymentVerified: true,
-      location: 'Remote',
-      applicants: 120,
-      description:
-        'We are looking for a skilled professional to join our team full-time. Your responsibilities will include building, editing, and managing our website, creating engaging PowerPoint presentations.',
-      tags: [
-        'Web Designer',
-        'UI/UX Designer',
-        'Framer Designer',
-        'Webflow Designer',
-      ],
-      hourlyRate: '$25 - $50/hr',
-      proposals: 25,
-      priority: 'high',
-      creator: 'John Doe',
-    },
-    {
-      id: 2,
-      company: 'Apollo.io',
-      companyIcon: '🟡',
-      title: 'Senior product designer / UI/UX designer',
-      paymentVerified: true,
-      location: 'Remote',
-      applicants: 24,
-      description:
-        'We are seeking a talented and experienced Senior Product Designer / UI/UX Designer to join our team at Anyday Design This role involves working independently on the design of web applications.',
-      tags: [
-        'Product Designer',
-        'UI/UX Designer',
-        'Design System',
-        'Figma',
-        'Figjam',
-      ],
-      hourlyRate: '$30 - $60/hr',
-      proposals: 18,
-      priority: 'medium',
-      creator: 'Jane Smith',
-    },
-    {
-      id: 3,
-      company: 'Tech Corp',
-      companyIcon: '🟢',
-      title: 'Frontend Developer with React Experience',
-      paymentVerified: true,
-      location: 'Hybrid',
-      applicants: 45,
-      description:
-        'Looking for a frontend developer with strong React skills to join our growing team. You will work on building responsive web applications and collaborate with our design team.',
-      tags: ['React', 'JavaScript', 'Frontend', 'CSS', 'HTML'],
-      hourlyRate: '$20 - $40/hr',
-      proposals: 12,
-      priority: 'low',
-      creator: 'Mike Johnson',
-    },
-    {
-      id: 4,
-      company: 'Design Studio',
-      companyIcon: '🟣',
-      title: 'Creative Graphic Designer',
-      paymentVerified: false,
-      location: 'On-site',
-      applicants: 78,
-      description:
-        'We need a creative graphic designer to work on various marketing materials, social media graphics, and brand identity projects.',
-      tags: [
-        'Graphic Design',
-        'Photoshop',
-        'Illustrator',
-        'Branding',
-        'Marketing',
-      ],
-      hourlyRate: '$15 - $35/hr',
-      proposals: 32,
-      priority: 'medium',
-      creator: 'Sarah Wilson',
-    },
-  ];
-
-  // Filter jobs based on criteria
-  const filteredJobs = jobs.filter((job) => {
-    // Job Title filter
-    if (jobTitle && !job.title.toLowerCase().includes(jobTitle.toLowerCase())) {
-      return false;
     }
 
-    // Major Skills filter
-    if (majorSkills) {
-      const skillsToSearch = majorSkills.toLowerCase();
-      const jobSkills = job.tags.join(' ').toLowerCase();
-      if (!jobSkills.includes(skillsToSearch)) {
+    if (majorSkills.trim()) {
+      const term = majorSkills.trim().toLowerCase();
+      result = result.filter(
+        (job) =>
+          job.major_skills.some((skill) =>
+            skill.name.toLowerCase().includes(term),
+          ) ||
+          job.skills.some((skill) => skill.name.toLowerCase().includes(term)),
+      );
+    }
+
+    if (selectedOrganization) {
+      result = result.filter(
+        (job) => job.organization === selectedOrganization,
+      );
+    }
+
+    if (selectedCategory) {
+      result = result.filter((job) => job.job_category === selectedCategory);
+    }
+
+    if (selectedCreator) {
+      result = result.filter(
+        (job) => getCreatorLabel(job.created_by) === selectedCreator,
+      );
+    }
+
+    const activeExperience = Object.entries(experienceFilters)
+      .filter(([, value]) => value)
+      .map(([key]) => key);
+    if (activeExperience.length > 0) {
+      result = result.filter((job) => {
+        const level = (job.level ?? '').toLowerCase();
+        if (!level) return false;
+        return (
+          (experienceFilters.entry && level.includes('entry')) ||
+          (experienceFilters.intermediate &&
+            (level.includes('intermediate') || level.includes('mid'))) ||
+          (experienceFilters.expert &&
+            (level.includes('senior') || level.includes('expert')))
+        );
+      });
+    }
+
+    const activeJobTypes = Object.entries(jobTypeFilters).filter(
+      ([, value]) => value,
+    );
+    if (activeJobTypes.length > 0) {
+      result = result.filter((job) => {
+        const type = (job.employment_type ?? '').toLowerCase();
+        const level = (job.level ?? '').toLowerCase();
+        return (
+          (jobTypeFilters.full_time && type.includes('full')) ||
+          (jobTypeFilters.part_time && type.includes('part')) ||
+          (jobTypeFilters.remote &&
+            (type.includes('remote') || level.includes('remote'))) ||
+          (jobTypeFilters.freelance && type.includes('contract'))
+        );
+      });
+    }
+
+    const activeCompanyLevels = Object.entries(companyLevelFilters).filter(
+      ([, value]) => value,
+    );
+    if (activeCompanyLevels.length > 0) {
+      result = result.filter((job) => {
+        const level = (job.level ?? '').toLowerCase();
+        return (
+          (companyLevelFilters.c_level &&
+            (level.includes('c-level') || level.includes('executive'))) ||
+          (companyLevelFilters.senior && level.includes('senior')) ||
+          (companyLevelFilters.manager && level.includes('manager')) ||
+          (companyLevelFilters.director && level.includes('director'))
+        );
+      });
+    }
+
+    const minComp = toNumberSafe(minCompensation);
+    if (minComp != null) {
+      result = result.filter((job) => {
+        if (job.compensation_from != null) {
+          return job.compensation_from >= minComp;
+        }
+        if (job.compensation_to != null) {
+          return job.compensation_to >= minComp;
+        }
         return false;
-      }
+      });
     }
 
-    // Compensation filter
-    if (minCompensation || maxCompensation) {
-      const hourlyRate = job.hourlyRate;
-      const rateMatch = hourlyRate.match(/\$(\d+)\s*-\s*\$(\d+)/);
-      if (rateMatch) {
-        const minRate = parseInt(rateMatch[1]);
-        const maxRate = parseInt(rateMatch[2]);
-
-        if (minCompensation) {
-          const minComp = parseInt(minCompensation);
-          if (maxRate < minComp) return false;
+    const maxComp = toNumberSafe(maxCompensation);
+    if (maxComp != null) {
+      result = result.filter((job) => {
+        if (job.compensation_to != null) {
+          return job.compensation_to <= maxComp;
         }
-
-        if (maxCompensation) {
-          const maxComp = parseInt(maxCompensation);
-          if (minRate > maxComp) return false;
+        if (job.compensation_from != null) {
+          return job.compensation_from <= maxComp;
         }
-      }
+        return false;
+      });
     }
 
-    // Organization filter
-    if (selectedOrganization && job.company !== selectedOrganization) {
-      return false;
+    const priorityFilters = Object.entries(priority).filter(
+      ([, value]) => value,
+    );
+    if (priorityFilters.length > 0) {
+      result = result.filter((job) =>
+        priorityFilters.some(
+          ([level]) => job.priority?.toLowerCase() === level,
+        ),
+      );
     }
 
-    // Priority filter (using actual job priority)
-    if (priority.high || priority.medium || priority.low) {
-      if (priority.high && job.priority !== 'high') return false;
-      if (priority.medium && job.priority !== 'medium') return false;
-      if (priority.low && job.priority !== 'low') return false;
+    switch (sortBy) {
+      case 'Oldest':
+        result.sort((a, b) => {
+          const aDate = new Date(a.created_at ?? 0).getTime();
+          const bDate = new Date(b.created_at ?? 0).getTime();
+          return aDate - bDate;
+        });
+        break;
+      case 'Applicants High':
+        result.sort((a, b) => (b.no_of_vacancy ?? 0) - (a.no_of_vacancy ?? 0));
+        break;
+      case 'Applicants Low':
+        result.sort((a, b) => (a.no_of_vacancy ?? 0) - (b.no_of_vacancy ?? 0));
+        break;
+      default:
+        result.sort((a, b) => {
+          const aDate = new Date(a.created_at ?? 0).getTime();
+          const bDate = new Date(b.created_at ?? 0).getTime();
+          return bDate - aDate;
+        });
+        break;
     }
 
-    // Creator filter (using actual job creator)
-    if (selectedCreator && job.creator !== selectedCreator) {
-      return false;
-    }
-
-    return true;
-  });
+    return result;
+  }, [
+    jobItems,
+    searchTerm,
+    jobTitle,
+    majorSkills,
+    selectedOrganization,
+    selectedCategory,
+    priority,
+    selectedCreator,
+    minCompensation,
+    maxCompensation,
+    sortBy,
+    experienceFilters,
+    jobTypeFilters,
+    companyLevelFilters,
+  ]);
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-primary-50 via-blue-50 to-indigo-50 py-8 md:py-12">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-6 md:mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                Find all the job in the portal
-              </h1>
-              <p className="text-sm md:text-base text-gray-600 mb-6">
-                Browse latest job openings.
-              </p>
-            </div>
-
-            {/* Search Bar - Glassmorphism */}
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-5 max-w-3xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 pr-8 h-9 text-sm w-full"
-                    placeholder="Product/UIUX designer"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-                <div className="flex-1 relative">
-                  <MapPin className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    value={locationTerm}
-                    onChange={(e) => setLocationTerm(e.target.value)}
-                    className="pl-8 h-9 text-sm w-full"
-                    placeholder="Location (e.g., Mumbai, Delhi)"
-                  />
-                </div>
-                <Button className="bg-black hover:bg-gray-800 text-white px-6 h-9 rounded-lg text-sm font-medium w-full sm:w-auto">
-                  Search
+      <div className="space-y-6 pb-8">
+        <div className="mx-auto w-full max-w-7xl space-y-4 px-4 md:px-5">
+          <header className="flex flex-col gap-3 rounded-3xl bg-white px-5 py-4 shadow-sm">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-2xl font-semibold text-slate-900">
+                  Find Your Dream Jobs
+                </h1>
+                <p className="text-sm text-slate-600">
+                  Search and explore thousands of openings to land your next
+                  opportunity.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  className="rounded-xl bg-[#4F39F6] px-4 text-sm font-semibold text-white hover:bg-[#3D2DC4]"
+                  onClick={() => navigate('/register-job')}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Job
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  onClick={() => navigate('/upload-jobs')}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Jobs
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-          {/* Mobile Results Header */}
-          <div className="lg:hidden mb-4">
-            <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <h2 className="text-base font-semibold text-gray-900">
-                Showing results ({filteredJobs.length})
-              </h2>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">Sort:</span>
-                  <CustomSelect
-                    value={sortBy}
-                    onChange={setSortBy}
-                    options={[
-                      { value: 'Newest', label: 'Newest' },
-                      { value: 'Oldest', label: 'Oldest' },
-                      { value: 'Relevant', label: 'Most Relevant' },
-                    ]}
-                    className="min-w-[100px]"
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                <span>
+                  <span className="text-base font-semibold text-slate-900">
+                    {filteredJobs.length}
+                  </span>{' '}
+                  job{filteredJobs.length === 1 ? '' : 's'} found
+                </span>
+                <CustomSelect
+                  value={sortBy}
+                  onChange={setSortBy}
+                  options={[
+                    { label: 'Newest', value: 'Newest' },
+                    { label: 'Oldest', value: 'Oldest' },
+                    {
+                      label: 'Applicants (High to Low)',
+                      value: 'Applicants High',
+                    },
+                    {
+                      label: 'Applicants (Low to High)',
+                      value: 'Applicants Low',
+                    },
+                  ]}
+                  className="w-40"
+                />
+              </div>
+              <form
+                className="flex w-full gap-2 md:w-auto"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <div className="relative flex-1 md:w-72">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    className="h-11 rounded-xl border border-slate-200 pl-10 text-sm focus:border-[#4F39F6] focus:ring-[#4F39F6]"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Job title or keywords"
                   />
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                      <EllipsisVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[320px] p-0" align="end">
-                    <div className="p-4 max-h-96 overflow-auto">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold text-gray-900">
-                          Filter & Actions
-                        </h3>
-                        <button
-                          onClick={handleClear}
-                          className="text-red-600 hover:text-red-700 font-medium text-sm"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                      <div className="space-y-4">
-                        {/* Action Links */}
-                        <div className="flex items-center gap-4">
-                          <button
-                            onClick={() => navigate('/register-job')}
-                            className="text-sm text-blue-600 hover-underline cursor-pointer"
-                          >
-                            Register Job
-                          </button>
-                          <button
-                            onClick={() => setIsUploadModalOpen(true)}
-                            className="text-sm text-blue-600 hover-underline cursor-pointer"
-                          >
-                            Upload Job
-                          </button>
-                        </div>
-                        {/* Filter Form */}
-                        {renderFilterForm()}
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                <Button className="h-11 rounded-xl bg-[#16a34a] px-6 text-sm font-semibold text-white hover:bg-[#15803d]">
+                  Search
+                </Button>
+              </form>
             </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-            {/* Job Listings */}
-            <div className="flex-1 order-1 lg:order-1">
-              {/* Results Header - Desktop Only */}
-              <div className="hidden lg:flex items-center justify-between mb-3">
-                <h2 className="text-sm md:text-base font-semibold text-gray-900">
-                  Showing results ({filteredJobs.length})
-                </h2>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => navigate('/register-job')}
-                      className="text-xs sm:text-sm text-blue-600 hover-underline cursor-pointer"
-                    >
-                      Register Job
-                    </button>
-                    <button
-                      onClick={() => setIsUploadModalOpen(true)}
-                      className="text-xs sm:text-sm text-blue-600 hover-underline cursor-pointer"
-                    >
-                      Upload Job
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm text-gray-600">
-                      Sort:
-                    </span>
-                    <CustomSelect
-                      value={sortBy}
-                      onChange={setSortBy}
-                      options={[
-                        { value: 'Newest', label: 'Newest' },
-                        { value: 'Oldest', label: 'Oldest' },
-                        { value: 'Relevant', label: 'Most Relevant' },
-                      ]}
-                      className="min-w-[120px]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Job Cards - Pinterest Style */}
-              <div className="space-y-5">
-                {filteredJobs.map((job) => (
-                  <motion.div
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    className="group relative"
-                  >
-                    <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-6 hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                      {/* Gradient Overlay on Hover */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#4F39F6]/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0" />
-
-                      {/* Content */}
-                      <div className="relative z-10">
-                        {/* Company Header */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#4F39F6] to-[#856FFF] rounded-xl flex items-center justify-center text-lg shadow-lg">
-                            {job.companyIcon}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover:text-[#4F39F6] transition-colors">
-                              {job.company}
-                            </h3>
-                            <div className="flex items-center flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1.5">
-                              {job.paymentVerified && (
-                                <div className="flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                                  <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                                  <span className="text-green-700 dark:text-green-300 font-medium">
-                                    Verified
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                                <MapPin className="h-3 w-3" />
-                                <span>{job.location}</span>
-                              </div>
-                              <span className="px-2.5 py-0.5 bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 rounded-lg text-xs font-semibold border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm">
-                                {job.applicants} applicants
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Job Title */}
-                        <button
-                          onClick={() =>
-                            navigate(`/jobs/${job.id}`, { state: { job } })
-                          }
-                          className="text-left text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 hover:text-[#4F39F6] transition-colors group/title"
-                        >
-                          {job.title}
-                        </button>
-
-                        {/* Description */}
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed line-clamp-2">
-                          {job.description}
-                        </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {job.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-[#4F39F6]/10 to-pink-500/10 text-[#4F39F6] dark:text-pink-300 border border-[#4F39F6]/20 dark:border-pink-500/20 backdrop-blur-sm hover:scale-105 transition-transform cursor-pointer"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-slate-700/50">
-                          <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                              <DollarSign className="h-4 w-4 text-[#4F39F6]" />
-                              <span className="font-semibold">
-                                {job.hourlyRate}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                              <FileText className="h-4 w-4 text-[#4F39F6]" />
-                              <span>{job.proposals} proposals</span>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() =>
-                              navigate(`/jobs/${job.id}`, { state: { job } })
-                            }
-                            className="bg-gradient-to-r from-[#4F39F6] to-[#856FFF] hover:from-[#3D2DC4] hover:to-[#6B5AE8] text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                          >
-                            See details
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-            {/* Filter Sidebar */}
-            <div className="hidden lg:block w-full lg:w-80 order-2 lg:order-2">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-4">
-                <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
-                  <Filter className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-base font-semibold text-gray-900">
-                    Filters
-                  </h3>
-                </div>
-                {renderFilterForm()}
-              </div>
-            </div>
-          </div>
+          </header>
         </div>
-      </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload Job</DialogTitle>
-            <DialogDescription>
-              Upload job postings via CSV or Excel file
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Download Template Button */}
-            <Button
-              onClick={handleDownloadTemplate}
-              variant="outline"
-              className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 text-sm h-9"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download Template
-            </Button>
-
-            {/* Upload Area */}
-            <input
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="file-upload"
-            />
-            <label htmlFor="file-upload" className="block cursor-pointer">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#4F39F6] transition-colors">
-                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">
-                  Drop file here or click to browse
-                </p>
-                <p className="text-xs text-gray-500 mt-1">CSV, Excel formats</p>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 md:px-5 lg:flex-row">
+          <div className="flex-1 space-y-3">
+            {isLoading ? (
+              <div className="flex h-48 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-[#4F39F6]" />
+                <span className="ml-2 text-sm text-gray-600">
+                  Loading jobs...
+                </span>
               </div>
-            </label>
+            ) : filteredJobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white py-12 text-center shadow-sm">
+                <Bookmark className="h-10 w-10 text-gray-300" />
+                <div>
+                  <p className="text-base font-semibold text-gray-900">
+                    No jobs available yet
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Create your first job posting to start building your
+                    pipeline.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/register-job')}
+                  className="rounded-xl bg-[#4F39F6] hover:bg-[#3D2DC4]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Job
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredJobs.map((job) => {
+                  const theme = getPriorityTheme(job.priority);
+                  const salaryLabel = formatSalary(
+                    job.currency,
+                    job.compensation_from,
+                    job.compensation_to,
+                  );
+                  const daysLeftLabel = getDaysLeftLabel(job.created_at);
+                  const remoteLabel = job.employment_type || 'Remote';
+                  const locationLabel =
+                    job.level || job.organization || 'Remote friendly';
+                  const avatar = getAvatarSource(
+                    job.job_title ?? job.organization ?? '',
+                  );
+                  const avatarLetter =
+                    (job.job_title || '?').trim().charAt(0).toUpperCase() ||
+                    avatar.initials.charAt(0);
 
-            {/* Uploaded Files List */}
-            {uploadFiles.length > 0 && (
-              <div className="space-y-2">
-                {uploadFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 rounded-lg p-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-700 truncate">
-                        {file.name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        ({(file.size / 1024).toFixed(2)} KB)
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className="text-red-600 hover:text-red-700"
+                  return (
+                    <motion.article
+                      key={job.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex flex-wrap items-start gap-3">
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold shadow-sm ring-1 ring-slate-200 ${avatar.color}`}
+                        >
+                          {avatarLetter}
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-semibold text-slate-900">
+                              {job.job_title}
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                              by{' '}
+                              <span className="text-emerald-600">
+                                {job.organization || 'Unassigned'}
+                              </span>{' '}
+                              in{' '}
+                              <span className="text-emerald-600">
+                                {job.job_category || 'General'}
+                              </span>
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-purple-600">
+                              {remoteLabel}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-emerald-600">
+                              <MapPin className="h-3 w-3" />
+                              {locationLabel}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-emerald-600">
+                              <DollarSign className="h-3 w-3" />
+                              {salaryLabel}
+                            </span>
+                            {job.priority && (
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${theme.chip}`}
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                {job.priority}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="ml-auto flex flex-col items-end gap-2 text-xs text-slate-500">
+                          <span className="text-sm font-medium text-emerald-600">
+                            {daysLeftLabel}
+                          </span>
+                          <button
+                            type="button"
+                            className="rounded-full border border-slate-200 p-1.5 text-slate-400 transition hover:text-slate-700"
+                          >
+                            <Bookmark className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.article>
+                  );
+                })}
               </div>
             )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsUploadModalOpen(false);
-                  setUploadFiles([]);
-                }}
-                className="flex-1 h-9"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUploadSubmit}
-                disabled={uploadFiles.length === 0}
-                className="flex-1 bg-black hover:bg-gray-800 text-white h-9"
-              >
-                Upload
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <aside className="w-full shrink-0 lg:w-72 lg:sticky lg:top-20 lg:self-start">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-slate-900">Filter</h2>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-[#4F39F6] hover:underline"
+                  onClick={handleResetFilters}
+                >
+                  Reset
+                </button>
+              </div>
+
+              <div className="space-y-6 text-sm">
+                <section className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Job Type
+                  </p>
+                  {jobTypeBuckets.map((option) => (
+                    <label
+                      key={`${option.key}-${option.label}`}
+                      className="flex items-center justify-between gap-3 text-slate-600"
+                    >
+                      <span className="flex-1">
+                        {option.label
+                          .split(' ')
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(' ')}
+                      </span>
+                      {option.count != null && option.count > 0 && (
+                        <span className="text-xs text-slate-400">
+                          {option.count}
+                        </span>
+                      )}
+                      <input
+                        type="checkbox"
+                        checked={jobTypeFilters[option.key]}
+                        onChange={() => handleJobTypeToggle(option.key)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                      />
+                    </label>
+                  ))}
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Experience Level
+                  </p>
+                  {(
+                    [
+                      { label: '0-1 Years', key: 'entry' as const },
+                      { label: '1-2 Years', key: 'intermediate' as const },
+                      { label: '3-4 Years', key: 'expert' as const },
+                    ] as const
+                  ).map((option) => (
+                    <label
+                      key={option.key}
+                      className="flex items-center gap-3 text-slate-600"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={experienceFilters[option.key]}
+                        onChange={() => handleExperienceToggle(option.key)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                      />
+                      <span className="flex-1">{option.label}</span>
+                      {experienceCounts[option.key] > 0 && (
+                        <span className="text-xs text-slate-400">
+                          {experienceCounts[option.key]}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Company Level
+                  </p>
+                  {(
+                    [
+                      { label: 'C Level', key: 'c_level' as const },
+                      { label: 'Senior', key: 'senior' as const },
+                      { label: 'Manager', key: 'manager' as const },
+                      { label: 'Director', key: 'director' as const },
+                    ] as const
+                  ).map((option) => (
+                    <label
+                      key={option.key}
+                      className="flex items-center gap-3 text-slate-600"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={companyLevelFilters[option.key]}
+                        onChange={() => handleCompanyLevelToggle(option.key)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                      />
+                      <span className="flex-1">{option.label}</span>
+                      {companyLevelCounts[option.key] > 0 && (
+                        <span className="text-xs text-slate-400">
+                          {companyLevelCounts[option.key]}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Salary
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      value={minCompensation}
+                      onChange={(event) =>
+                        setMinCompensation(event.target.value)
+                      }
+                      placeholder="Min"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-[#4F39F6] focus:ring-[#4F39F6]"
+                    />
+                    <Input
+                      value={maxCompensation}
+                      onChange={(event) =>
+                        setMaxCompensation(event.target.value)
+                      }
+                      placeholder="Max"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-[#4F39F6] focus:ring-[#4F39F6]"
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Categories
+                  </p>
+                  {categoryBuckets.length === 0 ? (
+                    <p className="text-xs text-slate-400">
+                      No categories available
+                    </p>
+                  ) : (
+                    categoryBuckets.slice(0, 6).map((bucket) => (
+                      <label
+                        key={bucket.name}
+                        className="flex items-center justify-between gap-3 text-slate-600"
+                      >
+                        <span className="flex-1">
+                          {bucket.name
+                            .split(' ')
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1),
+                            )
+                            .join(' ')}
+                        </span>
+                        {bucket.count > 0 && (
+                          <span className="text-xs text-slate-400">
+                            {bucket.count}
+                          </span>
+                        )}
+                        <input
+                          type="checkbox"
+                          checked={selectedCategory === bucket.name}
+                          onChange={() => handleCategoryToggle(bucket.name)}
+                          className="h-4 w-4 rounded border-slate-300 text-[#4F39F6] focus:ring-[#4F39F6]"
+                        />
+                      </label>
+                    ))
+                  )}
+                </section>
+
+                <section className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Organization
+                  </p>
+                  <CustomSelect
+                    value={selectedOrganization}
+                    onChange={setSelectedOrganization}
+                    options={organizationOptions.map((org) => ({
+                      label: org,
+                      value: org,
+                    }))}
+                    placeholder="Select organization"
+                    emptyMessage="No organizations available"
+                  />
+                </section>
+
+                <section className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Creator
+                  </p>
+                  <CustomSelect
+                    value={selectedCreator}
+                    onChange={setSelectedCreator}
+                    options={creatorOptions.map((creator) => ({
+                      label: creator,
+                      value: creator,
+                    }))}
+                    placeholder="Select creator"
+                    emptyMessage="No creators available"
+                  />
+                </section>
+
+                <section className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Priority
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(['high', 'medium', 'low'] as const).map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => handlePriorityToggle(level)}
+                        type="button"
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          priority[level]
+                            ? 'bg-[#4F39F6] text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {level.charAt(0).toUpperCase() + level.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
+                  onClick={() =>
+                    showToast('Export is not yet available', 'info')
+                  }
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Jobs
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
+                  onClick={() => navigate('/upload-jobs')}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Bulk Upload
+                </Button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
     </MainLayout>
   );
 };
