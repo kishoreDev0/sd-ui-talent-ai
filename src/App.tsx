@@ -133,6 +133,10 @@ const App = () => {
                   element={<PrivateRoute element={<RegisterJob />} />}
                 />
                 <Route
+                  path="/register-job/:id"
+                  element={<PrivateRoute element={<RegisterJob />} />}
+                />
+                <Route
                   path="/upload-jobs"
                   element={<PrivateRoute element={<UploadJobs />} />}
                 />

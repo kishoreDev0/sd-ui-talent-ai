@@ -23,5 +23,6 @@ export * from './job/actions/jobActions';
 export * from './jobCategory/actions/jobCategoryActions';
 export * from './majorSkill/actions/majorSkillActions';
 export * from './skill/actions/skillActions';
+export * from './candidate/actions/candidateActions';
 
 export default store;

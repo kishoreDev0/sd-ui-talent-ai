@@ -16,9 +16,21 @@ import {
   Download,
   Loader2,
   Bookmark,
+  Edit,
+  Eye,
+  Trash2,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
-import { useAppDispatch, useAppSelector, fetchJobsAsync } from '@/store';
+import {
+  useAppDispatch,
+  useAppSelector,
+  fetchJobsAsync,
+  updateJobAsync,
+  deleteJobAsync,
+  fetchJobByIdAsync,
+} from '@/store';
+import ConfirmationModal from '@/components/confirmation-modal';
+import type { Job } from '@/store/job/types/jobTypes';
 
 const stripHtml = (value?: string | null) =>
   value ? value.replace(/<[^>]+>/g, '') : '';
@@ -172,6 +184,8 @@ const JobBoard: React.FC = () => {
     low: false,
   });
   const [selectedCreator, setSelectedCreator] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   useEffect(() => {
     dispatch(fetchJobsAsync(undefined));
@@ -745,16 +759,55 @@ const JobBoard: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="ml-auto flex flex-col items-end gap-2 text-xs text-slate-500">
-                          <span className="text-sm font-medium text-emerald-600">
+                        <div className="ml-auto flex flex-col items-end gap-2">
+                          <span className="text-xs font-medium text-emerald-600">
                             {daysLeftLabel}
                           </span>
-                          <button
-                            type="button"
-                            className="rounded-full border border-slate-200 p-1.5 text-slate-400 transition hover:text-slate-700"
-                          >
-                            <Bookmark className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const jobData = await dispatch(fetchJobByIdAsync(job.id)).unwrap();
+                                  // Navigate to register-job page with job data in state
+                                  navigate(`/register-job/${jobData.id}`, { state: { job: jobData } });
+                                } catch (error) {
+                                  console.error('Failed to load job data:', error);
+                                  showToast('Failed to load job data', 'error');
+                                }
+                              }}
+                              className="rounded-lg border border-[#4F39F6] bg-white p-1.5 text-[#4F39F6] transition hover:bg-[#4F39F6] hover:text-white"
+                              title="Edit Job"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedJob(job);
+                                setDeleteModalOpen(true);
+                              }}
+                              className="rounded-lg border border-red-200 bg-white p-1.5 text-red-600 transition hover:bg-red-50"
+                              title="Delete Job"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/jobs/${job.id}`, { state: { job } })}
+                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-100"
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:text-slate-700"
+                              title="Bookmark"
+                            >
+                              <Bookmark className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </motion.article>
@@ -1014,6 +1067,45 @@ const JobBoard: React.FC = () => {
           </aside>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        labelHeading="Delete Job"
+        label={
+          selectedJob
+            ? `Are you sure you want to delete "${selectedJob.job_title}"? This action cannot be undone.`
+            : 'Are you sure you want to delete this job? This action cannot be undone.'
+        }
+        isOpen={deleteModalOpen}
+        onConfirm={async () => {
+          if (!selectedJob) return;
+          try {
+            await dispatch(deleteJobAsync(selectedJob.id)).unwrap();
+            showToast('Job deleted successfully', 'success');
+            setDeleteModalOpen(false);
+            setSelectedJob(null);
+            dispatch(fetchJobsAsync(undefined));
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : typeof error === 'string'
+                  ? error
+                  : 'Failed to delete job';
+            showToast(message, 'error');
+            setDeleteModalOpen(false);
+            setSelectedJob(null);
+          }
+        }}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setSelectedJob(null);
+        }}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSelectedJob(null);
+        }}
+      />
     </MainLayout>
   );
 };

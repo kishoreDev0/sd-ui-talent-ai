@@ -86,10 +86,13 @@ export const SKILLS = {
 // Candidates endpoints
 export const CANDIDATES = {
   LIST: '/api/v1/candidates',
-  GET_BY_ID: (id: number) => `/api/v1/candidates/${id}`,
-  CREATE: '/api/v1/candidates',
-  UPDATE: (id: number) => `/api/v1/candidates/${id}`,
-  DELETE: (id: number) => `/api/v1/candidates/${id}`,
+  GET_BY_ID: (id: number | string) => `/api/v1/candidate/${id}`,
+  CREATE: '/api/v1/candidate',
+  UPDATE: (id: number | string) => `/api/v1/candidate/${id}`,
+  DELETE: (id: number | string) => `/api/v1/candidate/${id}`,
+  PARSE_RESUME: '/api/v1/candidate/parse-resume',
+  MATCH_RESUME: (jobId: number) =>
+    `/api/v1/candidate/match-resume?job_id=${jobId}`,
 } as const;
 
 // Interviews endpoints

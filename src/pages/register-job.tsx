@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { MainLayout } from '@/components/layout';
@@ -20,18 +20,23 @@ import {
   Redo,
   Check,
   Loader2,
+  Upload,
+  File,
 } from 'lucide-react';
 import {
   useAppDispatch,
   useAppSelector,
   createJobAsync,
-  fetchJobsAsync,
+  updateJobAsync,
+  fetchJobByIdAsync,
 } from '@/store';
 import { useToast } from '@/components/ui/toast';
 import { getAllOrganizations } from '@/store/organization/actions/organizationActions';
 import { fetchJobCategories } from '@/store/jobCategory/actions/jobCategoryActions';
 import { fetchMajorSkills } from '@/store/majorSkill/actions/majorSkillActions';
 import { fetchSkills } from '@/store/skill/actions/skillActions';
+import type { Job } from '@/store/job/types/jobTypes';
+import axiosInstance from '@/axios-setup/axios-instance';
 
 interface JobFormData {
   jobTitle: string;
@@ -52,9 +57,11 @@ interface JobFormData {
 
 const RegisterJob: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const role = useUserRole();
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
+  const isEditMode = Boolean(id);
   const { organizations: organizationList, loading: organizationsLoading } =
     useAppSelector((state) => state.organization);
   const { items: jobCategoryList, isLoading: jobCategoriesLoading } =
@@ -64,9 +71,22 @@ const RegisterJob: React.FC = () => {
   const { items: skillItems, isLoading: skillsLoading } = useAppSelector(
     (state) => state.skill,
   );
+  const { current: jobDataFromStore, isLoading: isLoadingJob } = useAppSelector(
+    (state) => state.job,
+  );
+  
+  // Get job from navigation state first, then from store
+  const location = useLocation();
+  const jobFromState = (location.state as { job?: Job })?.job;
+  const jobData = jobFromState || jobDataFromStore;
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
+  const [jobRequirementFile, setJobRequirementFile] = useState<File | null>(null);
+  const [jobRequirementFileLink, setJobRequirementFileLink] = useState<string | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formData, setFormData] = useState<JobFormData>({
     jobTitle: '',
     employmentType: '',
@@ -108,28 +128,6 @@ const RegisterJob: React.FC = () => {
     }
   }, [dispatch, skillItems.length]);
 
-  const organizationOptions = useMemo(
-    () =>
-      organizationList
-        .filter((org) => org?.name?.trim())
-        .map((org) => ({
-          value: org.name as string,
-          label: org.name as string,
-        })),
-    [organizationList],
-  );
-
-  const jobCategoryOptions = useMemo(
-    () =>
-      jobCategoryList
-        .filter((category) => category?.name?.trim())
-        .map((category) => ({
-          value: category.name as string,
-          label: category.name as string,
-        })),
-    [jobCategoryList],
-  );
-
   // Initialize TipTap editors for Description and Responsibilities
   const editorDescription = useEditor({
     extensions: [StarterKit],
@@ -155,6 +153,124 @@ const RegisterJob: React.FC = () => {
       }
     },
   });
+
+  // Load job data if in edit mode (only if not in state)
+  useEffect(() => {
+    const loadJobData = async () => {
+      // If job data is in state, don't fetch from API
+      if (jobFromState) {
+        setIsLoadingInitialData(false);
+        return;
+      }
+
+      if (isEditMode && id && !jobFromState) {
+        setIsLoadingInitialData(true);
+        try {
+          const jobId = parseInt(id, 10);
+          if (!isNaN(jobId)) {
+            await dispatch(fetchJobByIdAsync(jobId)).unwrap();
+          }
+        } catch (error) {
+          console.error('Failed to load job data:', error);
+          showToast('Failed to load job data', 'error');
+          navigate('/jobs');
+        } finally {
+          setIsLoadingInitialData(false);
+        }
+      }
+    };
+
+    loadJobData();
+  }, [isEditMode, id, dispatch, navigate, showToast, jobFromState]);
+
+  // Populate form when job data is loaded (edit mode)
+  useEffect(() => {
+    if (isEditMode && jobData && !isLoadingInitialData && majorSkillItems.length > 0 && skillItems.length > 0) {
+      // Map job data to form data
+      const experienceYears = jobData.experience_years || 0;
+      const experienceText = experienceYears > 0 ? `${experienceYears} Years` : '';
+
+      // Map major skills from names to IDs
+      const majorSkillIds = jobData.major_skills
+        .map((skill) => {
+          const found = majorSkillItems.find((ms) => ms.name === skill.name);
+          return found ? Number(found.id) : null;
+        })
+        .filter((id): id is number => id !== null);
+
+      // Map skills from names to IDs
+      const skillIds = jobData.skills
+        .map((skill) => {
+          const found = skillItems.find((s) => s.name === skill.name);
+          return found ? Number(found.id) : null;
+        })
+        .filter((id): id is number => id !== null);
+
+      // Format compensation range
+      let compensationRange = '';
+      if (jobData.compensation_from || jobData.compensation_to) {
+        if (jobData.compensation_from && jobData.compensation_to) {
+          compensationRange = `${jobData.compensation_from} - ${jobData.compensation_to}`;
+        } else if (jobData.compensation_from) {
+          compensationRange = jobData.compensation_from.toString();
+        } else if (jobData.compensation_to) {
+          compensationRange = jobData.compensation_to.toString();
+        }
+      }
+
+      setFormData({
+        jobTitle: jobData.job_title || '',
+        employmentType: jobData.employment_type || '',
+        experience: experienceText,
+        majorSkills: majorSkillIds,
+        selectedSkills: skillIds,
+        organization: jobData.organization || '',
+        priority: jobData.priority || 'Medium',
+        currency: jobData.currency || 'USD',
+        jobCategory: jobData.job_category || '',
+        level: jobData.level || 'Mid Level',
+        compensationRange,
+        numberOfVacancies: jobData.no_of_vacancy?.toString() || '1',
+        jobDescription: jobData.job_description || '',
+        jobResponsibilities: jobData.job_responsibilities || '',
+      });
+
+      // Set job requirement file link if it exists
+      if (jobData.job_requirement_file_link) {
+        setJobRequirementFileLink(jobData.job_requirement_file_link);
+      }
+
+      // Update editors
+      if (editorDescription) {
+        editorDescription.commands.setContent(jobData.job_description || '');
+      }
+      if (editorResponsibilities) {
+        editorResponsibilities.commands.setContent(jobData.job_responsibilities || '');
+      }
+    }
+  }, [isEditMode, jobData, isLoadingInitialData, majorSkillItems, skillItems, editorDescription, editorResponsibilities]);
+
+  const organizationOptions = useMemo(
+    () =>
+      organizationList
+        .filter((org) => org?.name?.trim())
+        .map((org) => ({
+          value: org.name as string,
+          label: org.name as string,
+        })),
+    [organizationList],
+  );
+
+  const jobCategoryOptions = useMemo(
+    () =>
+      jobCategoryList
+        .filter((category) => category?.name?.trim())
+        .map((category) => ({
+          value: category.name as string,
+          label: category.name as string,
+        })),
+    [jobCategoryList],
+  );
 
   // Toolbar button component
   const MenuBar = ({ editor }: { editor: Editor | null }) => {
@@ -623,9 +739,60 @@ const RegisterJob: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await dispatch(createJobAsync(payload)).unwrap();
-      showToast('Job created successfully', 'success');
-      await dispatch(fetchJobsAsync(undefined));
+      // Upload job requirement file if a new file is selected
+      let fileLink = jobRequirementFileLink;
+      if (jobRequirementFile) {
+        setIsUploadingFile(true);
+        try {
+          // Upload file to S3 first
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', jobRequirementFile);
+          
+          const uploadResponse = await axiosInstance.post<{
+            data: { result: { file_link: string } };
+          }>('/api/v1/job/upload-requirement-file', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          
+          fileLink = uploadResponse.data.data.result.file_link || null;
+          setJobRequirementFileLink(fileLink);
+        } catch (uploadError: unknown) {
+          console.error('Failed to upload file:', uploadError);
+          let errorMessage = 'Failed to upload job requirement file';
+          if (uploadError && typeof uploadError === 'object' && 'response' in uploadError) {
+            const axiosError = uploadError as { response?: { data?: { detail?: string; message?: string } } };
+            errorMessage = axiosError.response?.data?.detail || axiosError.response?.data?.message || errorMessage;
+          } else if (uploadError instanceof Error) {
+            errorMessage = uploadError.message;
+          }
+          showToast(errorMessage, 'error');
+          setIsUploadingFile(false);
+          setIsSubmitting(false);
+          return;
+        } finally {
+          setIsUploadingFile(false);
+        }
+      }
+
+      // Add file link to payload
+      const finalPayload = {
+        ...payload,
+        job_requirement_file_link: fileLink || null,
+      };
+
+      if (isEditMode && id) {
+        const jobId = parseInt(id, 10);
+        if (isNaN(jobId)) {
+          throw new Error('Invalid job ID');
+        }
+        await dispatch(updateJobAsync({ id: jobId, ...finalPayload })).unwrap();
+        showToast('Job updated successfully', 'success');
+      } else {
+        await dispatch(createJobAsync(finalPayload)).unwrap();
+        showToast('Job created successfully', 'success');
+      }
       navigate('/jobs');
     } catch (err) {
       const message =
@@ -633,7 +800,9 @@ const RegisterJob: React.FC = () => {
           ? err.message
           : typeof err === 'string'
             ? err
-            : 'Failed to create job';
+            : isEditMode
+              ? 'Failed to update job'
+              : 'Failed to create job';
       showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
@@ -645,7 +814,7 @@ const RegisterJob: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Job Title *
+            Job Title <span className="text-red-500">*</span>
           </label>
           <Input
             type="text"
@@ -666,7 +835,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Employment Type *
+            Employment Type <span className="text-red-500">*</span>
           </label>
           <CustomSelect
             value={formData.employmentType}
@@ -687,7 +856,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Experience *
+            Experience <span className="text-red-500">*</span>
           </label>
           <CustomSelect
             value={formData.experience}
@@ -708,7 +877,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Organization *
+            Organization <span className="text-red-500">*</span>
           </label>
           <CustomSelect
             value={formData.organization}
@@ -746,7 +915,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Currency *
+            Currency <span className="text-red-500">*</span>
           </label>
           <CustomSelect
             value={formData.currency}
@@ -766,7 +935,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Job Category *
+            Job Category <span className="text-red-500">*</span>
           </label>
           <CustomSelect
             value={formData.jobCategory}
@@ -819,7 +988,7 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Number of Vacancies
+            Number of Vacancies <span className="text-red-500">*</span>
           </label>
           <Input
             type="text"
@@ -837,7 +1006,7 @@ const RegisterJob: React.FC = () => {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-900">
-              Major Skills
+              Major Skills <span className="text-red-500">*</span>
             </span>
             <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
               <input
@@ -897,7 +1066,9 @@ const RegisterJob: React.FC = () => {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-900">Skills</span>
+            <span className="text-sm font-semibold text-gray-900">
+              Skills <span className="text-red-500">*</span>
+            </span>
             <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
               <input
                 type="checkbox"
@@ -990,7 +1161,7 @@ const RegisterJob: React.FC = () => {
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Job Description *
+          Job Description <span className="text-red-500">*</span>
         </label>
         <div
           className={`border ${errors.jobDescription ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}
@@ -1011,7 +1182,7 @@ const RegisterJob: React.FC = () => {
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Job Responsibilities *
+          Job Responsibilities <span className="text-red-500">*</span>
         </label>
         <div
           className={`border ${errors.jobResponsibilities ? 'border-red-500' : 'border-gray-200'} rounded-lg overflow-hidden`}
@@ -1027,6 +1198,100 @@ const RegisterJob: React.FC = () => {
           </p>
         )}
       </div>
+
+      {/* Job Requirement File Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Job Requirement File (Optional)
+        </label>
+        <div className="space-y-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                // Validate file type
+                const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                const fileExtension = file.name.split('.').pop()?.toLowerCase();
+                if (!['pdf', 'doc', 'docx'].includes(fileExtension || '')) {
+                  showToast('Please upload a PDF, DOC, or DOCX file', 'error');
+                  return;
+                }
+                // Validate file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                  showToast('File size must be less than 10MB', 'error');
+                  return;
+                }
+                setJobRequirementFile(file);
+                setJobRequirementFileLink(null); // Clear existing link when new file is selected
+                if (errors.jobRequirementFile) {
+                  setErrors({ ...errors, jobRequirementFile: '' });
+                }
+              }
+            }}
+            className="hidden"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingFile}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {jobRequirementFile ? 'Change File' : 'Upload File'}
+            </Button>
+            {jobRequirementFile && (
+              <div className="flex items-center gap-2 flex-1">
+                <File className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-700 truncate">{jobRequirementFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJobRequirementFile(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+            {jobRequirementFileLink && !jobRequirementFile && (
+              <div className="flex items-center gap-2 flex-1">
+                <File className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-700 truncate">File already uploaded</span>
+                <a
+                  href={jobRequirementFileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#4F39F6] hover:text-[#3D2DC4] text-sm"
+                >
+                  View
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJobRequirementFileLink(null);
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+          {errors.jobRequirementFile && (
+            <p className="text-xs text-red-500">{errors.jobRequirementFile}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 
@@ -1041,19 +1306,36 @@ const RegisterJob: React.FC = () => {
           <Breadcrumb
             items={[
               { label: 'Job Board', href: '/job-board' },
-              { label: 'Register Job' },
+              { label: isEditMode ? 'Edit Job' : 'Register Job' },
             ]}
           />
 
           {/* Header */}
           <div className="mb-4">
             <h1 className="text-xl font-bold text-gray-900 mb-1">
-              Register Job
+              {isEditMode ? 'Edit Job' : 'Register Job'}
             </h1>
-            <p className="text-sm text-gray-600">Create a new job posting.</p>
+            <p className="text-sm text-gray-600">
+              {isEditMode
+                ? 'Update job posting details.'
+                : 'Create a new job posting.'}
+            </p>
           </div>
 
-          {/* Stepper */}
+          {/* Loading state when fetching job data */}
+          {(isLoadingInitialData || (isEditMode && isLoadingJob)) && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-[#4F39F6]" />
+              <span className="ml-2 text-sm text-gray-600">
+                Loading job data...
+              </span>
+            </div>
+          )}
+
+          {/* Form Content - Hide when loading */}
+          {!(isLoadingInitialData || (isEditMode && isLoadingJob)) && (
+            <>
+              {/* Stepper */}
           <div className="mb-6 flex justify-center">
             <div className="flex items-center">
               {steps.map((step, index) => (
@@ -1143,13 +1425,23 @@ const RegisterJob: React.FC = () => {
               ) : (
                 <Button
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
                 >
-                  Submit Job
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {isEditMode ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    isEditMode ? 'Update Job' : 'Submit Job'
+                  )}
                 </Button>
               )}
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
     </MainLayout>

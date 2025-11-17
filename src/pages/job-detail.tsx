@@ -3,28 +3,24 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, MapPin, CheckCircle, Paperclip } from 'lucide-react';
+import { ChevronLeft, MapPin, Paperclip, Edit } from 'lucide-react';
 import Breadcrumb from '@/components/ui/breadcrumb';
-
-interface JobState {
-  job?: {
-    id: number;
-    company: string;
-    title: string;
-    location: string;
-    description: string;
-    hourlyRate?: string;
-    tags?: string[];
-    [key: string]: unknown;
-  };
-}
+import type { Job } from '@/store/job/types/jobTypes';
 
 const JobDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = useUserRole();
-  // Job object is expected to be passed via navigation state from JobBoard
-  const job = (location.state as JobState)?.job;
+
+  // Get job from navigation state only
+  const job = (location.state as { job?: Job })?.job;
+
+  const handleEdit = () => {
+    if (job?.id) {
+      // Pass job data through state instead of fetching by ID
+      navigate(`/register-job/${job.id}`, { state: { job } });
+    }
+  };
 
   return (
     <MainLayout role={role}>
@@ -34,7 +30,7 @@ const JobDetail: React.FC = () => {
           <Breadcrumb
             items={[
               { label: 'Job Board', href: '/job-board' },
-              { label: job?.title || 'Job Details' },
+              { label: job?.job_title || 'Job Details' },
             ]}
           />
 
@@ -46,52 +42,61 @@ const JobDetail: React.FC = () => {
             <ChevronLeft className="h-4 w-4" /> Back to Jobs
           </button>
 
-          {/* Guard when navigated directly */}
+          {/* No job in state */}
           {!job ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
               <h1 className="text-lg font-semibold text-gray-900 mb-2">
                 Job not found
               </h1>
               <p className="text-sm text-gray-600 mb-4">
-                The job details were not provided. Please return to the job list
+                The job details were not provided. Please return to the job board
                 and open a job.
               </p>
-              <Button onClick={() => navigate('/jobs')}>Go to Job List</Button>
+              <Button onClick={() => navigate('/job-board')}>Go to Job Board</Button>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Header card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-xl">
-                    {job.companyIcon}
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-xl font-semibold text-blue-700">
+                    {(job as Job).job_title?.charAt(0).toUpperCase() || '?'}
                   </div>
                   <div>
                     <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
-                      {job.title}
+                      {(job as Job).job_title || 'Job Title'}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <span className="font-semibold text-gray-900">
-                        {job.company}
+                        {(job as Job).organization || 'Organization'}
                       </span>
                       <span className="h-1 w-1 rounded-full bg-gray-300" />
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        {job.location}
+                        {(job as Job).level || 'Location'}
                       </div>
-                      {job.paymentVerified && (
-                        <div className="flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4 text-[#4F39F6]" />
-                          Payment verified
-                        </div>
+                      {(job as Job).job_category && (
+                        <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full text-xs font-medium">
+                          {(job as Job).job_category}
+                        </span>
                       )}
-                      <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
-                        {job.applicants} applicants
-                      </span>
+                      {(job as Job).no_of_vacancy && (
+                        <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
+                          {(job as Job).no_of_vacancy} vacancy{(job as Job).no_of_vacancy > 1 ? 'ies' : 'y'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleEdit}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Job
+                  </Button>
                   <Button variant="outline">Save</Button>
                   <Button
                     onClick={() =>
@@ -110,24 +115,52 @@ const JobDetail: React.FC = () => {
                   <h2 className="text-sm font-semibold text-gray-900 mb-2">
                     About this role
                   </h2>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {job.description}
-                  </p>
+                  <div 
+                    className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ 
+                      __html: (job as Job).job_description || 'No description available' 
+                    }}
+                  />
                 </section>
+
+                {(job as Job).job_responsibilities && (
+                  <section>
+                    <h2 className="text-sm font-semibold text-gray-900 mb-2">
+                      Responsibilities
+                    </h2>
+                    <div 
+                      className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ 
+                        __html: (job as Job).job_responsibilities || '' 
+                      }}
+                    />
+                  </section>
+                )}
 
                 <section>
                   <h2 className="text-sm font-semibold text-gray-900 mb-2">
                     Required skills
                   </h2>
                   <div className="flex flex-wrap gap-2">
-                    {(job.tags as string[]).map((t: string, i: number) => (
+                    {(job as Job).major_skills?.map((skill) => (
                       <span
-                        key={i}
-                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                        key={skill.id}
+                        className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
                       >
-                        {t}
+                        {skill.name}
                       </span>
                     ))}
+                    {(job as Job).skills?.map((skill) => (
+                      <span
+                        key={skill.id}
+                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                      >
+                        {skill.name}
+                      </span>
+                    ))}
+                    {(!(job as Job).major_skills?.length && !(job as Job).skills?.length) && (
+                      <span className="text-xs text-gray-500">No skills specified</span>
+                    )}
                   </div>
                 </section>
 
