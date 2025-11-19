@@ -91,8 +91,14 @@ export const CANDIDATES = {
   UPDATE: (id: number | string) => `/api/v1/candidate/${id}`,
   DELETE: (id: number | string) => `/api/v1/candidate/${id}`,
   PARSE_RESUME: '/api/v1/candidate/parse-resume',
+  RESUME_LINK: (id: number | string) => `/api/v1/candidate/${id}/resume-link`,
   MATCH_RESUME: (jobId: number) =>
     `/api/v1/candidate/match-resume?job_id=${jobId}`,
+} as const;
+
+// Resume match endpoints
+export const RESUME_MATCH = {
+  ANALYZE: '/api/v1/resume-match/analyze',
 } as const;
 
 // Interviews endpoints

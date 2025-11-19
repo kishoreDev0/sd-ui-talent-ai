@@ -31,7 +31,6 @@ export interface Candidate {
   currency?: string | null;
   education_details?: string | null;
   current_company?: string | null;
-  rating: number;
   direct_interview: boolean;
   domain_expertise?: string | null;
   reason_for_change?: string | null;
@@ -108,6 +107,7 @@ export type CandidateCreateRequest = Omit<
   | 'organizations'
   | 'major_skills'
   | 'skills'
+  | 'rating'
   | 'created_at'
   | 'updated_at'
 > & {

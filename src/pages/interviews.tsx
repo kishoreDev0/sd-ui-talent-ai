@@ -208,32 +208,32 @@ const InterviewsPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="space-y-6 p-4">
+      <div className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <CalendarIcon className="w-6 h-6" /> Interviews
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5" /> Interviews
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
               Scheduled interviews overview
             </p>
           </div>
-          <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden text-xs">
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-4 py-2 text-sm ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              className={`px-3 py-1.5 ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
             >
               Calendar
             </button>
             <button
               onClick={() => setViewMode('timeline')}
-              className={`px-4 py-2 text-sm ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              className={`px-3 py-1.5 ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
             >
               Timeline
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
             >
               List
             </button>
@@ -241,10 +241,10 @@ const InterviewsPage: React.FC = () => {
         </div>
 
         {viewMode === 'calendar' ? (
-          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-white/10">
+          <div className="bg-white/95 dark:bg-slate-800/80 rounded-xl p-4 shadow border border-gray-200 dark:border-white/10">
             {/* Top controls like reference design */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <div className="flex flex-wrap gap-3 items-center justify-between mb-3">
+              <div className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                 {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}{' '}
                 {selectedDate.getDate()}
                 <sup className="text-xs align-super">
@@ -260,14 +260,14 @@ const InterviewsPage: React.FC = () => {
                   }
                 </sup>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-xs">
                 <button
                   onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
                   className="h-8 w-8 rounded border border-gray-200 dark:border-white/10 text-sm flex items-center justify-center"
                 >
                   ‹
                 </button>
-                <div className="px-3 text-sm text-gray-700 dark:text-gray-200 min-w-[140px] text-center">
+                <div className="px-2 text-gray-700 dark:text-gray-200 min-w-[120px] text-center">
                   {currentMonth.toLocaleString('en-US', {
                     month: 'long',
                     year: 'numeric',
@@ -280,11 +280,11 @@ const InterviewsPage: React.FC = () => {
                   ›
                 </button>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm">
+              <div className="flex items-center gap-2 text-xs">
+                <button className="px-3 py-1 rounded border border-gray-200 dark:border-white/10">
                   Filter
                 </button>
-                <button className="px-3 py-1 rounded bg-indigo-600 text-white text-sm">
+                <button className="px-3 py-1 rounded bg-indigo-600 text-white">
                   + Add new
                 </button>
               </div>
@@ -319,12 +319,12 @@ const InterviewsPage: React.FC = () => {
                   <div
                     key={idx}
                     onClick={() => cell.date && setSelectedDate(cell.date)}
-                    className={`cursor-pointer min-h-28 rounded-lg border border-gray-200 dark:border-white/10 p-2 ${cell.d ? 'bg-white/70 dark:bg-slate-900/40' : 'bg-transparent'} ${cell.date && cell.date.toDateString() === selectedDate.toDateString() ? 'ring-1 ring-orange-400' : ''}`}
+                    className={`cursor-pointer min-h-24 rounded-lg border border-gray-200 dark:border-white/10 p-2 ${cell.d ? 'bg-white/70 dark:bg-slate-900/40' : 'bg-transparent'} ${cell.date && cell.date.toDateString() === selectedDate.toDateString() ? 'ring-1 ring-orange-400' : ''}`}
                   >
                     <div className="text-right text-[10px] text-gray-500 dark:text-gray-400">
                       {cell.d || ''}
                     </div>
-                    <div className="space-y-1 mt-1 max-h-28 overflow-y-auto pr-1">
+                    <div className="space-y-1 mt-1 max-h-20 overflow-y-auto pr-1">
                       {dayEvents.map((ev) => (
                         <button
                           key={`${ev.id}-${ev.time}`}
@@ -353,9 +353,9 @@ const InterviewsPage: React.FC = () => {
             </div>
           </div>
         ) : viewMode === 'timeline' ? (
-          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-gray-700 dark:text-gray-200">
+          <div className="bg-white/95 dark:bg-slate-800/80 rounded-xl p-4 shadow border border-gray-200 dark:border-white/10">
+            <div className="flex flex-wrap gap-3 items-center justify-between mb-3 text-xs">
+              <div className="text-gray-700 dark:text-gray-200">
                 {currentWeekStart.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -369,13 +369,13 @@ const InterviewsPage: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={prevWeek}
-                  className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
+                  className="px-3 py-1 rounded border border-gray-200 dark:border-white/10"
                 >
                   Prev
                 </button>
                 <button
                   onClick={nextWeek}
-                  className="px-3 py-1 rounded border border-gray-200 dark:border-white/10 text-sm"
+                  className="px-3 py-1 rounded border border-gray-200 dark:border-white/10"
                 >
                   Next
                 </button>
@@ -460,27 +460,27 @@ const InterviewsPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-white/10">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="bg-white/95 dark:bg-slate-800/80 rounded-xl p-4 shadow border border-gray-200 dark:border-white/10">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
               Scheduled Interviews
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {interviews.map((i) => (
                 <div
                   key={i.id}
-                  className="w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-white/10"
+                  className="w-full text-left bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-white/10"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {i.name}
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-300">
+                      <div className="text-[11px] text-gray-600 dark:text-gray-300">
                         {i.role}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                      <Clock className="w-4 h-4 text-gray-500 dark:text-gray-300" />
+                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200">
+                      <Clock className="w-3.5 h-3.5 text-gray-500 dark:text-gray-300" />
                       <span>
                         {new Date(i.date).toLocaleDateString('en-US', {
                           month: 'short',

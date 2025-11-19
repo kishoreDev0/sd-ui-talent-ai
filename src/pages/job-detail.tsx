@@ -49,10 +49,12 @@ const JobDetail: React.FC = () => {
                 Job not found
               </h1>
               <p className="text-sm text-gray-600 mb-4">
-                The job details were not provided. Please return to the job board
-                and open a job.
+                The job details were not provided. Please return to the job
+                board and open a job.
               </p>
-              <Button onClick={() => navigate('/job-board')}>Go to Job Board</Button>
+              <Button onClick={() => navigate('/job-board')}>
+                Go to Job Board
+              </Button>
             </div>
           ) : (
             <div className="space-y-6">
@@ -82,7 +84,8 @@ const JobDetail: React.FC = () => {
                       )}
                       {(job as Job).no_of_vacancy && (
                         <span className="bg-primary-100 text-[#4F39F6] px-2 py-1 rounded-full text-xs font-medium">
-                          {(job as Job).no_of_vacancy} vacancy{(job as Job).no_of_vacancy > 1 ? 'ies' : 'y'}
+                          {(job as Job).no_of_vacancy} vacancy
+                          {(job as Job).no_of_vacancy > 1 ? 'ies' : 'y'}
                         </span>
                       )}
                     </div>
@@ -115,10 +118,12 @@ const JobDetail: React.FC = () => {
                   <h2 className="text-sm font-semibold text-gray-900 mb-2">
                     About this role
                   </h2>
-                  <div 
+                  <div
                     className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: (job as Job).job_description || 'No description available' 
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        (job as Job).job_description ||
+                        'No description available',
                     }}
                   />
                 </section>
@@ -128,10 +133,10 @@ const JobDetail: React.FC = () => {
                     <h2 className="text-sm font-semibold text-gray-900 mb-2">
                       Responsibilities
                     </h2>
-                    <div 
+                    <div
                       className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ 
-                        __html: (job as Job).job_responsibilities || '' 
+                      dangerouslySetInnerHTML={{
+                        __html: (job as Job).job_responsibilities || '',
                       }}
                     />
                   </section>
@@ -158,9 +163,12 @@ const JobDetail: React.FC = () => {
                         {skill.name}
                       </span>
                     ))}
-                    {(!(job as Job).major_skills?.length && !(job as Job).skills?.length) && (
-                      <span className="text-xs text-gray-500">No skills specified</span>
-                    )}
+                    {!(job as Job).major_skills?.length &&
+                      !(job as Job).skills?.length && (
+                        <span className="text-xs text-gray-500">
+                          No skills specified
+                        </span>
+                      )}
                   </div>
                 </section>
 

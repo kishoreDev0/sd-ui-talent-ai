@@ -1,5 +1,5 @@
 import axiosInstance from '@/axios-setup/axios-instance';
-import { CANDIDATES } from '@/store/endpoints';
+import { CANDIDATES, RESUME_MATCH } from '@/store/endpoints';
 import type {
   Candidate,
   CandidateCreateRequest,
@@ -89,6 +89,27 @@ export const deleteCandidate = async (id: number): Promise<number> => {
   return id;
 };
 
+export const getCandidateResumeLink = async (id: number): Promise<string> => {
+  const response = await axiosInstance.get<{
+    data: { result: { resume_url: string } };
+  }>(CANDIDATES.RESUME_LINK(id));
+
+  const resumeUrl = response.data?.data?.result?.resume_url;
+  if (!resumeUrl) {
+    throw new Error('Resume link unavailable');
+  }
+  return resumeUrl;
+};
+
+export interface Project {
+  name: string;
+  description: string;
+  technologies: string[];
+  duration: string;
+  role: string;
+  achievements?: string | null;
+}
+
 export interface ParsedResumeData {
   resume_link?: string;
   full_name?: string;
@@ -100,6 +121,8 @@ export interface ParsedResumeData {
   total_experience?: number | null;
   skills?: string[];
   major_skills?: string[];
+  matched_skill_ids?: number[]; // Matched skill IDs from database
+  matched_major_skill_ids?: number[]; // Matched major skill IDs from database
   education?: string | null;
   current_company?: string | null;
   current_ctc?: string | null;
@@ -117,6 +140,7 @@ export interface ParsedResumeData {
   domain_expertise?: string | null;
   education_details?: string | null;
   source?: string | null;
+  projects?: Project[];
 }
 
 export const parseResume = async (file: File): Promise<ParsedResumeData> => {
@@ -134,6 +158,40 @@ export const parseResume = async (file: File): Promise<ParsedResumeData> => {
   return response.data.data.result;
 };
 
+export interface SkillTreeItem {
+  skill_name: string;
+  efficiency: number;
+  match_status: 'exact' | 'partial' | 'missing';
+  used_in_projects: number;
+  years_of_experience: number;
+  relevance_to_job: number;
+}
+
+export interface TechnicalAnalysisGrade {
+  question: string;
+  answer: string;
+  score: number;
+  explanation: string;
+}
+
+export interface TechnicalAnalysisReport {
+  technical_score: number;
+  technical_explanation: string;
+  depth_score: number;
+  depth_explanation: string;
+  relevance_score: number;
+  relevance_explanation: string;
+  communication_score: number;
+  communication_explanation: string;
+  clarity_score: number;
+  clarity_explanation: string;
+  confidence_score: number;
+  confidence_explanation: string;
+  problem_solving_score: number;
+  problem_solving_explanation: string;
+  question_grades: TechnicalAnalysisGrade[];
+}
+
 export interface ResumeMatchResult {
   match_percentage: number;
   explanation: string;
@@ -144,7 +202,23 @@ export interface ResumeMatchResult {
   education_match: number;
   certifications_match: number;
   role_match: number;
+  skill_tree?: SkillTreeItem[];
   error?: string;
+  detailed_analysis?: TechnicalAnalysisReport;
+}
+
+export interface JobRequirementAnalysis {
+  filename?: string;
+  match_percentage?: number;
+  explanation?: string;
+  error?: string;
+  skills_matched?: number;
+  total_skills?: number;
+  experience_match?: number;
+  education_match?: number;
+  certifications_match?: number;
+  role_match?: number;
+  skill_tree?: SkillTreeItem[];
 }
 
 export const matchResumeWithJob = async (
@@ -160,6 +234,47 @@ export const matchResumeWithJob = async (
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 120000,
+  });
+
+  return response.data.data.result;
+};
+
+export interface ResumeMatchResumeResult {
+  filename: string;
+  match_percentage?: number;
+  explanation?: string;
+  skills_matched?: number;
+  total_skills?: number;
+  experience_match?: number;
+  education_match?: number;
+  certifications_match?: number;
+  role_match?: number;
+  skill_tree?: SkillTreeItem[];
+  error?: string;
+  detailed_analysis?: TechnicalAnalysisReport;
+}
+
+export interface ResumeMatchAnalysisResponse {
+  job_summary?: {
+    source: string;
+    reference?: string;
+    preview?: string;
+  };
+  job_requirement_analysis?: JobRequirementAnalysis;
+  resumes: ResumeMatchResumeResult[];
+}
+
+export const analyzeResumeMatch = async (
+  payload: FormData,
+): Promise<ResumeMatchAnalysisResponse> => {
+  const response = await axiosInstance.post<{
+    data: { result: ResumeMatchAnalysisResponse };
+  }>(RESUME_MATCH.ANALYZE, payload, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    timeout: 120000,
   });
 
   return response.data.data.result;

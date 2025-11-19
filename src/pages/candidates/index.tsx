@@ -14,6 +14,7 @@ import {
   ChevronRight,
   MoreVertical,
   FileText,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,16 +28,18 @@ import {
   deleteCandidateAsync,
 } from '@/store/candidate/actions/candidateActions';
 import ConfirmationModal from '@/components/confirmation-modal';
+import { useToast } from '@/components/ui/toast';
+import { getCandidateResumeLink } from '@/store/candidate/service/candidateService';
 
 type CandidateRow = {
   id: number;
   name: string;
   email: string;
   status: string;
-  aiRating: number;
   appliedOn: string;
   appliedTimestamp: number;
   tags: string[];
+  resumeLink?: string | null;
 };
 
 const formatAppliedDate = (value?: string): string => {
@@ -72,6 +75,11 @@ const CandidatesPage: React.FC = () => {
     id: number;
     name: string;
   } | null>(null);
+  const [downloadingResumeId, setDownloadingResumeId] = useState<number | null>(
+    null,
+  );
+
+  const { showToast } = useToast();
 
   const pageSizeValue = pageSize || 10;
 
@@ -113,10 +121,10 @@ const CandidatesPage: React.FC = () => {
 
       const status = candidate.direct_interview
         ? 'Interview'
-        : candidate.rating >= 80
-          ? 'Recommended'
-          : candidate.rating >= 60
-            ? 'Opened'
+        : candidate.reason_for_change
+          ? 'Review'
+          : candidate.source
+            ? 'Sourced'
             : 'New';
 
       const tagsSet = new Set<string>();
@@ -131,12 +139,12 @@ const CandidatesPage: React.FC = () => {
         name: fullName,
         email: candidate.email,
         status,
-        aiRating: candidate.rating ?? 0,
         appliedOn: formatAppliedDate(candidate.created_at),
         appliedTimestamp: candidate.created_at
           ? Date.parse(candidate.created_at)
           : 0,
         tags: Array.from(tagsSet).filter(Boolean),
+        resumeLink: candidate.resume_link,
       };
     });
   }, [items]);
@@ -207,6 +215,20 @@ const CandidatesPage: React.FC = () => {
   const handleDeleteClick = (candidateId: number, candidateName: string) => {
     setCandidateToDelete({ id: candidateId, name: candidateName });
     setDeleteModalOpen(true);
+  };
+
+  const handleViewCv = async (candidateId: number, hasResume: boolean) => {
+    if (!hasResume || downloadingResumeId === candidateId) return;
+    try {
+      setDownloadingResumeId(candidateId);
+      const resumeUrl = await getCandidateResumeLink(candidateId);
+      window.open(resumeUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Failed to open resume link:', error);
+      showToast('Unable to open resume. Please try again.', 'error');
+    } finally {
+      setDownloadingResumeId(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -372,9 +394,6 @@ const CandidatesPage: React.FC = () => {
                     Status
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
-                    AI Rating
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     <button
                       type="button"
                       onClick={() =>
@@ -409,7 +428,7 @@ const CandidatesPage: React.FC = () => {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="px-3 py-6 text-center text-xs text-slate-500"
                     >
                       Loading candidates...
@@ -464,11 +483,6 @@ const CandidatesPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-xs font-medium text-slate-900">
-                            {candidate.aiRating}%
-                          </span>
-                        </td>
-                        <td className="px-3 py-2">
                           <span className="text-xs text-slate-600">
                             {candidate.appliedOn}
                           </span>
@@ -506,9 +520,35 @@ const CandidatesPage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               className="h-7 border-slate-200 text-[10px] px-2"
+                              onClick={() =>
+                                handleViewCv(
+                                  candidate.id,
+                                  Boolean(candidate.resumeLink),
+                                )
+                              }
+                              disabled={
+                                !candidate.resumeLink ||
+                                downloadingResumeId === candidate.id
+                              }
                             >
-                              <FileText className="mr-1 h-3 w-3" />
-                              View CV
+                              {candidate.resumeLink ? (
+                                downloadingResumeId === candidate.id ? (
+                                  <>
+                                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                    Opening...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileText className="mr-1 h-3 w-3" />
+                                    View CV
+                                  </>
+                                )
+                              ) : (
+                                <>
+                                  <FileText className="mr-1 h-3 w-3" />
+                                  No CV
+                                </>
+                              )}
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

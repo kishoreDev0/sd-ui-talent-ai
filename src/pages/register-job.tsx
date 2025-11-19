@@ -74,7 +74,7 @@ const RegisterJob: React.FC = () => {
   const { current: jobDataFromStore, isLoading: isLoadingJob } = useAppSelector(
     (state) => state.job,
   );
-  
+
   // Get job from navigation state first, then from store
   const location = useLocation();
   const jobFromState = (location.state as { job?: Job })?.job;
@@ -83,8 +83,12 @@ const RegisterJob: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
-  const [jobRequirementFile, setJobRequirementFile] = useState<File | null>(null);
-  const [jobRequirementFileLink, setJobRequirementFileLink] = useState<string | null>(null);
+  const [jobRequirementFile, setJobRequirementFile] = useState<File | null>(
+    null,
+  );
+  const [jobRequirementFileLink, setJobRequirementFileLink] = useState<
+    string | null
+  >(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [formData, setFormData] = useState<JobFormData>({
@@ -185,10 +189,17 @@ const RegisterJob: React.FC = () => {
 
   // Populate form when job data is loaded (edit mode)
   useEffect(() => {
-    if (isEditMode && jobData && !isLoadingInitialData && majorSkillItems.length > 0 && skillItems.length > 0) {
+    if (
+      isEditMode &&
+      jobData &&
+      !isLoadingInitialData &&
+      majorSkillItems.length > 0 &&
+      skillItems.length > 0
+    ) {
       // Map job data to form data
       const experienceYears = jobData.experience_years || 0;
-      const experienceText = experienceYears > 0 ? `${experienceYears} Years` : '';
+      const experienceText =
+        experienceYears > 0 ? `${experienceYears} Years` : '';
 
       // Map major skills from names to IDs
       const majorSkillIds = jobData.major_skills
@@ -245,10 +256,20 @@ const RegisterJob: React.FC = () => {
         editorDescription.commands.setContent(jobData.job_description || '');
       }
       if (editorResponsibilities) {
-        editorResponsibilities.commands.setContent(jobData.job_responsibilities || '');
+        editorResponsibilities.commands.setContent(
+          jobData.job_responsibilities || '',
+        );
       }
     }
-  }, [isEditMode, jobData, isLoadingInitialData, majorSkillItems, skillItems, editorDescription, editorResponsibilities]);
+  }, [
+    isEditMode,
+    jobData,
+    isLoadingInitialData,
+    majorSkillItems,
+    skillItems,
+    editorDescription,
+    editorResponsibilities,
+  ]);
 
   const organizationOptions = useMemo(
     () =>
@@ -747,7 +768,7 @@ const RegisterJob: React.FC = () => {
           // Upload file to S3 first
           const uploadFormData = new FormData();
           uploadFormData.append('file', jobRequirementFile);
-          
+
           const uploadResponse = await axiosInstance.post<{
             data: { result: { file_link: string } };
           }>('/api/v1/job/upload-requirement-file', uploadFormData, {
@@ -755,15 +776,24 @@ const RegisterJob: React.FC = () => {
               'Content-Type': 'multipart/form-data',
             },
           });
-          
+
           fileLink = uploadResponse.data.data.result.file_link || null;
           setJobRequirementFileLink(fileLink);
         } catch (uploadError: unknown) {
           console.error('Failed to upload file:', uploadError);
           let errorMessage = 'Failed to upload job requirement file';
-          if (uploadError && typeof uploadError === 'object' && 'response' in uploadError) {
-            const axiosError = uploadError as { response?: { data?: { detail?: string; message?: string } } };
-            errorMessage = axiosError.response?.data?.detail || axiosError.response?.data?.message || errorMessage;
+          if (
+            uploadError &&
+            typeof uploadError === 'object' &&
+            'response' in uploadError
+          ) {
+            const axiosError = uploadError as {
+              response?: { data?: { detail?: string; message?: string } };
+            };
+            errorMessage =
+              axiosError.response?.data?.detail ||
+              axiosError.response?.data?.message ||
+              errorMessage;
           } else if (uploadError instanceof Error) {
             errorMessage = uploadError.message;
           }
@@ -1213,7 +1243,11 @@ const RegisterJob: React.FC = () => {
               const file = e.target.files?.[0];
               if (file) {
                 // Validate file type
-                const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                const validTypes = [
+                  'application/pdf',
+                  'application/msword',
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ];
                 const fileExtension = file.name.split('.').pop()?.toLowerCase();
                 if (!['pdf', 'doc', 'docx'].includes(fileExtension || '')) {
                   showToast('Please upload a PDF, DOC, or DOCX file', 'error');
@@ -1247,7 +1281,9 @@ const RegisterJob: React.FC = () => {
             {jobRequirementFile && (
               <div className="flex items-center gap-2 flex-1">
                 <File className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700 truncate">{jobRequirementFile.name}</span>
+                <span className="text-sm text-gray-700 truncate">
+                  {jobRequirementFile.name}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1265,7 +1301,9 @@ const RegisterJob: React.FC = () => {
             {jobRequirementFileLink && !jobRequirementFile && (
               <div className="flex items-center gap-2 flex-1">
                 <File className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-gray-700 truncate">File already uploaded</span>
+                <span className="text-sm text-gray-700 truncate">
+                  File already uploaded
+                </span>
                 <a
                   href={jobRequirementFileLink}
                   target="_blank"
@@ -1286,7 +1324,9 @@ const RegisterJob: React.FC = () => {
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-500">Supported formats: PDF, DOC, DOCX (Max 10MB)</p>
+          <p className="text-xs text-gray-500">
+            Supported formats: PDF, DOC, DOCX (Max 10MB)
+          </p>
           {errors.jobRequirementFile && (
             <p className="text-xs text-red-500">{errors.jobRequirementFile}</p>
           )}
@@ -1336,110 +1376,117 @@ const RegisterJob: React.FC = () => {
           {!(isLoadingInitialData || (isEditMode && isLoadingJob)) && (
             <>
               {/* Stepper */}
-          <div className="mb-6 flex justify-center">
-            <div className="flex items-center">
-              {steps.map((step, index) => (
-                <React.Fragment key={index}>
-                  {/* Step Circle */}
-                  <div className="flex flex-col items-center">
-                    <div className="flex items-center">
+              <div className="mb-6 flex justify-center">
+                <div className="flex items-center">
+                  {steps.map((step, index) => (
+                    <React.Fragment key={index}>
                       {/* Step Circle */}
-                      <div className="relative flex flex-col items-center">
-                        <button
-                          onClick={() => handleStepClick(index)}
-                          className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
-                            currentStep === index
-                              ? 'bg-[#4F39F6] border-[#4F39F6] text-white'
-                              : index < currentStep
-                                ? 'bg-green-500 border-green-500 text-white'
-                                : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
-                          }`}
-                        >
-                          {index < currentStep ? (
-                            <Check className="h-5 w-5" />
-                          ) : (
-                            <span className="text-sm font-semibold">
-                              {index + 1}
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center">
+                          {/* Step Circle */}
+                          <div className="relative flex flex-col items-center">
+                            <button
+                              onClick={() => handleStepClick(index)}
+                              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                                currentStep === index
+                                  ? 'bg-[#4F39F6] border-[#4F39F6] text-white'
+                                  : index < currentStep
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'bg-white border-gray-300 text-gray-500 cursor-pointer'
+                              }`}
+                            >
+                              {index < currentStep ? (
+                                <Check className="h-5 w-5" />
+                              ) : (
+                                <span className="text-sm font-semibold">
+                                  {index + 1}
+                                </span>
+                              )}
+                            </button>
+                            {/* Step Label */}
+                            <span
+                              className={`mt-2 text-xs font-medium ${
+                                currentStep === index
+                                  ? 'text-[#4F39F6]'
+                                  : index < currentStep
+                                    ? 'text-green-600'
+                                    : 'text-gray-500'
+                              }`}
+                            >
+                              {step}
                             </span>
+                          </div>
+                          {/* Connector Line */}
+                          {index < steps.length - 1 && (
+                            <div
+                              className={`w-24 h-0.5 mx-4 -mt-5 ${
+                                index < currentStep
+                                  ? 'bg-green-500'
+                                  : 'bg-gray-300'
+                              }`}
+                            />
                           )}
-                        </button>
-                        {/* Step Label */}
-                        <span
-                          className={`mt-2 text-xs font-medium ${
-                            currentStep === index
-                              ? 'text-[#4F39F6]'
-                              : index < currentStep
-                                ? 'text-green-600'
-                                : 'text-gray-500'
-                          }`}
-                        >
-                          {step}
-                        </span>
+                        </div>
                       </div>
-                      {/* Connector Line */}
-                      {index < steps.length - 1 && (
-                        <div
-                          className={`w-24 h-0.5 mx-4 -mt-5 ${
-                            index < currentStep ? 'bg-green-500' : 'bg-gray-300'
-                          }`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
 
-          {/* Form Content */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-            {currentStep === 0 && renderBasicInformation()}
-            {currentStep === 1 && renderDescription()}
-            {currentStep === 2 && renderResponsibilities()}
+              {/* Form Content */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+                {currentStep === 0 && renderBasicInformation()}
+                {currentStep === 1 && renderDescription()}
+                {currentStep === 2 && renderResponsibilities()}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-end gap-3 mt-4">
-              <Button variant="outline" onClick={() => navigate('/job-board')}>
-                Cancel
-              </Button>
+                {/* Navigation Buttons */}
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/job-board')}
+                  >
+                    Cancel
+                  </Button>
 
-              {currentStep > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-              )}
-
-              {currentStep < steps.length - 1 ? (
-                <Button
-                  onClick={handleNext}
-                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {isEditMode ? 'Updating...' : 'Creating...'}
-                    </>
-                  ) : (
-                    isEditMode ? 'Update Job' : 'Submit Job'
+                  {currentStep > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
                   )}
-                </Button>
-              )}
-            </div>
-          </div>
+
+                  {currentStep < steps.length - 1 ? (
+                    <Button
+                      onClick={handleNext}
+                      className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-2"
+                    >
+                      Next
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          {isEditMode ? 'Updating...' : 'Creating...'}
+                        </>
+                      ) : isEditMode ? (
+                        'Update Job'
+                      ) : (
+                        'Submit Job'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>

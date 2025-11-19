@@ -112,6 +112,18 @@ const navItems: NavItem[] = [
     roles: ['ta_executive', 'ta_manager', 'hiring_manager', 'interviewer'],
   },
   {
+    path: '/resume-match',
+    icon: <Sparkles className="h-4 w-4" />,
+    label: 'Resume Match',
+    roles: [
+      'admin',
+      'ta_executive',
+      'ta_manager',
+      'hiring_manager',
+      'interviewer',
+    ],
+  },
+  {
     path: '/candidate-tracking',
     icon: <TrendingUp className="h-4 w-4" />,
     label: 'Candidate Tracking',

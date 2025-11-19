@@ -768,11 +768,18 @@ const JobBoard: React.FC = () => {
                               type="button"
                               onClick={async () => {
                                 try {
-                                  const jobData = await dispatch(fetchJobByIdAsync(job.id)).unwrap();
+                                  const jobData = await dispatch(
+                                    fetchJobByIdAsync(job.id),
+                                  ).unwrap();
                                   // Navigate to register-job page with job data in state
-                                  navigate(`/register-job/${jobData.id}`, { state: { job: jobData } });
+                                  navigate(`/register-job/${jobData.id}`, {
+                                    state: { job: jobData },
+                                  });
                                 } catch (error) {
-                                  console.error('Failed to load job data:', error);
+                                  console.error(
+                                    'Failed to load job data:',
+                                    error,
+                                  );
                                   showToast('Failed to load job data', 'error');
                                 }
                               }}
@@ -794,7 +801,9 @@ const JobBoard: React.FC = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => navigate(`/jobs/${job.id}`, { state: { job } })}
+                              onClick={() =>
+                                navigate(`/jobs/${job.id}`, { state: { job } })
+                              }
                               className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-100"
                               title="View Details"
                             >

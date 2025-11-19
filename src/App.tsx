@@ -25,6 +25,7 @@ import UploadJobs from './pages/upload-jobs';
 import AdminAccessPage from './pages/admin-access';
 import InterviewDetailPage from './pages/interview-detail';
 import CandidateTrackingPage from './pages/candidate-tracking';
+import ResumeMatchPage from './pages/resume-match';
 
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
@@ -89,6 +90,10 @@ const App = () => {
                 <Route
                   path="/analytics"
                   element={<PrivateRoute element={<AnalyticsPage />} />}
+                />
+                <Route
+                  path="/resume-match"
+                  element={<PrivateRoute element={<ResumeMatchPage />} />}
                 />
                 <Route
                   path="/users"

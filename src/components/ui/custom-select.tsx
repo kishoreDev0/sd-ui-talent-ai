@@ -13,6 +13,7 @@ interface CustomSelectProps {
   placeholder?: string;
   className?: string;
   emptyMessage?: string;
+  disabled?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -22,6 +23,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   placeholder = 'Select an option',
   className = '',
   emptyMessage = 'No options available',
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -48,10 +50,22 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     <div ref={selectRef} className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F39F6] bg-white hover:border-gray-300 transition-all duration-200 flex items-center justify-between"
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen(!isOpen);
+        }}
+        disabled={disabled}
+        className={`w-full p-2 text-sm border rounded-lg focus:outline-none flex items-center justify-between transition-all duration-200 ${
+          disabled
+            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'border-gray-200 focus:ring-2 focus:ring-[#4F39F6] bg-white hover:border-gray-300'
+        }`}
       >
-        <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
+        <span
+          className={
+            selectedOption && !disabled ? 'text-gray-900' : 'text-gray-500'
+          }
+        >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
@@ -61,7 +75,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         />
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
           <div className="max-h-60 overflow-y-auto">
             {options.length === 0 ? (
