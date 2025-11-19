@@ -25,6 +25,7 @@ import UploadJobs from './pages/upload-jobs';
 import AdminAccessPage from './pages/admin-access';
 import InterviewDetailPage from './pages/interview-detail';
 import CandidateTrackingPage from './pages/candidate-tracking';
+import ResumeMatchPage from './pages/resume-match';
 
 import JobCategories from './pages/job-categories';
 import Skills from './pages/skills';
@@ -91,6 +92,10 @@ const App = () => {
                   element={<PrivateRoute element={<AnalyticsPage />} />}
                 />
                 <Route
+                  path="/resume-match"
+                  element={<PrivateRoute element={<ResumeMatchPage />} />}
+                />
+                <Route
                   path="/users"
                   element={<PrivateRoute element={<UsersPage />} />}
                 />
@@ -130,6 +135,10 @@ const App = () => {
                 />
                 <Route
                   path="/register-job"
+                  element={<PrivateRoute element={<RegisterJob />} />}
+                />
+                <Route
+                  path="/register-job/:id"
                   element={<PrivateRoute element={<RegisterJob />} />}
                 />
                 <Route

@@ -13,6 +13,7 @@ import userReducer from '../user/slices/userSlice';
 import jobCategoryReducer from '../jobCategory/slices/jobCategorySlice';
 import majorSkillReducer from '../majorSkill/slices/majorSkillSlice';
 import skillReducer from '../skill/slices/skillSlice';
+import candidateReducer from '../candidate/slices/candidateSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   jobCategory: jobCategoryReducer,
   majorSkill: majorSkillReducer,
   skill: skillReducer,
+  candidate: candidateReducer,
   role: roleReducer,
   permission: permissionReducer,
   organization: organizationReducer,

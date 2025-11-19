@@ -20,6 +20,7 @@ import {
   DollarSign as DollarSignIcon,
   Upload,
   Download,
+  Edit,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -713,14 +714,26 @@ const JobBoard: React.FC = () => {
                               <span>{job.proposals} proposals</span>
                             </div>
                           </div>
-                          <Button
-                            onClick={() =>
-                              navigate(`/jobs/${job.id}`, { state: { job } })
-                            }
-                            className="bg-gradient-to-r from-[#4F39F6] to-[#856FFF] hover:from-[#3D2DC4] hover:to-[#6B5AE8] text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                          >
-                            See details
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() =>
+                                navigate(`/register-job/${job.id}`)
+                              }
+                              variant="outline"
+                              className="flex items-center gap-2 border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                navigate(`/jobs/${job.id}`, { state: { job } })
+                              }
+                              className="bg-gradient-to-r from-[#4F39F6] to-[#856FFF] hover:from-[#3D2DC4] hover:to-[#6B5AE8] text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                            >
+                              See details
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
