@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,10 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import {
   createCandidateAsync,
   parseResumeAsync,
+  updateCandidateAsync,
 } from '@/store/candidate/actions/candidateActions';
 import {
+  getCandidateById,
   matchResumeWithJob,
   type ParsedResumeData,
   type ResumeMatchResult,
@@ -37,7 +39,10 @@ import { getAllOrganizations } from '@/store/organization/actions/organizationAc
 import { fetchMajorSkills } from '@/store/majorSkill/actions/majorSkillActions';
 import { fetchSkills } from '@/store/skill/actions/skillActions';
 import { fetchJobsAsync } from '@/store/job/actions/jobActions';
-import type { CandidateCreateRequest } from '@/store/candidate/types/candidateTypes';
+import type {
+  Candidate,
+  CandidateCreateRequest,
+} from '@/store/candidate/types/candidateTypes';
 import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
@@ -98,23 +103,36 @@ const isCountryCode = (value: string): value is PhoneCountry =>
 
 const RegisterCandidate: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { id: candidateIdParam } = useParams<{ id?: string }>();
+  const parsedCandidateId = candidateIdParam ? Number(candidateIdParam) : NaN;
+  const candidateId = Number.isNaN(parsedCandidateId)
+    ? null
+    : parsedCandidateId;
+
   const dispatch = useAppDispatch();
-  const { isLoading: isCreating } = useAppSelector((state) => state.candidate);
+  const { isLoading: isCandidateMutating } = useAppSelector(
+    (state) => state.candidate,
+  );
   const organizationsState = useAppSelector((state) => state.organization);
   const majorSkillsState = useAppSelector((state) => state.majorSkill);
   const skillsState = useAppSelector((state) => state.skill);
   const jobsState = useAppSelector((state) => state.job);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCandidateLoading, setIsCandidateLoading] = useState(false);
+  const [candidateLoadError, setCandidateLoadError] = useState<string | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState<
     'upload' | 'general' | 'professional' | 'additional'
-  >('upload');
+  >(candidateId ? 'general' : 'upload');
   const [countries, setCountries] = useState<Country[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [isParsingResume, setIsParsingResume] = useState(false);
-  const [isCvUploaded, setIsCvUploaded] = useState(false);
+  const [isCvUploaded, setIsCvUploaded] = useState(Boolean(candidateId));
   const [showCvAlert, setShowCvAlert] = useState(false);
   const [resumeLink, setResumeLink] = useState<string>('');
   const [parsedResumeData, setParsedResumeData] =
@@ -128,6 +146,24 @@ const RegisterCandidate: React.FC = () => {
   );
   const [isMatching, setIsMatching] = useState(false);
   const { showToast } = useToast();
+  const isEditMode = Boolean(
+    candidateId && location.pathname.includes('/edit'),
+  );
+  const isViewMode = Boolean(
+    candidateId && location.pathname.includes('/view'),
+  );
+  const isExistingCandidate = Boolean(candidateId);
+  const shouldSkipUploadStep = isExistingCandidate;
+  const pageTitle = isViewMode
+    ? 'Candidate Profile'
+    : isEditMode
+      ? 'Edit Candidate'
+      : 'Register Candidate';
+  const pageSubtitle = isViewMode
+    ? 'Review the candidate profile information'
+    : isEditMode
+      ? 'Update candidate details and keep the profile current'
+      : 'Add a new candidate to the system';
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CandidateFormData>({
     resumeTitle: '',
@@ -159,6 +195,78 @@ const RegisterCandidate: React.FC = () => {
     source: '',
     noticePeriod: '',
   });
+  const mapExperienceYearsToLabel = useCallback((years?: number | null) => {
+    if (years === null || years === undefined || Number.isNaN(years)) {
+      return '';
+    }
+    if (years < 1) return '0-1 Years';
+    if (years < 2) return '1-2 Years';
+    if (years < 4) return '2-4 Years';
+    if (years < 6) return '4-6 Years';
+    if (years < 8) return '6-8 Years';
+    return '8+ Years';
+  }, []);
+
+  const hydrateFormFromCandidate = useCallback(
+    (candidate: Candidate) => {
+      const organizationIds =
+        candidate.organizations
+          ?.map((org) => org.id?.toString())
+          .filter(Boolean) ?? [];
+      const majorSkillIds =
+        candidate.major_skills
+          ?.map((skill) => skill.id?.toString())
+          .filter(Boolean) ?? [];
+      const skillIds =
+        candidate.skills
+          ?.map((skill) => skill.id?.toString())
+          .filter(Boolean) ?? [];
+      const safeNumberToString = (value?: number | null) =>
+        typeof value === 'number' && !Number.isNaN(value)
+          ? value.toString()
+          : '';
+
+      setFormData((prev) => ({
+        ...prev,
+        resumeTitle: candidate.resume_title ?? '',
+        email: candidate.email ?? '',
+        firstName: candidate.first_name ?? '',
+        lastName: candidate.last_name ?? '',
+        city: candidate.city ?? '',
+        address1: candidate.address1 ?? '',
+        address2: candidate.address2 ?? '',
+        state: candidate.state ?? '',
+        zipCode: candidate.zip_code ?? '',
+        country: candidate.country ?? '',
+        preferredTimeZone: candidate.preferred_time_zone ?? '',
+        mobile: candidate.mobile ?? '',
+        organization: organizationIds,
+        majorSkills: majorSkillIds,
+        skills: skillIds,
+        educationDetails: candidate.education_details ?? '',
+        domainExpertise: candidate.domain_expertise ?? '',
+        passportNumber: candidate.passport_number ?? '',
+        currentCTC: safeNumberToString(candidate.current_ctc),
+        currentCompany: candidate.current_company ?? '',
+        reasonForChange: candidate.reason_for_change ?? '',
+        experience: mapExperienceYearsToLabel(candidate.experience_years),
+        expectedCTC: safeNumberToString(candidate.expected_ctc),
+        currency: candidate.currency ?? '',
+        directInterview: Boolean(candidate.direct_interview),
+        skypeID: candidate.skype_id ?? '',
+        source: candidate.source ?? '',
+        noticePeriod: candidate.notice_period ?? '',
+      }));
+
+      setPhoneNumber(candidate.mobile ?? '');
+      setResumeLink(candidate.resume_link ?? '');
+      setIsCvUploaded(true);
+      setShowCvAlert(false);
+      setActiveTab('general');
+      setErrors({});
+    },
+    [mapExperienceYearsToLabel],
+  );
 
   // Fetch organizations, major skills, and skills on component mount
   useEffect(() => {
@@ -2718,7 +2826,7 @@ const RegisterCandidate: React.FC = () => {
                         type="button"
                         variant="outline"
                         onClick={handlePrevious}
-                        disabled={isCreating}
+                        disabled={isCandidateMutating}
                         className="h-8 text-xs flex items-center gap-1.5"
                       >
                         <ArrowLeft className="h-3.5 w-3.5" />
@@ -2731,7 +2839,7 @@ const RegisterCandidate: React.FC = () => {
                       type="button"
                       variant="outline"
                       onClick={() => navigate('/candidates')}
-                      disabled={isCreating}
+                      disabled={isCandidateMutating}
                       className="h-8 text-xs"
                     >
                       Cancel
@@ -2744,7 +2852,7 @@ const RegisterCandidate: React.FC = () => {
                           e.stopPropagation();
                           handleNext();
                         }}
-                        disabled={isCreating}
+                        disabled={isCandidateMutating}
                         className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-1.5 h-8 text-xs"
                       >
                         Next
@@ -2754,9 +2862,9 @@ const RegisterCandidate: React.FC = () => {
                       <Button
                         type="submit"
                         className="bg-[#4F39F6] hover:bg-[#3D2DC4] text-white flex items-center gap-1.5 h-8 text-xs"
-                        disabled={isCreating}
+                        disabled={isCandidateMutating}
                       >
-                        {isCreating ? 'Creating...' : 'Submit'}
+                        {isCandidateMutating ? 'Creating...' : 'Submit'}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     )}

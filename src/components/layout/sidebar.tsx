@@ -116,7 +116,6 @@ const navItems: NavItem[] = [
     icon: <Sparkles className="h-4 w-4" />,
     label: 'Resume Match',
     roles: [
-      'admin',
       'ta_executive',
       'ta_manager',
       'hiring_manager',

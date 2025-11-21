@@ -9,7 +9,7 @@ This application uses a centralized Axios instance configured with backend URL, 
 ### 1. **Centralized Axios Instance** (`src/axios-setup/axios-instance.ts`)
 
 - **Base URL**: Configured from environment variables (`VITE_API_URL` or `VITE_API_BASE_URL`)
-- **Default Fallback**: `http://localhost:5010` (only used if `.env` is not configured)
+- **Default Fallback**: `http://127.0.0.1.nip.io:5010` (only used if `.env` is not configured)
 - **Timeout**: 30 seconds
 - **Default Headers**:
   - `Content-Type: application/json`
@@ -35,20 +35,20 @@ This application uses a centralized Axios instance configured with backend URL, 
 Create a `.env` file in the root directory (`sd-ui-talent-ai/.env`):
 
 ```env
-# Backend API URL
-VITE_API_URL=http://192.168.1.188:8000
+# Backend API URL (uses nip.io to automatically resolve to localhost)
+VITE_API_URL=http://127.0.0.1.nip.io:5010
 
 # Alternative (will fallback to VITE_API_URL)
-# VITE_API_BASE_URL=http://192.168.1.188:8000
+# VITE_API_BASE_URL=http://127.0.0.1.nip.io:5010
 ```
 
 **Important**: After creating or modifying the `.env` file, restart your development server for changes to take effect.
 
-**Example endpoints:**
+**Example endpoints (nip.io hostname resolves automatically to 127.0.0.1):**
 
-- Login: `http://192.168.1.188:8000/api/v1/auth/login`
-- Jobs: `http://192.168.1.188:8000/jobs`
-- Permissions: `http://192.168.1.188:8000/api/permissions`
+- Login: `http://127.0.0.1.nip.io:5010/api/v1/auth/login`
+- Jobs: `http://127.0.0.1.nip.io:5010/jobs`
+- Permissions: `http://127.0.0.1.nip.io:5010/api/permissions`
 
 **Note**: All Vite environment variables must be prefixed with `VITE_`
 
@@ -124,9 +124,9 @@ The base URL is configured in priority order:
 
 1. `import.meta.env.VITE_API_URL` (primary) - **Set this in `.env` file**
 2. `import.meta.env.VITE_API_BASE_URL` (fallback)
-3. `http://localhost:5010` (default, only if `.env` not configured)
+3. `http://127.0.0.1.nip.io:5010` (default, only if `.env` not configured)
 
-**Current Configuration**: `http://192.168.1.188:8000` (set in `.env`)
+**Current Configuration**: `http://127.0.0.1.nip.io:5010` (set in `.env`)
 
 All API endpoints are relative to the base URL:
 

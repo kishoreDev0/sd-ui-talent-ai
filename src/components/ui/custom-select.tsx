@@ -14,6 +14,7 @@ interface CustomSelectProps {
   className?: string;
   emptyMessage?: string;
   disabled?: boolean;
+  searchable?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -24,8 +25,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   className = '',
   emptyMessage = 'No options available',
   disabled = false,
+  searchable = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const selectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,7 +47,19 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('');
+    }
+  }, [isOpen]);
+
   const selectedOption = options.find((option) => option.value === value);
+  const filteredOptions =
+    !searchable || searchTerm.trim() === ''
+      ? options
+      : options.filter((option) =>
+          option.label.toLowerCase().includes(searchTerm.toLowerCase()),
+        );
 
   return (
     <div ref={selectRef} className={`relative ${className}`}>
@@ -77,13 +92,25 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
       {isOpen && !disabled && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-in slide-in-from-top-2 duration-200">
+          {searchable && (
+            <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search…"
+                className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F39F6]/40"
+                autoFocus
+              />
+            </div>
+          )}
           <div className="max-h-60 overflow-y-auto">
-            {options.length === 0 ? (
+            {filteredOptions.length === 0 ? (
               <div className="px-3 py-6 text-center text-sm text-gray-500">
                 {emptyMessage}
               </div>
             ) : (
-              options.map((option) => (
+              filteredOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"

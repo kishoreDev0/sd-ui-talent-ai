@@ -1,7 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Plus,
+  Users2,
+  Target,
+  Check,
+  X,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +17,125 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useNavigate } from 'react-router-dom';
+import {
+  createInterviewRound,
+  listInterviewRounds,
+  updateRoundStatus,
+} from '@/store/interviews/service/interviewService';
+import type {
+  InterviewRound,
+  InterviewRoundCreatePayload,
+  PanelAssignmentInput,
+} from '@/store/interviews/types/interviewTypes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import CustomSelect from '@/components/ui/custom-select';
+import { useToast } from '@/components/ui/toast';
+import {
+  listCandidates,
+  getCandidateById,
+} from '@/store/candidate/service/candidateService';
+import { getAllJobs } from '@/store/job/service/jobService';
+import { UserAPI } from '@/store/service/user/userService';
+import type { User } from '@/store/types/user/userTypes';
+import InterviewHosting from '@/components/interview/interview-hosting';
+
+const buildTimezoneOptions = () => {
+  let zones: string[] = [];
+  try {
+    const intlWithSupport = Intl as typeof Intl & {
+      supportedValuesOf?: (key: string) => string[];
+    };
+    if (typeof intlWithSupport.supportedValuesOf === 'function') {
+      zones = intlWithSupport.supportedValuesOf('timeZone');
+    }
+  } catch {
+    // ignored – fallback list below
+  }
+  if (!zones.length) {
+    zones = [
+      'UTC',
+      'Etc/GMT',
+      'America/New_York',
+      'America/Los_Angeles',
+      'America/Chicago',
+      'America/Denver',
+      'Europe/London',
+      'Europe/Berlin',
+      'Europe/Paris',
+      'Europe/Moscow',
+      'Asia/Kolkata',
+      'Asia/Dubai',
+      'Asia/Singapore',
+      'Asia/Tokyo',
+      'Asia/Shanghai',
+      'Australia/Sydney',
+      'Pacific/Auckland',
+    ];
+  }
+
+  const now = new Date();
+
+  const formatOffset = (zone: string) => {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZoneName: 'short',
+      });
+      const tzName = formatter
+        .formatToParts(now)
+        .find((part) => part.type === 'timeZoneName')?.value;
+      if (!tzName) return 'GMT';
+      const match = tzName.match(/GMT([+-]\d{1,2})(?::(\d{2}))?/i);
+      if (!match) return tzName.toUpperCase();
+      const hourValue = Number(match[1]);
+      const minuteValue = match[2] ? Number(match[2]) : 0;
+      const sign = hourValue >= 0 ? '+' : '-';
+      const paddedHours = Math.abs(hourValue).toString().padStart(2, '0');
+      const paddedMinutes = minuteValue.toString().padStart(2, '0');
+      return `GMT${sign}${paddedHours}:${paddedMinutes}`;
+    } catch {
+      return 'GMT';
+    }
+  };
+
+  const formatLongName = (zone: string) => {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone,
+        timeZoneName: 'long',
+      });
+      const tzName = formatter
+        .formatToParts(now)
+        .find((part) => part.type === 'timeZoneName')?.value;
+      return tzName ?? zone.replace(/_/g, ' ');
+    } catch {
+      return zone.replace(/_/g, ' ');
+    }
+  };
+
+  return zones
+    .map((zone) => {
+      const offset = formatOffset(zone);
+      const longName = formatLongName(zone);
+      const location = zone.split('/').slice(1).join(' / ').replace(/_/g, ' ');
+      const descriptor = location ? `${longName} - ${location}` : longName;
+      return {
+        value: zone,
+        label: `(${offset}) ${descriptor}`,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+};
 
 const InterviewsPage: React.FC = () => {
   const role = useUserRole();
-  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const userApi = useMemo(() => new UserAPI(), []);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
@@ -29,114 +151,453 @@ const InterviewsPage: React.FC = () => {
   );
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
+  const [rounds, setRounds] = useState<InterviewRound[]>([]);
+  const [isLoadingRounds, setIsLoadingRounds] = useState<boolean>(true);
+  const [roundsError, setRoundsError] = useState<string | null>(null);
+  const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
+  const [isSubmittingRound, setIsSubmittingRound] = useState(false);
+  const [schedulerData, setSchedulerData] = useState<
+    InterviewRoundCreatePayload & { panel: PanelAssignmentInput[] }
+  >({
+    round_name: '',
+    stage: '',
+    scheduled_start: new Date().toISOString().slice(0, 16),
+    duration_minutes: 60,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    recording_enabled: true,
+    panel: [],
+  });
+  const [selectedRound, setSelectedRound] = useState<InterviewRound | null>(
+    null,
+  );
+  const [isRoundDetailOpen, setIsRoundDetailOpen] = useState(false);
+  const [isHostingInterfaceOpen, setIsHostingInterfaceOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const schedulerSteps = useMemo(
+    () => [
+      {
+        key: 'details',
+        title: 'Details',
+        helper: 'Select candidate, job, and timing',
+      },
+      {
+        key: 'panel',
+        title: 'Panel & Recording',
+        helper: 'Assign panelists and notes',
+      },
+    ],
+    [],
+  );
+  const [schedulerStep, setSchedulerStep] = useState(0);
+  const [candidateNameMap, setCandidateNameMap] = useState<
+    Record<number, string>
+  >({});
+  const [candidateOptions, setCandidateOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [jobOptions, setJobOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [panelistOptions, setPanelistOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [panelistNameMap, setPanelistNameMap] = useState<
+    Record<number, string>
+  >({});
+  const timezoneOptions = useMemo(buildTimezoneOptions, []);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
 
-  // Placeholder scheduled interviews; replace with API data later
+  const fetchRounds = useCallback(async () => {
+    try {
+      setIsLoadingRounds(true);
+      const payload = await listInterviewRounds({ page: 1, pageSize: 100 });
+      setRounds(payload.result);
+      setRoundsError(null);
+    } catch (error) {
+      console.error('Failed to load interview rounds', error);
+      setRounds([]);
+      setRoundsError('Unable to load interview rounds right now.');
+    } finally {
+      setIsLoadingRounds(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRounds();
+  }, [fetchRounds]);
+
+  const loadSchedulerOptions = useCallback(async () => {
+    try {
+      setIsLoadingOptions(true);
+      const [candidatePayload, jobPayload, panelPayload] = await Promise.all([
+        listCandidates({ page: 1, pageSize: 50 }),
+        getAllJobs({ page: 1, page_size: 50 }),
+        userApi.getAllUsers({
+          page: 1,
+          page_size: 100,
+          is_active: true,
+        }),
+      ]);
+      const candidateNameEntries: Record<number, string> = {};
+      const candidateOpts =
+        candidatePayload.result?.map((candidate) => {
+          const name =
+            `${candidate.first_name ?? ''} ${candidate.last_name ?? ''}`.trim() ||
+            candidate.resume_title ||
+            candidate.email ||
+            '';
+          if (candidate.id) {
+            candidateNameEntries[candidate.id] =
+              name || `Candidate #${candidate.id}`;
+          }
+          return {
+            label:
+              name ||
+              `Candidate #${candidate.id ?? Math.random().toString(36)}`,
+            value: candidate.id?.toString() ?? '',
+          };
+        }) ?? [];
+      if (Object.keys(candidateNameEntries).length > 0) {
+        setCandidateNameMap((prev) => ({
+          ...candidateNameEntries,
+          ...prev,
+        }));
+      }
+      const jobOpts =
+        jobPayload.result?.map((job) => ({
+          label: `${job.job_title} • ${job.organization}`,
+          value: job.id.toString(),
+        })) ?? [];
+      const panelUsers: User[] = (panelPayload.data?.data?.result ?? []).filter(
+        (user: User) => {
+          // Exclude admin users - check if role name is 'admin' (case insensitive)
+          const roleName = user.role?.name?.toLowerCase() || '';
+          return roleName !== 'admin';
+        },
+      );
+      const panelNameEntries: Record<number, string> = {};
+      const panelOpts =
+        panelUsers.map((user) => {
+          const displayName =
+            `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() ||
+            user.email ||
+            `Panelist #${user.id}`;
+          panelNameEntries[user.id] = displayName;
+          return {
+            label: `${displayName}${user.email ? ` • ${user.email}` : ''}`,
+            value: user.id.toString(),
+          };
+        }) ?? [];
+      if (Object.keys(panelNameEntries).length > 0) {
+        setPanelistNameMap((prev) => ({
+          ...panelNameEntries,
+          ...prev,
+        }));
+      }
+      setCandidateOptions(candidateOpts);
+      setJobOptions(jobOpts);
+      setPanelistOptions(panelOpts);
+      setOptionsError(null);
+    } catch (error) {
+      console.error('Failed to load scheduler options', error);
+      setOptionsError('Unable to load candidates or jobs for scheduling.');
+    } finally {
+      setIsLoadingOptions(false);
+    }
+  }, [userApi]);
+
+  useEffect(() => {
+    loadSchedulerOptions();
+  }, [loadSchedulerOptions]);
+
+  useEffect(() => {
+    if (!isSchedulerOpen) {
+      setSchedulerStep(0);
+    }
+  }, [isSchedulerOpen]);
+  const hydrateCandidateNames = useCallback(
+    async (data: InterviewRound[]) => {
+      const missingIds = Array.from(
+        new Set(
+          data
+            .map((round) => round.candidate_id)
+            .filter(
+              (id): id is number =>
+                Boolean(id) && candidateNameMap[id as number] === undefined,
+            ),
+        ),
+      );
+
+      if (!missingIds.length) return;
+
+      try {
+        const entries = await Promise.all(
+          missingIds.map(async (id) => {
+            try {
+              const candidate = await getCandidateById(id);
+              const displayName =
+                `${candidate.first_name ?? ''} ${candidate.last_name ?? ''}`.trim() ||
+                candidate.resume_title ||
+                candidate.email ||
+                `Candidate #${id}`;
+              return [id, displayName] as const;
+            } catch (error) {
+              console.warn('Unable to load candidate name', id, error);
+              return [id, `Candidate #${id}`] as const;
+            }
+          }),
+        );
+        setCandidateNameMap((prev) => ({
+          ...prev,
+          ...Object.fromEntries(entries),
+        }));
+      } catch (error) {
+        console.error('Failed to hydrate candidate names', error);
+      }
+    },
+    [candidateNameMap],
+  );
+
+  const hydratePanelistNames = useCallback(
+    async (data: InterviewRound[]) => {
+      const missingIds = Array.from(
+        new Set(
+          data
+            .flatMap(
+              (round) =>
+                round.panel_assignments?.map((panel) => panel.interviewer_id) ??
+                [],
+            )
+            .filter(
+              (id): id is number =>
+                Boolean(id) && panelistNameMap[id as number] === undefined,
+            ),
+        ),
+      );
+
+      if (!missingIds.length) return;
+
+      try {
+        const entries = await Promise.all(
+          missingIds.map(async (id) => {
+            try {
+              const response = await userApi.getUserById(id);
+              const user = response.data?.data?.data;
+              const displayName =
+                `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() ||
+                user?.email ||
+                `Panelist #${id}`;
+              return [id, displayName] as const;
+            } catch (error) {
+              console.warn('Unable to load panelist name', id, error);
+              return [id, `Panelist #${id}`] as const;
+            }
+          }),
+        );
+        setPanelistNameMap((prev) => ({
+          ...prev,
+          ...Object.fromEntries(entries),
+        }));
+      } catch (error) {
+        console.error('Failed to hydrate panelist names', error);
+      }
+    },
+    [panelistNameMap, userApi],
+  );
+
+  const validateSchedulerDetailsStep = useCallback(() => {
+    if (!schedulerData.round_name?.trim()) {
+      showToast('Round title is required', 'error');
+      return false;
+    }
+    if (!schedulerData.candidate_id) {
+      showToast('Select a candidate to continue', 'error');
+      return false;
+    }
+    if (!schedulerData.job_id) {
+      showToast('Select a job / requisition to continue', 'error');
+      return false;
+    }
+    if (!schedulerData.scheduled_start) {
+      showToast('Pick a start date & time', 'error');
+      return false;
+    }
+    if (!schedulerData.timezone) {
+      showToast('Select a timezone', 'error');
+      return false;
+    }
+    return true;
+  }, [
+    schedulerData.round_name,
+    schedulerData.candidate_id,
+    schedulerData.job_id,
+    schedulerData.scheduled_start,
+    schedulerData.timezone,
+    showToast,
+  ]);
+
+  const isLastSchedulerStep = schedulerStep === schedulerSteps.length - 1;
+
+  const handleSchedulerNext = useCallback(
+    (event?: React.MouseEvent) => {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (isLastSchedulerStep) {
+        return;
+      }
+      if (schedulerStep === 0 && !validateSchedulerDetailsStep()) {
+        return;
+      }
+      setSchedulerStep((prev) => Math.min(prev + 1, schedulerSteps.length - 1));
+    },
+    [
+      isLastSchedulerStep,
+      schedulerStep,
+      schedulerSteps.length,
+      validateSchedulerDetailsStep,
+    ],
+  );
+
+  const handleSchedulerBack = useCallback(() => {
+    if (schedulerStep === 0) {
+      return;
+    }
+    setSchedulerStep((prev) => Math.max(prev - 1, 0));
+  }, [schedulerStep]);
+
+  useEffect(() => {
+    if (rounds.length) {
+      hydrateCandidateNames(rounds);
+      hydratePanelistNames(rounds);
+    }
+  }, [rounds, hydrateCandidateNames, hydratePanelistNames]);
+
+  const formatTimeWindow = (start: Date, durationMinutes: number) => {
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    return `${formatter.format(start)} - ${formatter.format(end)}`;
+  };
+
+  const derivePriorityFromRound = (
+    round: InterviewRound,
+  ): 'High' | 'Medium' | 'Low' => {
+    if (round.stage?.toLowerCase().includes('panel')) return 'High';
+    if (round.status === 'completed' || round.status === 'in_progress')
+      return 'High';
+    if (round.status === 'needs_feedback') return 'Medium';
+    return 'Low';
+  };
+
   const interviews = useMemo(() => {
-    const y = currentMonth.getFullYear();
-    const m = currentMonth.getMonth();
-    const d = (day: number) => new Date(y, m, day).toISOString().split('T')[0];
-    return [
-      {
-        id: 1,
-        name: 'Candidate Screen',
-        role: 'UI/UX Designer',
-        date: d(3),
-        time: '10:30 - 12:00',
-        status: 'Scheduled',
-        start: d(3),
-        end: d(3),
-        priority: 'Low',
-      },
-      {
-        id: 2,
-        name: 'Portfolio Review',
-        role: 'Backend Engineer',
-        date: d(6),
-        time: '10:30 - 12:00',
-        status: 'Scheduled',
-        start: d(6),
-        end: d(6),
-        priority: 'Medium',
-      },
-      {
-        id: 3,
-        name: 'Tech Round',
-        role: 'Product Designer',
-        date: d(10),
-        time: '09:30 - 10:30',
-        status: 'Scheduled',
-        start: d(10),
-        end: d(10),
-        priority: 'High',
-      },
-      {
-        id: 31,
-        name: 'Tech Round 2',
-        role: 'Product Designer',
-        date: d(10),
-        time: '11:00 - 12:00',
-        status: 'Scheduled',
-        start: d(10),
-        end: d(10),
-        priority: 'Medium',
-      },
-      {
-        id: 32,
-        name: 'Managerial Round',
-        role: 'Product Designer',
-        date: d(10),
-        time: '02:00 - 03:00',
-        status: 'Scheduled',
-        start: d(10),
-        end: d(10),
-        priority: 'Low',
-      },
-      {
-        id: 4,
-        name: 'System Design',
-        role: 'Frontend Developer',
-        date: d(12),
-        time: '10:30 - 12:00',
-        status: 'Scheduled',
-        start: d(12),
-        end: d(12),
-        priority: 'Medium',
-      },
-      {
-        id: 5,
-        name: 'HR Discussion',
-        role: 'QA Analyst',
-        date: d(18),
-        time: '10:30 - 12:00',
-        status: 'Scheduled',
-        start: d(18),
-        end: d(18),
-        priority: 'Low',
-      },
-      {
-        id: 6,
-        name: 'Panel Interview',
-        role: 'Backend Engineer',
-        date: d(24),
-        time: '10:30 - 12:00',
-        status: 'Scheduled',
-        start: d(24),
-        end: d(24),
-        priority: 'High',
-      },
-      {
-        id: 7,
-        name: 'Client Round',
-        role: 'PM',
-        date: d(27),
-        time: '15:30 - 17:00',
-        status: 'Scheduled',
-        start: d(27),
-        end: d(27),
-        priority: 'Medium',
-      },
-    ];
-  }, [currentMonth]);
+    return rounds.map((round) => {
+      const startDate = new Date(round.scheduled_start);
+      const duration = round.duration_minutes || 60;
+      const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+      const isoDate = startDate.toISOString().split('T')[0];
+      return {
+        id: round.id,
+        name: round.round_name,
+        candidateName:
+          (round.candidate_id && candidateNameMap[round.candidate_id]) || null,
+        role: round.stage || 'Interview Round',
+        date: isoDate,
+        time: formatTimeWindow(startDate, duration),
+        status: round.status || 'scheduled',
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        priority: derivePriorityFromRound(round),
+        meetingUrl: round.meeting_url,
+      };
+    });
+  }, [rounds]);
+
+  const roundStats = useMemo(() => {
+    const upcoming = rounds.filter(
+      (round) => round.status === 'scheduled',
+    ).length;
+    const inProgress = rounds.filter(
+      (round) => round.status === 'in_progress',
+    ).length;
+    const needsFeedback = rounds.filter(
+      (round) => round.status === 'needs_feedback',
+    ).length;
+    const completed = rounds.filter(
+      (round) => round.status === 'completed',
+    ).length;
+    return { upcoming, inProgress, needsFeedback, completed };
+  }, [rounds]);
+
+  const openRoundDetails = (roundId: number) => {
+    // Open hosting interface instead of drawer
+    const found = rounds.find((item) => item.id === roundId);
+    if (found) {
+      setSelectedRound(found);
+      setIsHostingInterfaceOpen(true);
+    }
+  };
+
+  const statusBadgeClass = (status?: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'in_progress':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'needs_feedback':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'completed':
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'cancelled':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      default:
+        return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  };
+
+  const handleStatusUpdate = async (
+    roundId: number,
+    status: string,
+    successMessage: string,
+  ) => {
+    try {
+      setIsUpdatingStatus(true);
+      const updated = await updateRoundStatus(roundId, status);
+      showToast(successMessage, 'success');
+      setSelectedRound(updated);
+      await fetchRounds();
+    } catch (error) {
+      console.error('Failed to update interview status', error);
+      showToast('Unable to update interview status right now.', 'error');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleStartMeeting = () => {
+    if (!selectedRound?.meeting_url || !selectedRound?.id) return;
+    window.open(selectedRound.meeting_url, '_blank', 'noopener,noreferrer');
+    if (selectedRound.status !== 'in_progress') {
+      handleStatusUpdate(
+        selectedRound.id,
+        'in_progress',
+        'Interview marked as In Progress.',
+      );
+    }
+  };
+
+  const handleMarkCompleted = () => {
+    if (!selectedRound?.id) return;
+    handleStatusUpdate(
+      selectedRound.id,
+      'needs_feedback',
+      'Interview marked as completed. Awaiting feedback.',
+    );
+  };
 
   const startOfMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth(), 1);
@@ -208,8 +669,8 @@ const InterviewsPage: React.FC = () => {
 
   return (
     <MainLayout role={role}>
-      <div className="space-y-4 p-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 lg:p-2 w-full">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <CalendarIcon className="w-5 h-5" /> Interviews
@@ -218,25 +679,65 @@ const InterviewsPage: React.FC = () => {
               Scheduled interviews overview
             </p>
           </div>
-          <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden text-xs">
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1.5 ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden text-xs">
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-3 py-1.5 ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              >
+                Calendar
+              </button>
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`px-3 py-1.5 ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              >
+                Timeline
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
+              >
+                List
+              </button>
+            </div>
+            <Button
+              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm"
+              onClick={() => setIsSchedulerOpen(true)}
             >
-              Calendar
-            </button>
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`px-3 py-1.5 ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
-            >
-              Timeline
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200'}`}
-            >
-              List
-            </button>
+              <Plus className="h-4 w-4" />
+              Schedule Round
+            </Button>
+          </div>
+        </div>
+        {roundsError && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {roundsError}
+          </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-3">
+            <div className="text-xs text-gray-500">Upcoming</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {roundStats.upcoming}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-3">
+            <div className="text-xs text-gray-500">In Progress</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {roundStats.inProgress}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-3">
+            <div className="text-xs text-gray-500">Needs Feedback</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {roundStats.needsFeedback}
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 p-3">
+            <div className="text-xs text-gray-500">Completed</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              {roundStats.completed}
+            </div>
           </div>
         </div>
 
@@ -351,6 +852,9 @@ const InterviewsPage: React.FC = () => {
                 );
               })}
             </div>
+            {isLoadingRounds && (
+              <p className="mt-3 text-xs text-gray-500">Loading interviews…</p>
+            )}
           </div>
         ) : viewMode === 'timeline' ? (
           <div className="bg-white/95 dark:bg-slate-800/80 rounded-xl p-4 shadow border border-gray-200 dark:border-white/10">
@@ -456,6 +960,11 @@ const InterviewsPage: React.FC = () => {
                     );
                   })}
                 </div>
+                {isLoadingRounds && (
+                  <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
+                    Loading interviews…
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -464,35 +973,55 @@ const InterviewsPage: React.FC = () => {
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
               Scheduled Interviews
             </h2>
-            <div className="space-y-2">
-              {interviews.map((i) => (
-                <div
-                  key={i.id}
-                  className="w-full text-left bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-white/10"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                        {i.name}
+            {isLoadingRounds ? (
+              <p className="text-xs text-gray-500">Loading interviews…</p>
+            ) : interviews.length === 0 ? (
+              <p className="text-xs text-gray-500">
+                No interviews scheduled for this period.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {interviews.map((i) => (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => openRoundDetails(i.id)}
+                    className="w-full text-left bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-white/10 hover:border-indigo-200 focus:ring-1 focus:ring-indigo-400"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                          {i.name}
+                        </div>
+                        {i.candidateName && (
+                          <div className="text-[11px] text-gray-500">
+                            Candidate: {i.candidateName}
+                          </div>
+                        )}
+                        <div className="text-[11px] text-gray-600 dark:text-gray-300">
+                          {i.role}
+                        </div>
+                        <span
+                          className={`inline-flex text-[10px] px-2 py-0.5 rounded-full border ${statusBadgeClass(i.status)}`}
+                        >
+                          {i.status?.replace('_', ' ')}
+                        </span>
                       </div>
-                      <div className="text-[11px] text-gray-600 dark:text-gray-300">
-                        {i.role}
+                      <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200">
+                        <Clock className="w-3.5 h-3.5 text-gray-500 dark:text-gray-300" />
+                        <span>
+                          {new Date(i.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })}{' '}
+                          at {i.time}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200">
-                      <Clock className="w-3.5 h-3.5 text-gray-500 dark:text-gray-300" />
-                      <span>
-                        {new Date(i.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}{' '}
-                        at {i.time}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -557,7 +1086,7 @@ const InterviewsPage: React.FC = () => {
                     <button
                       onClick={() => {
                         setIsDayModalOpen(false);
-                        navigate(`/interviews/${i.id}`);
+                        openRoundDetails(i.id);
                       }}
                       className="ml-2 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
                     >
@@ -569,6 +1098,599 @@ const InterviewsPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog open={isSchedulerOpen} onOpenChange={setIsSchedulerOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Schedule Interview Round</DialogTitle>
+            <DialogDescription>
+              Assign panelists, link a candidate/job, and generate a meeting.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              // Only submit if we're on the last step
+              if (!isLastSchedulerStep) {
+                return;
+              }
+              try {
+                setIsSubmittingRound(true);
+                await createInterviewRound({
+                  ...schedulerData,
+                  scheduled_start: new Date(
+                    schedulerData.scheduled_start ?? new Date().toISOString(),
+                  ).toISOString(),
+                });
+                showToast('Interview round scheduled successfully', 'success');
+                setIsSchedulerOpen(false);
+                await fetchRounds();
+              } catch (error) {
+                console.error('Failed to schedule round', error);
+                showToast(
+                  'Unable to schedule interview round right now.',
+                  'error',
+                );
+              } finally {
+                setIsSubmittingRound(false);
+              }
+            }}
+          >
+            {optionsError && (
+              <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-lg">
+                {optionsError}
+              </p>
+            )}
+            <div className="border-b border-gray-100 pb-3">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-center gap-2">
+                  {schedulerSteps.map((step, index) => (
+                    <div key={step.key} className="flex items-center min-w-0">
+                      <div className="flex flex-col items-center text-center flex-shrink-0 px-1">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold border transition-colors ${
+                            index <= schedulerStep
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'border-gray-300 text-gray-500 bg-white'
+                          }`}
+                        >
+                          {index < schedulerStep ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <div className="text-[11px] font-semibold text-gray-700 mt-1">
+                          {step.title}
+                        </div>
+                        <div className="text-[10px] text-gray-500 hidden sm:block">
+                          {step.helper}
+                        </div>
+                      </div>
+                      {index < schedulerSteps.length - 1 && (
+                        <div
+                          className={`w-16 sm:w-24 h-px mx-2 sm:mx-3 ${
+                            index < schedulerStep
+                              ? 'bg-indigo-600'
+                              : 'bg-gray-200'
+                          }`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {schedulerStep === 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Round Title
+                  </label>
+                  <Input
+                    value={schedulerData.round_name}
+                    onChange={(event) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        round_name: event.target.value,
+                      }))
+                    }
+                    placeholder="Technical Interview, Panel Discussion, etc."
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Stage / Pipeline Step
+                  </label>
+                  <Input
+                    value={schedulerData.stage ?? ''}
+                    onChange={(event) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        stage: event.target.value,
+                      }))
+                    }
+                    placeholder="Onsite, Panel Round..."
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Candidate
+                  </label>
+                  <CustomSelect
+                    value={schedulerData.candidate_id?.toString() ?? ''}
+                    onChange={(value) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        candidate_id: value ? Number(value) : undefined,
+                      }))
+                    }
+                    options={candidateOptions}
+                    placeholder={
+                      isLoadingOptions
+                        ? 'Loading candidates…'
+                        : 'Select candidate'
+                    }
+                    disabled={isLoadingOptions || candidateOptions.length === 0}
+                    emptyMessage="No candidates found"
+                    searchable
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Job / Requisition
+                  </label>
+                  <CustomSelect
+                    value={schedulerData.job_id?.toString() ?? ''}
+                    onChange={(value) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        job_id: value ? Number(value) : undefined,
+                      }))
+                    }
+                    options={jobOptions}
+                    placeholder={
+                      isLoadingOptions ? 'Loading jobs…' : 'Select job'
+                    }
+                    disabled={isLoadingOptions || jobOptions.length === 0}
+                    emptyMessage="No jobs found"
+                    searchable
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Start Date & Time
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={
+                      schedulerData.scheduled_start?.slice(0, 16) ??
+                      new Date().toISOString().slice(0, 16)
+                    }
+                    onChange={(event) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        scheduled_start: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Duration (minutes)
+                  </label>
+                  <Input
+                    type="number"
+                    value={schedulerData.duration_minutes}
+                    onChange={(event) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        duration_minutes: Math.max(
+                          15,
+                          Number(event.target.value) || 60,
+                        ),
+                      }))
+                    }
+                    min={15}
+                    step={15}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Timezone
+                  </label>
+                  <CustomSelect
+                    value={
+                      schedulerData.timezone ?? timezoneOptions[0]?.value ?? ''
+                    }
+                    onChange={(value) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        timezone: value || undefined,
+                      }))
+                    }
+                    options={timezoneOptions}
+                    placeholder="Select timezone"
+                    emptyMessage="No timezones available"
+                    searchable
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Meeting Link (Google Meet)
+                  </label>
+                  <p className="text-xs text-gray-500 border rounded-md px-3 py-2 bg-gray-50">
+                    Google Meet link will be generated automatically and shared
+                    with panelists after scheduling.
+                  </p>
+                </div>
+              </div>
+            )}
+            {schedulerStep === 1 && (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600">
+                    Notes
+                  </label>
+                  <Textarea
+                    value={schedulerData.notes ?? ''}
+                    onChange={(event) =>
+                      setSchedulerData((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                    placeholder="Share agenda, expectations, or preparation details."
+                  />
+                </div>
+                <div className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold text-gray-700 flex gap-2 items-center">
+                      <Users2 className="h-3.5 w-3.5" />
+                      Panelists
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        if (!panelistOptions.length) {
+                          showToast(
+                            'No users available to assign as panelists.',
+                            'error',
+                          );
+                          return;
+                        }
+                        const defaultId = Number(panelistOptions[0].value) || 0;
+                        setSchedulerData((prev) => ({
+                          ...prev,
+                          panel: [
+                            ...prev.panel,
+                            {
+                              interviewer_id: defaultId,
+                              role: 'Interviewer',
+                              status: 'invited',
+                            },
+                          ],
+                        }));
+                      }}
+                    >
+                      Add Panelist
+                    </Button>
+                  </div>
+                  {!panelistOptions.length && (
+                    <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">
+                      No users available to assign as panelists. Configure users
+                      in User Management first.
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {schedulerData.panel.map((panelist, idx) => (
+                      <div
+                        key={`panel-${idx}-${panelist.interviewer_id ?? 'new'}`}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center"
+                      >
+                        <CustomSelect
+                          value={
+                            panelist.interviewer_id
+                              ? panelist.interviewer_id.toString()
+                              : ''
+                          }
+                          onChange={(value) => {
+                            const numericValue = value ? Number(value) : 0;
+                            setSchedulerData((prev) => {
+                              const nextPanel = [...prev.panel];
+                              nextPanel[idx] = {
+                                ...nextPanel[idx],
+                                interviewer_id: numericValue,
+                              };
+                              return { ...prev, panel: nextPanel };
+                            });
+                          }}
+                          options={panelistOptions}
+                          placeholder={
+                            panelistOptions.length
+                              ? 'Select panelist'
+                              : 'No panelists available'
+                          }
+                          emptyMessage="No panelists available"
+                          disabled={panelistOptions.length === 0}
+                          searchable
+                        />
+                        <Input
+                          value={panelist.role ?? ''}
+                          placeholder="Role (Moderator, etc.)"
+                          onChange={(event) => {
+                            setSchedulerData((prev) => {
+                              const nextPanel = [...prev.panel];
+                              nextPanel[idx] = {
+                                ...nextPanel[idx],
+                                role: event.target.value,
+                              };
+                              return { ...prev, panel: nextPanel };
+                            });
+                          }}
+                        />
+                        <CustomSelect
+                          value={panelist.status ?? 'invited'}
+                          options={[
+                            { label: 'Invited', value: 'invited' },
+                            { label: 'Confirmed', value: 'confirmed' },
+                            { label: 'Declined', value: 'declined' },
+                          ]}
+                          onChange={(value) =>
+                            setSchedulerData((prev) => {
+                              const nextPanel = [...prev.panel];
+                              nextPanel[idx] = {
+                                ...nextPanel[idx],
+                                status: value,
+                              };
+                              return { ...prev, panel: nextPanel };
+                            })
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            setSchedulerData((prev) => ({
+                              ...prev,
+                              panel: prev.panel.filter((_, i) => i !== idx),
+                            }));
+                          }}
+                          title="Remove panelist"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    {!schedulerData.panel.length && (
+                      <p className="text-[11px] text-gray-500">
+                        No panelists added yet.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsSchedulerOpen(false)}
+                >
+                  Cancel
+                </Button>
+                {schedulerStep > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSchedulerBack}
+                    disabled={isSubmittingRound}
+                  >
+                    Back
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {!isLastSchedulerStep ? (
+                  <Button
+                    type="button"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    onClick={handleSchedulerNext}
+                    disabled={isSubmittingRound}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    disabled={isSubmittingRound}
+                  >
+                    {isSubmittingRound ? 'Scheduling…' : 'Schedule Interview'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRoundDetailOpen} onOpenChange={setIsRoundDetailOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex flex-col gap-1">
+              <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {selectedRound?.round_name ?? 'Interview Round'}
+              </span>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span
+                  className={`inline-flex px-2 py-0.5 rounded-full border ${statusBadgeClass(selectedRound?.status)}`}
+                >
+                  {selectedRound?.status?.replace('_', ' ')}
+                </span>
+                {selectedRound?.stage && (
+                  <span className="inline-flex items-center gap-1 text-gray-500">
+                    <Target className="h-3 w-3" />
+                    {selectedRound.stage}
+                  </span>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRound ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 justify-end">
+                {selectedRound.meeting_url && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={handleStartMeeting}
+                    disabled={isUpdatingStatus}
+                  >
+                    Start Meeting
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleMarkCompleted}
+                  disabled={isUpdatingStatus}
+                >
+                  Mark Completed
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Candidate</span>
+                  <span className="font-medium">
+                    {selectedRound.candidate_id
+                      ? (candidateNameMap[selectedRound.candidate_id] ??
+                        `Candidate #${selectedRound.candidate_id}`)
+                      : 'Not linked'}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Job ID</span>
+                  <span className="font-medium">
+                    {selectedRound.job_id ?? 'Not linked'}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Scheduled</span>
+                  <span className="font-medium">
+                    {new Date(selectedRound.scheduled_start).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Duration</span>
+                  <span className="font-medium">
+                    {selectedRound.duration_minutes} minutes
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Timezone</span>
+                  <span className="font-medium">
+                    {selectedRound.timezone ?? '—'}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-gray-500">Location</span>
+                  <span className="font-medium">
+                    {selectedRound.location ?? 'Virtual'}
+                  </span>
+                </div>
+              </div>
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-600">
+                    Panel
+                  </span>
+                  {selectedRound.meeting_url && (
+                    <Button
+                      size="sm"
+                      className="text-xs"
+                      onClick={() =>
+                        window.open(selectedRound.meeting_url!, '_blank')
+                      }
+                    >
+                      Join Meeting
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  {selectedRound.panel_assignments?.map((panelist) => (
+                    <div
+                      key={panelist.id}
+                      className="flex items-center justify-between text-xs border rounded-md px-2 py-1"
+                    >
+                      <div>
+                        <div className="font-medium">
+                          {panelist.interviewer_id
+                            ? (panelistNameMap[panelist.interviewer_id] ??
+                              `Panelist #${panelist.interviewer_id}`)
+                            : 'Panelist TBD'}
+                        </div>
+                        {panelist.role && (
+                          <div className="text-[11px] text-gray-500">
+                            Role: {panelist.role}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full border text-[11px] ${
+                          panelist.status === 'confirmed'
+                            ? 'border-emerald-200 text-emerald-600 bg-emerald-50'
+                            : panelist.status === 'declined'
+                              ? 'border-rose-200 text-rose-600 bg-rose-50'
+                              : 'border-gray-200 text-gray-600 bg-gray-50'
+                        }`}
+                      >
+                        {panelist.status}
+                      </span>
+                    </div>
+                  ))}
+                  {!selectedRound.panel_assignments?.length && (
+                    <p className="text-[11px] text-gray-500">
+                      Panel has not been assigned yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+              {selectedRound.notes && (
+                <div className="border rounded-lg p-3 text-sm">
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Notes
+                  </div>
+                  <p className="text-gray-700">{selectedRound.notes}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No round selected.</p>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Interview Hosting Interface */}
+      {isHostingInterfaceOpen && selectedRound && (
+        <InterviewHosting
+          round={selectedRound}
+          onClose={() => {
+            setIsHostingInterfaceOpen(false);
+            setSelectedRound(null);
+          }}
+        />
+      )}
     </MainLayout>
   );
 };

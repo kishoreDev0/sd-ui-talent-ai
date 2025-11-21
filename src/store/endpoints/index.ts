@@ -103,11 +103,22 @@ export const RESUME_MATCH = {
 
 // Interviews endpoints
 export const INTERVIEWS = {
-  LIST: '/api/v1/interviews',
-  GET_BY_ID: (id: number) => `/api/v1/interviews/${id}`,
-  CREATE: '/api/v1/interviews',
-  UPDATE: (id: number) => `/api/v1/interviews/${id}`,
-  DELETE: (id: number) => `/api/v1/interviews/${id}`,
+  LIST: '/api/v1/interview-rounds',
+  CREATE: '/api/v1/interview-rounds',
+  GET_BY_ID: (id: number) => `/api/v1/interview-rounds/${id}`,
+  UPDATE_PANEL: (id: number) => `/api/v1/interview-rounds/${id}/panel`,
+  UPDATE_STATUS: (id: number) => `/api/v1/interview-rounds/${id}/status`,
+  RECORDINGS: (id: number) => `/api/v1/interview-rounds/${id}/recordings`,
+  FEEDBACK: (id: number) => `/api/v1/interview-rounds/${id}/feedback`,
+} as const;
+
+// Google OAuth endpoints
+export const GOOGLE_OAUTH = {
+  STATUS: '/api/v1/google/oauth/status',
+  CONNECT_URL: '/api/v1/google/oauth/connect-url',
+  CALLBACK: '/api/v1/google/oauth/callback',
+  EXCHANGE: '/api/v1/google/oauth/exchange',
+  DISCONNECT: '/api/v1/google/oauth/disconnect',
 } as const;
 
 // Organizations endpoints
@@ -119,4 +130,14 @@ export const ORGANIZATIONS = {
   DELETE: (id: number) => `/api/v1/organization/${id}`,
   GET_USERS: (id: number) => `/api/v1/organizations/${id}/users`,
   ASSIGN_USERS: (id: number) => `/api/v1/organizations/${id}/users`,
+} as const;
+
+// Dashboard endpoints
+export const DASHBOARD = {
+  ANALYTICS: '/api/v1/dashboard/analytics',
+  SYSTEM_STATUS: '/api/v1/dashboard/system-status',
+  NOTIFICATIONS: '/api/v1/dashboard/notifications',
+  METRICS: '/api/v1/dashboard/metrics',
+  GOOGLE_INTEGRATION_STATUS: '/api/v1/dashboard/admin/google-integration-status',
+  USER_ACTIVITY: '/api/v1/dashboard/admin/user-activity',
 } as const;

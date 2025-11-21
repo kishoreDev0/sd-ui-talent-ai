@@ -17,7 +17,7 @@ import RegisterCandidate from './pages/candidates/register';
 import InterviewsPage from './pages/interviews';
 import AnalyticsPage from './pages/analytics';
 import UsersPage from './pages/users';
-import SettingsPage from './pages/settings';
+import Settings from './pages/settings';
 import JobBoard from './pages/job-board';
 import JobDetail from './pages/job-detail';
 import RegisterJob from './pages/register-job';
@@ -105,7 +105,7 @@ const App = () => {
                 />
                 <Route
                   path="/settings"
-                  element={<PrivateRoute element={<SettingsPage />} />}
+                  element={<PrivateRoute element={<Settings />} />}
                 />
 
                 <Route

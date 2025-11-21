@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store';
+import RealTimeDashboard from '@/components/dashboard/real-time-dashboard';
+import AdminDashboard from '@/pages/dashboard/admin-dashboard';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const Dashboard: React.FC = () => {
       navigate('/login', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+  
   const userData =
     user ||
     (localStorage.getItem('user')
@@ -25,20 +28,20 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
-  // Support both new structure (first_name, last_name) and old structure (name, username)
-  const displayName = userData?.first_name
-    ? `${userData.first_name} ${userData.last_name || ''}`.trim() ||
-      userData.email ||
-      'User'
-    : userData?.username ||
-      userData?.userName ||
-      userData?.name ||
-      userData?.email ||
-      'User';
 
+  const userRole = userData?.role?.name || 'admin';
+  const isAdmin = userRole === 'admin';
+  
+  // Show admin dashboard for admin users
+  if (isAdmin) {
+    return <AdminDashboard />;
+  }
+  
+  // Show regular dashboard for other users
   return (
     <main className="p-3 pt-16">
       <h2 className="text-xl font-bold">Hello, {displayName}</h2>
+      <RealTimeDashboard userRole={userRole} />
     </main>
   );
 };

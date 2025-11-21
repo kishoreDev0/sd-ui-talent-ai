@@ -1,1177 +1,433 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { MainLayout } from '@/components/layout';
 import { useUserRole } from '@/utils/getUserRole';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { logout } from '@/store/slices/authentication/login';
-import { updateSelfProfile } from '@/store/user/actions/userActions';
-import { useToast } from '@/components/ui/toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import ResetPassword from '@/components/reset-password';
-import { initializeHttpClient } from '@/axios-setup/axios-interceptor';
-import { forgotPassword } from '@/store/action/authentication/forgotPassword';
-import {
-  Camera,
-  Edit2,
-  Loader2,
-  Info,
-  Bell,
-  MapPin,
-  Lock,
-  Mail,
-} from 'lucide-react';
-import { GetCountries, GetState, GetCity } from 'react-country-state-city';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
-import { parsePhoneNumber } from 'react-phone-number-input';
-import { Combobox } from '@/components/ui/combobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { UserAPI } from '@/store/service/user/userService';
+import { googleOAuthService } from '@/store/google/service/googleOAuthService';
 
-type SettingsTab = 'general-information' | 'password' | 'notifications';
-
-type Country = {
-  id: number;
-  name: string;
-  iso2?: string;
-  iso3?: string;
-};
-
-type State = {
-  id: number;
-  name: string;
-};
-
-type City = {
-  id: number;
-  name: string;
-};
-
-const extractErrorMessage = (error: unknown, fallback: string): string => {
-  if (!error) {
-    return fallback;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (error instanceof Error) {
-    return error.message || fallback;
-  }
-
-  if (typeof error === 'object') {
-    const record = error as Record<string, unknown>;
-    const direct = record.error;
-    const message = record.message;
-    const responseData = (record.response as Record<string, unknown>)?.data as
-      | Record<string, unknown>
-      | undefined;
-
-    if (typeof direct === 'string') {
-      return direct;
-    }
-
-    if (Array.isArray(direct) && direct.length > 0) {
-      return direct
-        .filter((item): item is string => typeof item === 'string')
-        .join(', ');
-    }
-
-    if (typeof message === 'string') {
-      return message;
-    }
-
-    if (responseData) {
-      const responseError = responseData.error;
-      const responseMessage = responseData.message;
-
-      if (typeof responseError === 'string') {
-        return responseError;
-      }
-
-      if (Array.isArray(responseError) && responseError.length > 0) {
-        return responseError
-          .filter((item): item is string => typeof item === 'string')
-          .join(', ');
-      }
-
-      if (typeof responseMessage === 'string') {
-        return responseMessage;
-      }
-    }
-  }
-
-  return fallback;
-};
-
-const SettingsPage: React.FC = () => {
-  const role = useUserRole();
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+const Settings: React.FC = () => {
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isCheckingGoogle, setIsCheckingGoogle] = useState(true);
+  const [googleConnectError, setGoogleConnectError] = useState<string | null>(
+    null,
+  );
   const { showToast } = useToast();
-  const { user } = useAppSelector((state) => state.auth);
-  const { loading: userLoading } = useAppSelector((state) => state.user);
-  const { isLoading: forgotPasswordLoading, error: forgotPasswordError } =
-    useAppSelector((state) => state.forgotPassword);
-  const { httpClient } = initializeHttpClient();
-  const [activeTab, setActiveTab] = useState<SettingsTab>(
-    'general-information',
-  );
-  const [businessName, setBusinessName] = useState('');
-  const [fax, setFax] = useState('');
+  const role = useUserRole();
+  const dispatch = useAppDispatch();
+  const userAPI = new UserAPI();
 
-  // Initialize business name from user organizations
-  useEffect(() => {
-    if (user?.organizations && user.organizations.length > 0 && !businessName) {
-      setBusinessName(user.organizations[0].name || '');
-    }
-  }, [user?.organizations, businessName]);
-  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [originalUserDetails, setOriginalUserDetails] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    mobileCountryCode: '+1',
-    birthday: '',
-    bio: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    countryId: '',
-    stateId: '',
-    cityId: '',
-    preferredTimeZone: '',
-    isActive: true,
-    lastLogin: '',
-    role: '',
-    imageUrl: '',
+  // Get current user data
+  const currentUser = useAppSelector((state) => state.auth.user);
+
+  // Profile form state (only fields supported by backend self-update)
+  const [profileData, setProfileData] = useState({
+    first_name: currentUser?.first_name || '',
+    last_name: currentUser?.last_name || '',
+    country: currentUser?.country || '',
+    preferred_timezone: currentUser?.preferred_timezone || '',
+    mobile_country_code: currentUser?.mobile_country_code || '',
+    mobile_number: currentUser?.mobile_number || '',
   });
-  const [originalPhoneNumber, setOriginalPhoneNumber] = useState<string>('');
-  const [originalSelectedCountry, setOriginalSelectedCountry] =
-    useState<Country | null>(null);
-  const [originalSelectedState, setOriginalSelectedState] =
-    useState<State | null>(null);
-  const [originalSelectedCity, setOriginalSelectedCity] = useState<City | null>(
-    null,
-  );
-  const [originalAvatarPreview, setOriginalAvatarPreview] =
-    useState<string>('');
-  const [originalAvatarFile, setOriginalAvatarFile] = useState<File | null>(
-    null,
-  );
-  const [userDetails, setUserDetails] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    mobileCountryCode: '+1',
-    birthday: '',
-    bio: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    countryId: '',
-    stateId: '',
-    cityId: '',
-    preferredTimeZone: '',
-    isActive: true,
-    lastLogin: '',
-    role: '',
-    imageUrl: '',
-  });
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState<string>('');
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [selectedState, setSelectedState] = useState<State | null>(null);
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [loadingCities, setLoadingCities] = useState(false);
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-
-  const displayLocation =
-    selectedCity?.name ||
-    selectedState?.name ||
-    selectedCountry?.name ||
-    userDetails.city ||
-    userDetails.state ||
-    userDetails.country ||
-    '';
-
-  const handleSendResetLink = async () => {
-    if (!forgotEmail.trim()) {
-      showToast(
-        'Please enter an email address to send the reset link.',
-        'error',
-      );
-      return;
-    }
-    try {
-      await dispatch(
-        forgotPassword({
-          forgotPayload: { email: forgotEmail.trim() },
-          api: httpClient,
-        }),
-      ).unwrap();
-      showToast(
-        'Password reset email sent successfully. Please check your inbox.',
-        'success',
-      );
-    } catch (error) {
-      const message = extractErrorMessage(
-        error,
-        'Failed to send password reset email.',
-      );
-      showToast(message, 'error');
-    }
-  };
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   useEffect(() => {
-    // Populate user details from Redux or localStorage
-    const userData = user || JSON.parse(localStorage.getItem('user') || '{}');
-    if (userData) {
-      const imageUrl = userData.image_url || userData.imageUrl || '';
-      const phone = userData.phone || userData.phone_number || '';
-      const mobileCountryCode =
-        userData.mobile_country_code || userData.mobileCountryCode || '+1';
+    checkGoogleConnection();
 
-      // Construct full phone number in international format
-      const fullPhoneNumber = phone
-        ? mobileCountryCode && !phone.startsWith('+')
-          ? `${mobileCountryCode}${phone}`
-          : phone
-        : '';
+    // Check for OAuth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleSuccess = urlParams.get('google_success');
+    const googleError = urlParams.get('google_error');
 
-      setPhoneNumber(fullPhoneNumber);
-      const initialUserDetails = {
-        firstName: userData.first_name || userData.firstName || '',
-        lastName: userData.last_name || userData.lastName || '',
-        email: userData.email || '',
-        phone: phone,
-        mobileCountryCode: mobileCountryCode,
-        birthday: userData.birthday || userData.birth_date || '',
-        bio: userData.bio || userData.biography || '',
-        city: userData.city || '',
-        state: userData.state || '',
-        zipCode: userData.zip_code || userData.zipCode || '',
-        country: userData.country || '',
-        countryId: userData.country_id || userData.countryId || '',
-        stateId: userData.state_id || userData.stateId || '',
-        cityId: userData.city_id || userData.cityId || '',
-        preferredTimeZone:
-          userData.preferred_time_zone || userData.preferredTimeZone || '',
-        isActive: userData.is_active ?? userData.isActive ?? true,
-        lastLogin: userData.last_login || userData.lastLogin || '',
-        role: userData.role?.name || userData.role_name || '',
-        imageUrl: imageUrl,
+    if (googleSuccess === 'true') {
+      setIsGoogleConnected(true);
+      setGoogleConnectError(null);
+      showToast('Google Calendar connected successfully!', 'success');
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Refresh the connection status from the server
+      checkGoogleConnection();
+    } else if (googleError) {
+      setIsGoogleConnected(false);
+      const errorMessages: Record<string, string> = {
+        access_denied: 'You denied access to Google Calendar',
+        invalid_state: 'Security error occurred during authentication',
+        exchange_failed: 'Failed to complete Google authentication',
+        missing_parameters: 'Authentication parameters missing',
       };
-      setUserDetails(initialUserDetails);
-      setOriginalUserDetails(initialUserDetails);
-      setOriginalPhoneNumber(fullPhoneNumber);
-      setAvatarPreview(imageUrl);
-      setOriginalAvatarPreview(imageUrl);
+      const errorMessage =
+        errorMessages[googleError] || 'Failed to connect Google Calendar';
+      setGoogleConnectError(errorMessage);
+      showToast(errorMessage, 'error');
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [user]);
+  }, [showToast]);
 
-  useEffect(() => {
-    if (userDetails.email) {
-      setForgotEmail(userDetails.email);
-    } else if (user?.email) {
-      setForgotEmail(user.email);
-    }
-  }, [userDetails.email, user?.email]);
-
-  // Load countries on mount
-  useEffect(() => {
-    const loadCountries = async () => {
-      setLoadingCountries(true);
-      try {
-        const data = await GetCountries();
-        setCountries(data);
-      } catch (error) {
-        console.error('Failed to load countries:', error);
-      } finally {
-        setLoadingCountries(false);
-      }
-    };
-    loadCountries();
-  }, []);
-
-  // Load states when country changes
-  useEffect(() => {
-    const loadStates = async () => {
-      if (selectedCountry) {
-        setLoadingStates(true);
-        try {
-          const data = await GetState(selectedCountry.id);
-          setStates(data);
-        } catch (error) {
-          console.error('Failed to load states:', error);
-          setStates([]);
-        } finally {
-          setLoadingStates(false);
-        }
-      } else {
-        setStates([]);
-      }
-      setSelectedState(null);
-      setSelectedCity(null);
-    };
-    loadStates();
-  }, [selectedCountry]);
-
-  // Load cities when state changes
-  useEffect(() => {
-    const loadCities = async () => {
-      if (selectedState && selectedCountry) {
-        setLoadingCities(true);
-        try {
-          const data = await GetCity(selectedCountry.id, selectedState.id);
-          setCities(data);
-        } catch (error) {
-          console.error('Failed to load cities:', error);
-          setCities([]);
-        } finally {
-          setLoadingCities(false);
-        }
-      } else {
-        setCities([]);
-      }
-      setSelectedCity(null);
-    };
-    loadCities();
-  }, [selectedState, selectedCountry]);
-
-  // Initialize selected country/state/city when countries are loaded and user data is available
-  useEffect(() => {
-    if (countries.length > 0 && userDetails.countryId) {
-      const countryId = parseInt(userDetails.countryId);
-      const foundCountry = countries.find((c) => c.id === countryId);
-      if (foundCountry && !selectedCountry) {
-        setSelectedCountry(foundCountry);
-        setOriginalSelectedCountry(foundCountry);
-      }
-    }
-  }, [countries, userDetails.countryId, selectedCountry]);
-
-  // Initialize state when states are loaded
-  useEffect(() => {
-    if (states.length > 0 && userDetails.stateId && selectedCountry) {
-      const stateId = parseInt(userDetails.stateId);
-      const foundState = states.find((s) => s.id === stateId);
-      if (foundState && !selectedState) {
-        setSelectedState(foundState);
-        setOriginalSelectedState(foundState);
-      }
-    }
-  }, [states, userDetails.stateId, selectedCountry, selectedState]);
-
-  // Initialize city when cities are loaded
-  useEffect(() => {
-    if (cities.length > 0 && userDetails.cityId && selectedState) {
-      const cityId = parseInt(userDetails.cityId);
-      const foundCity = cities.find((c) => c.id === cityId);
-      if (foundCity && !selectedCity) {
-        setSelectedCity(foundCity);
-        setOriginalSelectedCity(foundCity);
-      }
-    }
-  }, [cities, userDetails.cityId, selectedState, selectedCity]);
-
-  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    {
-      id: 'general-information',
-      label: 'General Information',
-      icon: <Info className="w-4 h-4" />,
-    },
-    {
-      id: 'password',
-      label: 'Password',
-      icon: <Lock className="w-4 h-4" />,
-    },
-    {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: <Bell className="w-4 h-4" />,
-    },
-  ];
-
-  const handleLogout = () => {
+  const checkGoogleConnection = async () => {
     try {
-      dispatch(logout());
-      navigate('/login');
+      setIsCheckingGoogle(true);
+      const response = await googleOAuthService.getStatus();
+      // Fix: Access the correct nested data structure
+      const connected = response.data?.data?.connected || response.data?.connected || false;
+      console.log('Google connection status response:', response.data);
+      console.log('Extracted connected status:', connected);
+      setIsGoogleConnected(connected);
+      setGoogleConnectError(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Failed to check Google connection:', error);
+      setIsGoogleConnected(false);
+      setGoogleConnectError('Failed to check connection status');
+    } finally {
+      setIsCheckingGoogle(false);
     }
   };
 
-  const handleUpdateProfile = async () => {
-    if (!user?.id) {
-      showToast('User not found. Please log in again.', 'error');
-      return;
-    }
-
-    setIsSaving(true);
+  const handleConnectGoogleCalendar = async () => {
     try {
+      // Get OAuth URL from backend (authenticated call)
+      const response = await googleOAuthService.getConnectUrl();
+      if (response.data.success && response.data.data.auth_url) {
+        // Redirect to Google OAuth
+        window.location.href = response.data.data.auth_url;
+      } else {
+        showToast('Failed to initiate Google OAuth', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to get OAuth URL:', error);
+      showToast('Failed to connect Google Calendar', 'error');
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = async () => {
+    try {
+      await googleOAuthService.disconnect();
+      setIsGoogleConnected(false);
+      setGoogleConnectError(null);
+      showToast('Google Calendar disconnected successfully', 'success');
+    } catch (error) {
+      console.error('Failed to disconnect Google Calendar:', error);
+      showToast('Failed to disconnect Google Calendar', 'error');
+    }
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsUpdatingProfile(true);
+
+      // Create FormData for the API call
       const formData = new FormData();
-      const appendIfValue = (key: string, value?: string | null) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          String(value).trim() !== ''
-        ) {
+      Object.entries(profileData).forEach(([key, value]) => {
+        if (value) {
           formData.append(key, value);
         }
-      };
+      });
 
-      appendIfValue('first_name', userDetails.firstName);
-      appendIfValue('last_name', userDetails.lastName);
-      appendIfValue('email', userDetails.email);
-      appendIfValue('mobile_number', userDetails.phone);
-      appendIfValue('mobile_country_code', userDetails.mobileCountryCode);
-      appendIfValue('city', selectedCity?.name || userDetails.city);
-      appendIfValue('state', selectedState?.name || userDetails.state);
-      appendIfValue('country', selectedCountry?.name || userDetails.country);
-      appendIfValue('zip_code', userDetails.zipCode);
-      appendIfValue('preferred_timezone', userDetails.preferredTimeZone);
+      const response = await userAPI.updateProfile(formData);
 
-      if (avatarFile) {
-        formData.append('profile_pic', avatarFile);
-      }
-
-      const result = await dispatch(updateSelfProfile(formData)).unwrap();
-
-      if (result?.success) {
+      if (response.data.success) {
         showToast('Profile updated successfully!', 'success');
-        const updatedUserFromApi = result.data;
-
-        const updatedPhoneNumber = updatedUserFromApi.mobile_number
-          ? `${updatedUserFromApi.mobile_country_code || ''}${updatedUserFromApi.mobile_number}`
-          : '';
-
-        const matchedCountry =
-          countries.find((c) => c.name === updatedUserFromApi.country) || null;
-        const matchedState =
-          states.find((s) => s.name === updatedUserFromApi.state) || null;
-        const matchedCity =
-          cities.find((c) => c.name === updatedUserFromApi.city) || null;
-
-        const updatedDetails = {
-          firstName: updatedUserFromApi.first_name || '',
-          lastName: updatedUserFromApi.last_name || '',
-          email: updatedUserFromApi.email || '',
-          phone: updatedUserFromApi.mobile_number || '',
-          mobileCountryCode: updatedUserFromApi.mobile_country_code || '+1',
-          birthday: userDetails.birthday,
-          bio: userDetails.bio,
-          city: updatedUserFromApi.city || '',
-          state: updatedUserFromApi.state || '',
-          zipCode: updatedUserFromApi.zip_code || '',
-          country: updatedUserFromApi.country || '',
-          countryId: matchedCountry?.id
-            ? String(matchedCountry.id)
-            : userDetails.countryId,
-          stateId: matchedState?.id
-            ? String(matchedState.id)
-            : userDetails.stateId,
-          cityId: matchedCity?.id ? String(matchedCity.id) : userDetails.cityId,
-          preferredTimeZone: updatedUserFromApi.preferred_timezone || '',
-          isActive: updatedUserFromApi.is_active ?? userDetails.isActive,
-          lastLogin: updatedUserFromApi.last_login || userDetails.lastLogin,
-          role: updatedUserFromApi.role?.name || userDetails.role,
-          imageUrl: updatedUserFromApi.image_url || userDetails.imageUrl,
-        };
-
-        setUserDetails(updatedDetails);
-        setAvatarPreview(updatedDetails.imageUrl || avatarPreview);
-        setAvatarFile(null);
-        setPhoneNumber(updatedPhoneNumber);
-        setSelectedCountry(matchedCountry);
-        setSelectedState(matchedState);
-        setSelectedCity(matchedCity);
-
-        const updatedUser = { ...user, ...updatedUserFromApi };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-
-        setOriginalUserDetails(updatedDetails);
-        setOriginalPhoneNumber(updatedPhoneNumber);
-        setOriginalSelectedCountry(matchedCountry);
-        setOriginalSelectedState(matchedState);
-        setOriginalSelectedCity(matchedCity);
-        setOriginalAvatarPreview(updatedDetails.imageUrl || avatarPreview);
-        setOriginalAvatarFile(null);
-        setIsEditing(false); // Exit edit mode after successful update
+        // TODO: Update the user in Redux store if needed
+        // dispatch(updateUserProfile(response.data.data));
       } else {
-        showToast(result?.error?.[0] || 'Failed to update profile', 'error');
+        showToast('Failed to update profile', 'error');
       }
-    } catch (err: unknown) {
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
       const errorMessage =
-        (err as { payload?: { message?: string }; message?: string })?.payload
-          ?.message ||
-        (err as { message?: string })?.message ||
-        'Failed to update profile. Please try again.';
+        error?.response?.data?.message || 'Failed to update profile';
       showToast(errorMessage, 'error');
     } finally {
-      setIsSaving(false);
+      setIsUpdatingProfile(false);
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        showToast('Please select an image file', 'error');
-        return;
-      }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('Image size should be less than 5MB', 'error');
-        return;
-      }
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview('');
-    setUserDetails({
-      ...userDetails,
-      imageUrl: '',
-    });
-  };
-
-  const handleEdit = () => {
-    // Save current values as original before editing
-    setOriginalUserDetails({ ...userDetails });
-    setOriginalPhoneNumber(phoneNumber);
-    setOriginalSelectedCountry(selectedCountry);
-    setOriginalSelectedState(selectedState);
-    setOriginalSelectedCity(selectedCity);
-    setOriginalAvatarPreview(avatarPreview);
-    setOriginalAvatarFile(avatarFile);
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    // Restore original values
-    setUserDetails({ ...originalUserDetails });
-    setPhoneNumber(originalPhoneNumber);
-    setSelectedCountry(originalSelectedCountry);
-    setSelectedState(originalSelectedState);
-    setSelectedCity(originalSelectedCity);
-    setAvatarPreview(originalAvatarPreview);
-    setAvatarFile(originalAvatarFile);
-    setIsEditing(false);
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'general-information':
-        return (
-          <div className="space-y-10">
-            {/* Section Header */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  General Information
-                </h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Update your profile and organization details
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {!isEditing ? (
-                  <Button
-                    type="button"
-                    onClick={handleEdit}
-                    disabled={isSaving || userLoading}
-                    className="h-8 px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] sm:h-9 sm:px-4 sm:text-sm"
-                  >
-                    <Edit2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    Edit
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCancel}
-                      disabled={isSaving || userLoading}
-                      className="h-8 px-3 text-xs border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white sm:h-9 sm:px-4 sm:text-sm"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleUpdateProfile}
-                      disabled={isSaving || userLoading}
-                      className="h-8 px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] sm:h-9 sm:px-4 sm:text-sm"
-                    >
-                      {isSaving || userLoading ? (
-                        <>
-                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
-                          Saving...
-                        </>
-                      ) : (
-                        'Save Changes'
-                      )}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <form className="space-y-6">
-              {/* Profile Picture Upload Section */}
-              <div className="space-y-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
-                    Profile Picture
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                      disabled={!isEditing}
-                    />
-                    <label htmlFor="avatar-upload">
-                      <Button
-                        type="button"
-                        disabled={!isEditing}
-                        className="h-8 cursor-pointer px-3 text-xs text-white bg-[#4F39F6] hover:bg-[#3D2DC4] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:px-4 sm:text-sm"
-                      >
-                        Upload New Photo
-                      </Button>
-                    </label>
-                    {isEditing && avatarPreview && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleRemoveAvatar}
-                        className="h-8 px-3 text-xs border-[#4F39F6] text-[#4F39F6] hover:bg-[#4F39F6] hover:text-white sm:h-9 sm:px-4 sm:text-sm"
-                      >
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-                  <div className="relative">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-700 sm:h-18 sm:w-18">
-                      {avatarPreview ? (
-                        <img
-                          src={avatarPreview}
-                          alt="Avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-gray-400 dark:text-gray-500">
-                          <Camera className="h-7 w-7" />
-                        </div>
-                      )}
-                    </div>
-                    {avatarPreview && (
-                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#4F39F6] dark:border-slate-800">
-                        <MapPin className="h-3 w-3 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 sm:text-lg">
-                        {userDetails.firstName && userDetails.lastName
-                          ? `${userDetails.firstName} ${userDetails.lastName}`
-                          : userDetails.firstName ||
-                            userDetails.lastName ||
-                            user?.email?.split('@')[0] ||
-                            'User'}
-                      </h3>
-                      <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-                        {user?.role?.name ||
-                          user?.role?.display_name ||
-                          userDetails.role ||
-                          'No role assigned'}
-                      </p>
-                      {displayLocation && (
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                          <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          {displayLocation}
-                        </p>
-                      )}
-                      {user?.email && (
-                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-500">
-                          {user.email}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Organization Information Section */}
-              <div className="space-y-3 border-b border-gray-200 pb-3 dark:border-gray-700">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
-                  Organization Information
-                </h3>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Business Name
-                    </label>
-                    <Input
-                      placeholder={
-                        user?.organizations?.[0]?.name || 'Enter business name'
-                      }
-                      className="h-9 w-full text-sm"
-                      value={
-                        businessName || user?.organizations?.[0]?.name || ''
-                      }
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Email Address
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="Enter email address"
-                      className="h-9 w-full text-sm"
-                      value={userDetails.email || user?.email || ''}
-                      onChange={(e) =>
-                        setUserDetails({
-                          ...userDetails,
-                          email: e.target.value,
-                        })
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Phone Number
-                    </label>
-                    <PhoneInput
-                      international
-                      defaultCountry="US"
-                      value={
-                        phoneNumber ||
-                        (userDetails.mobileCountryCode && userDetails.phone
-                          ? `${userDetails.mobileCountryCode}${userDetails.phone}`
-                          : '')
-                      }
-                      onChange={(value) => {
-                        setPhoneNumber(value || '');
-                        if (value) {
-                          try {
-                            const phoneNumberObj = parsePhoneNumber(value);
-                            if (phoneNumberObj) {
-                              setUserDetails({
-                                ...userDetails,
-                                mobileCountryCode: `+${phoneNumberObj.countryCallingCode}`,
-                                phone: phoneNumberObj.nationalNumber,
-                              });
-                            }
-                          } catch (error) {
-                            console.error('Error parsing phone number:', error);
-                          }
-                        } else {
-                          setUserDetails({
-                            ...userDetails,
-                            phone: '',
-                            mobileCountryCode: '+1',
-                          });
-                        }
-                      }}
-                      className="phone-input-container"
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Fax
-                    </label>
-                    <div className="relative">
-                      <Input
-                        placeholder="Enter fax number"
-                        className="h-9 w-full pr-10 text-sm"
-                        value={fax}
-                        onChange={(e) => setFax(e.target.value)}
-                        disabled={!isEditing}
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Address Section */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
-                  Address
-                </h3>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Country
-                    </label>
-                    <Combobox
-                      options={countries.map((country) => ({
-                        value: country.id.toString(),
-                        label: country.name,
-                      }))}
-                      value={selectedCountry?.id?.toString()}
-                      onValueChange={(value) => {
-                        const country = countries.find(
-                          (c) => c.id.toString() === value,
-                        );
-                        setSelectedCountry(country || null);
-                        setSelectedState(null);
-                        setSelectedCity(null);
-                        setUserDetails({
-                          ...userDetails,
-                          countryId: country ? String(country.id) : '',
-                          country: country?.name || '',
-                          stateId: '',
-                          state: '',
-                          cityId: '',
-                          city: '',
-                        });
-                      }}
-                      placeholder={
-                        loadingCountries ? 'Loading...' : 'Select Country'
-                      }
-                      searchPlaceholder="Search countries..."
-                      emptyMessage="No countries found"
-                      loading={loadingCountries}
-                      className="w-full"
-                      disabled={!isEditing || loadingCountries}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      City
-                    </label>
-                    <Combobox
-                      options={cities.map((city) => ({
-                        value: city.id.toString(),
-                        label: city.name,
-                      }))}
-                      value={selectedCity?.id?.toString()}
-                      onValueChange={(value) => {
-                        const city = cities.find(
-                          (c) => c.id.toString() === value,
-                        );
-                        setSelectedCity(city || null);
-                        setUserDetails({
-                          ...userDetails,
-                          cityId: city ? String(city.id) : '',
-                          city: city?.name || '',
-                        });
-                      }}
-                      placeholder={
-                        loadingCities
-                          ? 'Loading...'
-                          : !selectedState
-                            ? 'Select State first'
-                            : 'Select City'
-                      }
-                      searchPlaceholder="Search cities..."
-                      emptyMessage={
-                        selectedState
-                          ? 'No cities found'
-                          : 'Select a state first'
-                      }
-                      disabled={!isEditing || !selectedState || loadingCities}
-                      loading={loadingCities}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Postcode
-                    </label>
-                    <Input
-                      placeholder="Enter postcode"
-                      className="h-9 w-full text-sm"
-                      value={userDetails.zipCode}
-                      onChange={(e) =>
-                        setUserDetails({
-                          ...userDetails,
-                          zipCode: e.target.value,
-                        })
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      State
-                    </label>
-                    <Combobox
-                      options={states.map((state) => ({
-                        value: state.id.toString(),
-                        label: state.name,
-                      }))}
-                      value={selectedState?.id?.toString()}
-                      onValueChange={(value) => {
-                        const state = states.find(
-                          (s) => s.id.toString() === value,
-                        );
-                        setSelectedState(state || null);
-                        setSelectedCity(null);
-                        setUserDetails({
-                          ...userDetails,
-                          stateId: state ? String(state.id) : '',
-                          state: state?.name || '',
-                          cityId: '',
-                          city: '',
-                        });
-                      }}
-                      placeholder={
-                        loadingStates
-                          ? 'Loading...'
-                          : !selectedCountry
-                            ? 'Select Country first'
-                            : 'Select State'
-                      }
-                      searchPlaceholder="Search states..."
-                      emptyMessage={
-                        selectedCountry
-                          ? 'No states found'
-                          : 'Select a country first'
-                      }
-                      disabled={!isEditing || !selectedCountry || loadingStates}
-                      loading={loadingStates}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        );
-      case 'password':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Password Management
-              </h2>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                Change your current password or send a reset link to your email.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-slate-800 space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                  <Lock className="h-4 w-4" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wide">
-                    Change Password
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Use this option to set a new password while you are logged in.
-                </p>
-                <Button
-                  type="button"
-                  onClick={() => setIsResetPasswordOpen(true)}
-                  className="h-9 w-full sm:w-auto bg-[#4F39F6] hover:bg-[#3D2DC4] text-white text-sm"
-                >
-                  Reset Password
-                </Button>
-              </div>
-
-              <div className="space-y-2 border-t border-gray-200 pt-4 dark:border-gray-700">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Send Reset Link
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  We will email a password reset link to the address below.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                  <Input
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(event) => setForgotEmail(event.target.value)}
-                    placeholder="Enter email address"
-                    className="h-9 w-full text-sm"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleSendResetLink}
-                    disabled={forgotPasswordLoading}
-                    className="h-9 w-full sm:w-auto bg-[#4F39F6] hover:bg-[#3D2DC4] text-white text-sm disabled:opacity-60"
-                  >
-                    {forgotPasswordLoading ? 'Sending...' : 'Send Reset Link'}
-                  </Button>
-                </div>
-                {forgotPasswordError && (
-                  <p className="text-xs text-red-500">
-                    {typeof forgotPasswordError === 'string'
-                      ? forgotPasswordError
-                      : 'Unable to send reset link. Please try again.'}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 'notifications':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Notifications
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage your notification preferences.
-              </p>
-            </div>
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Notifications section coming soon...
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+  const handleProfileInputChange = (field: string, value: string) => {
+    setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
     <MainLayout role={role}>
-      <div className="min-h-screen bg-transparent">
-        <div className="relative z-10 mx-auto w-full max-w-5xl ">
-          {/* Header Section */}
-          <div className="mb-4 flex items-start justify-between sm:mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">
-                Settings
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 sm:mt-1">
-                Manage your account settings and preferences
-              </p>
-            </div>
-            {/* Top Right Action Buttons - Only show when NOT editing (Edit button) or when editing (Cancel/Save) */}
-            <div className="hidden" />
-          </div>
-
-          {/* Main Content - Sidebar + Content Area */}
-          <div className="flex gap-6">
-            {/* Left Sidebar Navigation */}
-            <div className="w-64 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-slate-800">
-              <nav className="space-y-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-[#4F39F6] text-white'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <span
-                      className={
-                        activeTab === tab.id
-                          ? 'text-white'
-                          : 'text-gray-600 dark:text-gray-400'
-                      }
-                    >
-                      {tab.icon}
-                    </span>
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Right Content Area */}
-            <div className="flex-1 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-slate-800">
-              {renderContent()}
-            </div>
-          </div>
+      <div className="w-full p-2">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your application preferences and integrations
+          </p>
         </div>
+
+        <Tabs defaultValue="integrations" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="integrations" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Google Calendar Integration</CardTitle>
+                <CardDescription>
+                  Connect your Google Calendar to automatically create meeting
+                  links and schedule interviews
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Google Calendar</span>
+                      {isCheckingGoogle ? (
+                        <Badge variant="secondary">Checking...</Badge>
+                      ) : isGoogleConnected ? (
+                        <Badge variant="default" className="bg-green-500">
+                          Connected
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Not Connected</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {isGoogleConnected
+                        ? 'Your Google Calendar is connected and ready for interview scheduling'
+                        : 'Connect Google Calendar to enable automatic meeting creation'}
+                    </p>
+                    {googleConnectError && (
+                      <p className="text-sm text-red-600">
+                        {googleConnectError}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isGoogleConnected}
+                      disabled={isCheckingGoogle}
+                      onCheckedChange={(checked) => {
+                        if (checked && !isGoogleConnected) {
+                          handleConnectGoogleCalendar();
+                        } else if (!checked && isGoogleConnected) {
+                          handleDisconnectGoogleCalendar();
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={checkGoogleConnection}
+                      disabled={isCheckingGoogle}
+                      className="ml-2"
+                    >
+                      {isCheckingGoogle ? 'Checking...' : 'Refresh'}
+                    </Button>
+                  </div>
+                </div>
+
+                {!isGoogleConnected && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 text-yellow-600 mt-0.5">⚠️</div>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-yellow-800">
+                          Google Calendar Required
+                        </p>
+                        <p className="text-sm text-yellow-700">
+                          Interview scheduling requires Google Calendar
+                          integration. Please connect your Google account to
+                          create and manage interview rounds.
+                        </p>
+                        <Button
+                          onClick={handleConnectGoogleCalendar}
+                          size="sm"
+                          className="mt-2"
+                          disabled={isCheckingGoogle}
+                        >
+                          Connect Google Calendar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {isGoogleConnected && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 text-green-600 mt-0.5">✅</div>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-green-800">
+                          Integration Active
+                        </p>
+                        <p className="text-sm text-green-700">
+                          Your Google Calendar is connected. Interview rounds
+                          will automatically create Google Meet links and send
+                          calendar invitations to participants.
+                        </p>
+                        <Button
+                          onClick={handleDisconnectGoogleCalendar}
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+                <CardDescription>
+                  Manage your personal information and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={profileData.first_name}
+                        onChange={(e) =>
+                          handleProfileInputChange('first_name', e.target.value)
+                        }
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={profileData.last_name}
+                        onChange={(e) =>
+                          handleProfileInputChange('last_name', e.target.value)
+                        }
+                        placeholder="Enter your last name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={profileData.country}
+                      onChange={(e) =>
+                        handleProfileInputChange('country', e.target.value)
+                      }
+                      placeholder="Enter your country"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="preferred_timezone">
+                      Preferred Timezone
+                    </Label>
+                    <Input
+                      id="preferred_timezone"
+                      value={profileData.preferred_timezone}
+                      onChange={(e) =>
+                        handleProfileInputChange(
+                          'preferred_timezone',
+                          e.target.value,
+                        )
+                      }
+                      placeholder="e.g., America/New_York"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="mobile_country_code">Country Code</Label>
+                      <Input
+                        id="mobile_country_code"
+                        value={profileData.mobile_country_code}
+                        onChange={(e) =>
+                          handleProfileInputChange(
+                            'mobile_country_code',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g., +1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mobile_number">Phone Number</Label>
+                      <Input
+                        id="mobile_number"
+                        value={profileData.mobile_number}
+                        onChange={(e) =>
+                          handleProfileInputChange(
+                            'mobile_number',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      <strong>Note:</strong> Email and other account details can
+                      only be updated by administrators. Contact your system
+                      administrator if you need to change your email address.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      type="submit"
+                      disabled={isUpdatingProfile}
+                      className="min-w-[120px]"
+                    >
+                      {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>
+                  Configure how you receive notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Notification settings coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Reset Password Dialog */}
-      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="sm:max-w-md p-0">
-          <ResetPassword onClose={() => setIsResetPasswordOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Logout Confirmation Dialog */}
-      <Dialog open={isLogoutOpen} onOpenChange={setIsLogoutOpen}>
-        <DialogContent className="sm:max-w-md border border-gray-200 bg-white text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Confirm Logout
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-base text-gray-600 dark:text-gray-300">
-              Are you sure you want to log out?
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsLogoutOpen(false)}
-                className="border-gray-300 bg-white text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200"
-              >
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleLogout}>
-                Log out
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 };
 
-export default SettingsPage;
+export default Settings;
